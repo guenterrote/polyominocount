@@ -1,6 +1,12 @@
 CC = gcc
 CFLAGS = -O3 -march=native -Wall
 
+all: build/redelmeier build/ustats
+
+build/ustats: src/ustats.c
+	mkdir -p build
+	$(CC) $(CFLAGS) -o $@ $<
+
 build/redelmeier: src/redelmeier.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -o $@ $<
