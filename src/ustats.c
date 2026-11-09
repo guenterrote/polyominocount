@@ -1,7 +1,7 @@
 /*
  * ustats.c -- statistics of Redelmeier's untried set near the leaves.
  *
- * Usage: ustats N K
+ * Usage: ustats [-q] N K   (-q: untried set as a queue)
  * For every node of Redelmeier's recursion (stack discipline) where the
  * current polyomino S has N-K cells (K cells still missing), record
  *   |U|      size of the untried set available to the subtree
@@ -63,9 +63,29 @@ static void rec(int depth, int *u, int nu)
     }
 }
 
+/* queue discipline (Rote's variant): one array Q; the untried set is
+   Q[b..e-1]; trying Q[i] excludes Q[b..i-1]; new neighbours go to the end */
+static int *Q;
+static void recq(int depth, int b, int e)
+{
+    if (depth == N - K) { stats(Q + b, e - b); return; }
+    for (int i = b; i < e; i++) {
+        int c = Q[i];
+        int m = e;
+        for (int j = 0; j < 4; j++) {
+            int d = c + off[j];
+            if (!mark[d]) { mark[d] = 1; Q[m++] = d; }
+        }
+        recq(depth + 1, i + 1, m);
+        for (int j = e; j < m; j++) mark[Q[j]] = 0;
+    }
+}
+
 int main(int argc, char **argv)
 {
-    if (argc < 3) { fprintf(stderr, "usage: %s N K\n", argv[0]); return 1; }
+    int queue = 0;
+    if (argc > 1 && strcmp(argv[1], "-q") == 0) { queue = 1; argv++; argc--; }
+    if (argc < 3) { fprintf(stderr, "usage: %s [-q] N K\n", argv[0]); return 1; }
     N = atoi(argv[1]); K = atoi(argv[2]);
     W = 2 * N + 8;
     int H = N + 8;
@@ -83,7 +103,13 @@ int main(int argc, char **argv)
     int origin = oy * W + ox;
     mark[origin] = 1;
     untried[0][0] = origin;
-    rec(0, untried[0], 1);
+    if (queue) {
+        Q = malloc(sizeof(int) * (4 * N + 8));
+        Q[0] = origin;
+        recq(0, 0, 1);
+    } else
+        rec(0, untried[0], 1);
+    printf("%s: ", queue ? "queue" : "stack");
     printf("N=%d, %d missing cells: %llu nodes with |S|=%d\n", N, K, nodes, N - K);
     double s = 0;
     for (int i = 0; i < 4 * MAXN + 8; i++) s += (double)i * hist[i];
