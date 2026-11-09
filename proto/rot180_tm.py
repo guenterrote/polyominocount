@@ -252,6 +252,45 @@ def glue_touch(f, xs, c, d, nmax_r, X, touched):
     return GLUE_CACHE[key]
 
 
+PRUNE_GAPS = False  # tried: valid, but only ~1% fewer states
+
+
+def gap_bound(f, xs, c):
+    """Lower bound on the weight still needed to connect everything.
+    Overlay U's frontier (labels u_a at x) with the rotated copy's frontier
+    (labels v_a at c - x).  The final P is connected, so every column
+    between the outermost occupied ones needs a cell, unless the gap is
+    already bridged by old cells: some node u_a or v_a occurring on both
+    sides of it.  Each missing column costs at least weight 1."""
+    L = len(xs)
+    lo, hi = {}, {}
+    occ = [False] * L
+    for i, x in enumerate(xs):
+        j = xs.index(c - x) if False else (L - 1 - i)   # c - xs[i] == xs[L-1-i]
+        for node in (("u", f[i]), ("v", f[j])):
+            if node[1]:
+                occ[i] = True
+                if node not in lo:
+                    lo[node] = i
+                hi[node] = i
+    pos = [i for i in range(L) if occ[i]]
+    if not pos:
+        return 0
+    need = 0
+    i = pos[0]
+    while i <= pos[-1]:
+        if occ[i]:
+            i += 1
+            continue
+        g1 = i
+        while not occ[i]:
+            i += 1
+        g2 = i - 1
+        if not any(lo[n] < g1 and hi[n] > g2 for n in lo):
+            need += g2 - g1 + 1
+    return need
+
+
 def count_case_width(nmax, c, d, X):
     """returns (lt, eq): counts by size of P in case (c,d), half-width X,
     with w < h and w == h respectively"""
@@ -306,6 +345,8 @@ def count_case_width(nmax, c, d, X):
             for (f, t), gf in new.items():
                 need_rows = max(0, kmin - rows_done)
                 lb = 2 * need_rows
+                if PRUNE_GAPS:
+                    lb = max(lb, gap_bound(f, xs, c))
                 if not t:
                     occ = [i for i, v in enumerate(f) if v]
                     if occ:
