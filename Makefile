@@ -7,5 +7,6 @@ build/redelmeier: src/redelmeier.c
 
 test: build/redelmeier
 	sh tests/run_tests.sh
+	sh tests/test_mirror.sh
 
 .PHONY: test
