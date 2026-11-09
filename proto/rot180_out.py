@@ -225,6 +225,12 @@ def count_case_width(nmax, c, d, X):
                 lb = 2 * max(0, kmin - row)
                 if PRUNE_MERGE:
                     lb = max(lb, 2 * merge_bound(f, p))
+                if PRUNE_KNUTH and j == L - 1 and any(f):
+                    if not completion_possible(p):
+                        continue
+                    kb = knuth_bound(f, p)
+                    if kb is not None:
+                        lb = max(lb, 2 * kb)
                 if not t:
                     occ_i = [i for i, v in enumerate(f) if v]
                     if occ_i:
@@ -246,6 +252,7 @@ def count_case_width(nmax, c, d, X):
 
 STATS = defaultdict(int)
 PRUNE_MERGE = True
+PRUNE_KNUTH = True
 
 
 def merge_bound(f, p):
@@ -298,3 +305,131 @@ if __name__ == "__main__":
     for n in range(1, nmax + 1):
         print(n, out[n])
     print("# max states", STATS['states'], file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# Knuth's minimum-connection cost (POLYNUM sections 19-25), end-of-row case,
+# applied to super-classes (a class together with its present partner).
+INF = 10 ** 9
+
+
+def mmul(a, b):
+    return [[min(a[i][0] + b[0][j], a[i][1] + b[1][j]) for j in (0, 1)] for i in (0, 1)]
+
+
+def xg(g):
+    return [[INF, INF], [INF, g]]
+
+
+NMAT = [[0, INF], [INF, INF]]
+
+
+def run_mat(length):
+    return [[0, 1], [1, 1]] if length == 1 else [[0, 1], [1, 2]]
+
+
+def knuth_cost(seq):
+    """seq: list of super-class ids (0 = empty), a complete row.
+    Returns the minimum number of new cells (above the row) that connect
+    all super-classes, with no edge requirement; None if the super-classes
+    cross (then the nested recursion does not apply)."""
+    L = len(seq)
+    first, last = {}, {}
+    for i, s in enumerate(seq):
+        if s:
+            first.setdefault(s, i)
+            last[s] = i
+    # non-crossing check
+    stack = []
+    for i, s in enumerate(seq):
+        if not s:
+            continue
+        if stack and stack[-1] == s:
+            pass
+        elif s in stack:
+            return None
+        else:
+            stack.append(s)
+        if last[s] == i:
+            if stack[-1] != s:
+                return None
+            stack.pop()
+
+    def tokens(lo, hi):
+        """tokens in [lo, hi): ('g', len) and ('c', s, start, end)"""
+        out = []
+        i = lo
+        while i < hi:
+            if seq[i] == 0:
+                j = i
+                while j < hi and seq[j] == 0:
+                    j += 1
+                out.append(('g', j - i))
+                i = j
+            else:
+                s = seq[i]
+                out.append(('c', s, i, last[s]))
+                i = last[s] + 1
+        return out
+
+    def comp_matrix(s, a, b):
+        # own runs of s inside [a, b], with nested segments between them
+        pieces = []          # alternating: run matrix, segment token list
+        i = a
+        while i <= b:
+            j = i
+            while j <= b and seq[j] == s:
+                j += 1
+            pieces.append(run_mat(j - i))
+            if j > b:
+                break
+            k = j
+            while seq[k] != s:
+                k = last[seq[k]] + 1 if seq[k] else k + 1
+            pieces.append(tokens(j, k))
+            i = k
+        M = pieces[0]
+        for p in range(1, len(pieces), 2):
+            seg, R = pieces[p], pieces[p + 1]
+            mats = []
+            for t in seg:
+                mats.append(('g', t[1]) if t[0] == 'g' else ('m', comp_matrix(t[1], t[2], t[3])))
+            best = None
+            gap_idx = [q for q, t in enumerate(mats) if t[0] == 'g']
+            for chosen in gap_idx:
+                cur = M
+                for q, t in enumerate(mats):
+                    if t[0] == 'g':
+                        cur = mmul(cur, NMAT if q == chosen else xg(t[1]))
+                    else:
+                        cur = mmul(cur, t[1])
+                cur = mmul(cur, R)
+                best = cur if best is None else [[min(best[x][y], cur[x][y]) for y in (0, 1)] for x in (0, 1)]
+            M = best
+        return M
+
+    top = [t for t in tokens(0, L)]
+    # drop leading / trailing gaps (no edge requirement)
+    while top and top[0][0] == 'g':
+        top.pop(0)
+    while top and top[-1][0] == 'g':
+        top.pop()
+    if not top:
+        return 0
+    M = None
+    for t in top:
+        m = xg(t[1]) if t[0] == 'g' else comp_matrix(t[1], t[2], t[3])
+        M = m if M is None else mmul(M, m)
+    return M[0][0]
+
+
+def completion_possible(p):
+    part = dict(p)
+    return any(q == 's' or isinstance(q, int) for q in part.values()) or not part
+
+
+def knuth_bound(f, p):
+    part = dict(p)
+    sup = {lab: (min(lab, q) if isinstance(q, int) else lab) for lab, q in part.items()}
+    seq = [sup[v] if v else 0 for v in f]
+    return knuth_cost(seq)
