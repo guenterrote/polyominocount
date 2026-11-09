@@ -51,7 +51,17 @@ class UF:
         self.p[self.find(a)] = self.find(b)
 
 
+GLUE_CACHE = {}
+
+
 def glue(f, xs, c, d, nmax_r):
+    key = (f, c, d, nmax_r)
+    if key not in GLUE_CACHE:
+        GLUE_CACHE[key] = _glue(f, xs, c, d, nmax_r)
+    return GLUE_CACHE[key]
+
+
+def _glue(f, xs, c, d, nmax_r):
     """For frontier f (labels at row 1, columns xs), return {|R|: number of
     middle rows R making P connected}.  If d == 1 there is no middle row."""
     idx = {x: i for i, x in enumerate(xs)}
@@ -90,16 +100,21 @@ def glue(f, xs, c, d, nmax_r):
         return res
     # symmetric middle rows: choose cells for x >= c - x, i.e. 2x >= c
     half = [x for x in xs if 2 * x >= c]
-    for mask in range(1 << len(half)):
-        R = set()
-        for k, x in enumerate(half):
-            if mask >> k & 1:
+    from itertools import combinations
+    for k in range(len(half) + 1):
+        if (2 * k - (1 if c == 0 and k and 0 in half else 0)) > nmax_r and k > 0:
+            # even the cheapest choice (including x=0) is too big
+            if 2 * k - 1 > nmax_r:
+                break
+        for chosen in combinations(half, k):
+            R = set()
+            for x in chosen:
                 R.add(x)
                 R.add(c - x)
-        if len(R) > nmax_r:
-            continue
-        if connected(R):
-            res[len(R)] += 1
+            if len(R) > nmax_r:
+                continue
+            if connected(R):
+                res[len(R)] += 1
     return res
 
 
@@ -149,7 +164,7 @@ def count_case(nmax, c, d):
         row += 1
         # glue: the row just finished is row 1
         for f, gf in states.items():
-            gl = glue(f, xs, c, d, nmax)
+            gl = glue(f, xs, c, d, nmax - 2 * min(gf))
             for u, k in gf.items():
                 for r, m in gl.items():
                     if 2 * u + r <= nmax:
