@@ -225,10 +225,14 @@ def count_case_width(nmax, c, d, X):
                 lb = 2 * max(0, kmin - row)
                 if PRUNE_MERGE:
                     lb = max(lb, 2 * merge_bound(f, p))
-                if PRUNE_KNUTH and j == L - 1 and any(f):
+                if PRUNE_KNUTH and any(f) and not (d == 1 and row == 1 and j < L - 1):
+                    # (in row 1 with d = 1, twin links inside the row are not planar)
                     if not completion_possible(p):
                         continue
-                    kb = knuth_bound(f, p)
+                    if j < L - 1 and d == 1 and row == 1:
+                        kb = None   # row-1 twin links are not planar: no kink bound
+                    else:
+                        kb = knuth_bound(f, p, None if j == L - 1 else j)
                     if kb is not None:
                         lb = max(lb, 2 * kb)
                 if not t:
@@ -328,7 +332,11 @@ def run_mat(length):
     return [[0, 1], [1, 1]] if length == 1 else [[0, 1], [1, 2]]
 
 
-def knuth_cost(seq):
+def yg(g):
+    return [[INF, g], [INF, INF]]
+
+
+def knuth_cost(seq, kink=None):
     """seq: list of super-class ids (0 = empty), a complete row.
     Returns the minimum number of new cells (above the row) that connect
     all super-classes, with no edge requirement; None if the super-classes
@@ -364,13 +372,26 @@ def knuth_cost(seq):
                 j = i
                 while j < hi and seq[j] == 0:
                     j += 1
-                out.append(('g', j - i))
+                out.append(gap_token(i, j))
                 i = j
             else:
                 s = seq[i]
+                if (kink is not None and out and out[-1][0] == 'c' and i == kink + 1):
+                    out.append(('m', yg(0)))      # different components meet at the kink
                 out.append(('c', s, i, last[s]))
                 i = last[s] + 1
         return out
+
+    def gap_token(i, j):
+        """zeros at positions i..j-1; Knuth section 24 for the kink"""
+        g = j - i
+        if kink is None or j <= kink or i > kink + 1:
+            return ('m', xg(g))
+        a = max(0, min(j, kink + 1) - i)
+        b = g - a
+        if a > 0:
+            return ('m', xg(a + b + 1))
+        return ('m', yg(b))
 
     def comp_matrix(s, a, b):
         # own runs of s inside [a, b], with nested segments between them
@@ -393,14 +414,14 @@ def knuth_cost(seq):
             seg, R = pieces[p], pieces[p + 1]
             mats = []
             for t in seg:
-                mats.append(('g', t[1]) if t[0] == 'g' else ('m', comp_matrix(t[1], t[2], t[3])))
+                mats.append(('g', t[1]) if t[0] == 'm' else ('c', comp_matrix(t[1], t[2], t[3])))
             best = None
             gap_idx = [q for q, t in enumerate(mats) if t[0] == 'g']
             for chosen in gap_idx:
                 cur = M
                 for q, t in enumerate(mats):
                     if t[0] == 'g':
-                        cur = mmul(cur, NMAT if q == chosen else xg(t[1]))
+                        cur = mmul(cur, NMAT if q == chosen else t[1])
                     else:
                         cur = mmul(cur, t[1])
                 cur = mmul(cur, R)
@@ -410,15 +431,15 @@ def knuth_cost(seq):
 
     top = [t for t in tokens(0, L)]
     # drop leading / trailing gaps (no edge requirement)
-    while top and top[0][0] == 'g':
+    while top and top[0][0] == 'm':
         top.pop(0)
-    while top and top[-1][0] == 'g':
+    while top and top[-1][0] == 'm':
         top.pop()
     if not top:
         return 0
     M = None
     for t in top:
-        m = xg(t[1]) if t[0] == 'g' else comp_matrix(t[1], t[2], t[3])
+        m = t[1] if t[0] == 'm' else comp_matrix(t[1], t[2], t[3])
         M = m if M is None else mmul(M, m)
     return M[0][0]
 
@@ -428,8 +449,8 @@ def completion_possible(p):
     return any(q == 's' or isinstance(q, int) for q in part.values()) or not part
 
 
-def knuth_bound(f, p):
+def knuth_bound(f, p, kink=None):
     part = dict(p)
     sup = {lab: (min(lab, q) if isinstance(q, int) else lab) for lab, q in part.items()}
     seq = [sup[v] if v else 0 for v in f]
-    return knuth_cost(seq)
+    return knuth_cost(seq, kink)
