@@ -15,6 +15,7 @@
  * fix(r180)(n) = sum over (c, d, vhi) of 2 #(vspan < uspan) + #(vspan = uspan).
  *
  * Counters are uint64 modulo 2^64, or modulo M with -m M (for CRT).
+ * Compiled with -DCNT128 (make CNT128=1) they are 128 bits: exact for n <= 71.
  *
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
@@ -38,7 +39,26 @@
 #include <stdint.h>
 #include <time.h>
 
+#ifdef CNT128
+typedef unsigned __int128 cnt_t;  /* make CNT128=1: exact to 2^128 */
+#define CNT_BITS "128"
+#else
 typedef uint64_t cnt_t;
+#define CNT_BITS "64"
+#endif
+
+/* decimal string of a counter (rotating buffers, so several per printf) */
+static const char *cs(cnt_t x)
+{
+    static char buf[8][44];
+    static int r;
+    char *e = buf[r = (r + 1) & 7] + 43, *p = e;
+    *p = 0;
+    do
+        *--p = '0' + (int)(x % 10), x /= 10;
+    while (x);
+    return p;
+}
 
 static int NMAX;
 static uint64_t MOD = 0;          /* 0: arithmetic mod 2^64 */
@@ -931,9 +951,9 @@ static void stat_line(const char *tag, int k, int u, int ci, int nu,
     for (int n = 0; n <= NMAX; n++)
         done = addm(done, addm(LT[n], EQ[n]));
     fprintf(stderr, "%s c=%d d=%d vhi=%d L=%d row k=%d u=%d cell %d/%d: "
-            "%zu states, %zu records, %.1f MB, done %llu, %.1fs wall, %.1fs cpu\n",
+            "%zu states, %zu records, %.1f MB, done %s, %.1fs wall, %.1fs cpu\n",
             tag, G_C, G_D, G_VHI, L, k, u, ci, nu, cur->n, cur->nrec,
-            (tab_bytes(cur) + tab_bytes(nxt)) / 1e6, (unsigned long long)done,
+            (tab_bytes(cur) + tab_bytes(nxt)) / 1e6, cs(done),
             now - T_START, (double)clock() / CLOCKS_PER_SEC);
     fflush(stderr);
 }
@@ -1192,7 +1212,7 @@ int main(int argc, char **argv)
         if (MOD)
             fprintf(stderr, ", modulus %llu\n", (unsigned long long)MOD);
         else
-            fprintf(stderr, ", modulus 2**64\n");
+            fprintf(stderr, ", modulus 2**" CNT_BITS "\n");
         fprintf(stderr, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 OLDBOUND ? "old Kruskal (-K)" : "cactus", HEIGHT ? "on" : "off (-H)",
                 LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
@@ -1209,10 +1229,9 @@ int main(int argc, char **argv)
         if (MOD)
             printf("# modulus %llu; n #(vspan<uspan) #(vspan=uspan)\n", (unsigned long long)MOD);
         else
-            printf("# modulus 2**64; n #(vspan<uspan) #(vspan=uspan)\n");
+            printf("# modulus 2**" CNT_BITS "; n #(vspan<uspan) #(vspan=uspan)\n");
         for (int n = 1; n <= NMAX; n++)
-            printf("%d %llu %llu\n", n, (unsigned long long)LT[n],
-                   (unsigned long long)EQ[n]);
+            printf("%d %s %s\n", n, cs(LT[n]), cs(EQ[n]));
     } else {
         /* centre types: 0 cell (c=d=0), 1 edge midpoint (c != d), 2 vertex */
         cnt_t *out = calloc(3 * NW, sizeof(cnt_t));
@@ -1251,13 +1270,13 @@ int main(int argc, char **argv)
         if (MOD)
             snprintf(mstr, sizeof mstr, "%llu", (unsigned long long)MOD);
         else
-            snprintf(mstr, sizeof mstr, "2**64");
+            snprintf(mstr, sizeof mstr, "2**" CNT_BITS);
         fprintf(rf, "# diag180 N=%d modulus %s\ntry:\n    Results\nexcept NameError:\n    Results = {}\n", NMAX, mstr);
         static const char *tyname[3] = {"R180C", "R180M", "R180V"};
         for (int n = 1; n <= NMAX; n++)
             for (int ty = 0; ty < 3; ty++)
-                fprintf(rf, "Results[%d, %s, '%s'] = %llu\n", n, mstr, tyname[ty],
-                        (unsigned long long)out[ty * NW + n]);
+                fprintf(rf, "Results[%d, %s, '%s'] = %s\n", n, mstr, tyname[ty],
+                        cs(out[ty * NW + n]));
         fclose(rf);
         printf("# modulus %s; results appended to %s\n", mstr, RESFILE);
         if (SPLIT)
@@ -1265,11 +1284,10 @@ int main(int argc, char **argv)
         for (int n = 1; n <= NMAX; n++) {
             cnt_t tot = addm(addm(out[n], out[NW + n]), out[2 * NW + n]);
             if (SPLIT)
-                printf("%d %llu %llu %llu %llu\n", n, (unsigned long long)tot,
-                       (unsigned long long)out[n], (unsigned long long)out[NW + n],
-                       (unsigned long long)out[2 * NW + n]);
+                printf("%d %s %s %s %s\n", n, cs(tot), cs(out[n]), cs(out[NW + n]),
+                       cs(out[2 * NW + n]));
             else
-                printf("%d %llu\n", n, (unsigned long long)tot);
+                printf("%d %s\n", n, cs(tot));
         }
     }
     fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu 64-bit words)\n",
