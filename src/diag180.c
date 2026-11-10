@@ -19,6 +19,7 @@
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
  *   -R  disable the reflection merge (v -> -v) for t = 0
+ *   -C  check that every packed key unpacks to the same state
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,17 +50,47 @@ static int MAXC;                  /* max classes in a state */
 static int KL;                    /* key length in bytes */
 static int NW;                    /* counter vector length = NMAX + 1 */
 
+#define MAXL 160
 #define PSELF 0xFF
 #define PGHOST 0xFE
 
 /* ------------------------------------------------------------------ */
-/* hash table of states: key bytes + counter vector */
+/* State storage.  A canonical state is first built as a byte key (L labels,
+   MAXC partner codes, touched flag).  In the table it is bit-packed:
+     per position 3 bits: 0 empty, 1 continues the run to its left,
+       run starts: 2 class with a single run, 3 first run of a class,
+       4 middle run, 5 last run (classes are non-crossing, so a stack
+       recovers the labels);
+     per class 2 bits: 0 self, 1 ghost, 2 opens a partner pair, 3 closes
+       the innermost open pair (partner pairs are non-crossing);
+     1 bit touched.
+   Counts per state are a chain of (size, count) records. */
+static int KW;                    /* packed key length in 64-bit words */
+
+typedef struct {
+    cnt_t c;
+    uint32_t next;                /* index + 1, 0 = end */
+    uint8_t wt;
+} rec_t;
+
 typedef struct {
     size_t n, cap, hmask;
-    uint8_t *keys;
-    cnt_t *cnt;
+    uint64_t *keys;
+    uint32_t *head;               /* first record + 1 */
+    rec_t *rec;
+    size_t nrec, rcap;
     uint32_t *hash;               /* index + 1, 0 = empty */
 } table_t;
+
+static void *xrealloc(void *p, size_t s)
+{
+    p = realloc(p, s);
+    if (!p) {
+        fprintf(stderr, "out of memory\n");
+        exit(1);
+    }
+    return p;
+}
 
 static void tab_init(table_t *t, size_t cap)
 {
@@ -69,46 +100,54 @@ static void tab_init(table_t *t, size_t cap)
     while (h < 2 * cap)
         h <<= 1;
     t->hmask = h - 1;
-    t->keys = malloc(cap * KL);
-    t->cnt = malloc(cap * NW * sizeof(cnt_t));
+    t->keys = xrealloc(0, cap * KW * 8);
+    t->head = xrealloc(0, cap * 4);
     t->hash = calloc(h, sizeof(uint32_t));
-    if (!t->keys || !t->cnt || !t->hash) {
-        fprintf(stderr, "out of memory\n");
-        exit(1);
-    }
+    t->rcap = 2 * cap;
+    t->nrec = 0;
+    t->rec = xrealloc(0, t->rcap * sizeof(rec_t));
 }
 
 static void tab_free(table_t *t)
 {
     free(t->keys);
-    free(t->cnt);
+    free(t->head);
+    free(t->rec);
     free(t->hash);
 }
 
-static inline uint64_t hkey(const uint8_t *k)
+static size_t tab_bytes(const table_t *t)
+{
+    return t->n * (KW * 8 + 4) + t->nrec * sizeof(rec_t) + (t->hmask + 1) * 4;
+}
+
+static inline uint64_t hkey(const uint64_t *k)
 {
     uint64_t h = 0x9E3779B97F4A7C15ull;
-    for (int i = 0; i < KL; i++)
-        h = (h ^ k[i]) * 0x100000001B3ull;
-    return h ^ (h >> 29);
+    for (int i = 0; i < KW; i++) {
+        h ^= k[i];
+        h *= 0xBF58476D1CE4E5B9ull;
+        h ^= h >> 31;
+    }
+    return h;
 }
 
 static void tab_grow(table_t *t)
 {
     size_t cap = t->cap * 2;
-    t->keys = realloc(t->keys, cap * KL);
-    t->cnt = realloc(t->cnt, cap * NW * sizeof(cnt_t));
+    t->keys = xrealloc(t->keys, cap * KW * 8);
+    t->head = xrealloc(t->head, cap * 4);
     size_t h = (t->hmask + 1) * 2;
     free(t->hash);
     t->hash = calloc(h, sizeof(uint32_t));
-    if (!t->keys || !t->cnt || !t->hash) {
+    if (!t->hash) {
         fprintf(stderr, "out of memory\n");
         exit(1);
     }
     t->hmask = h - 1;
     t->cap = cap;
     for (size_t i = 0; i < t->n; i++) {
-        size_t p = hkey(t->keys + i * KL) & t->hmask;
+        size_t p = hkey(t->keys + i * KW) & t->hmask;
         while (t->hash[p])
             p = (p + 1) & t->hmask;
         t->hash[p] = i + 1;
@@ -118,37 +157,164 @@ static void tab_grow(table_t *t)
 static void tab_clear(table_t *t)
 {
     t->n = 0;
+    t->nrec = 0;
     memset(t->hash, 0, (t->hmask + 1) * sizeof(uint32_t));
 }
 
-/* returns the counter vector for key (zeroed if new) */
-static cnt_t *tab_get(table_t *t, const uint8_t *key)
+static inline void putbits(uint64_t *w, int *pos, uint64_t v, int nb)
 {
-    size_t p = hkey(key) & t->hmask;
+    int i = *pos >> 6, o = *pos & 63;
+    w[i] |= v << o;
+    if (o + nb > 64)
+        w[i + 1] |= v >> (64 - o);
+    *pos += nb;
+}
+
+static inline int getbits(const uint64_t *w, int *pos, int nb)
+{
+    int i = *pos >> 6, o = *pos & 63;
+    uint64_t v = w[i] >> o;
+    if (o + nb > 64)
+        v |= w[i + 1] << (64 - o);
+    *pos += nb;
+    return v & ((1u << nb) - 1);
+}
+
+static void pack(const uint8_t *key, uint64_t *w)
+{
+    int first[MAXL + 2], lastrun[MAXL + 2];
+    int pos = 0, m = 0;
+    memset(w, 0, KW * 8);
+    for (int i = 0; i < L; i++)
+        if (key[i] && (i == 0 || !key[i - 1])) {
+            int l = key[i];
+            if (l > m) {
+                m = l;
+                first[l] = i;
+            }
+            lastrun[l] = i;
+        }
+    for (int i = 0; i < L; i++) {
+        int l = key[i], code;
+        if (!l)
+            code = 0;
+        else if (i > 0 && key[i - 1])
+            code = 1;
+        else if (first[l] == i)
+            code = lastrun[l] == i ? 2 : 3;
+        else
+            code = lastrun[l] == i ? 5 : 4;
+        putbits(w, &pos, code, 3);
+    }
+    for (int j = 1; j <= m; j++) {
+        int q = key[L + j - 1];
+        putbits(w, &pos, q == PSELF ? 0 : q == PGHOST ? 1 : q > j ? 2 : 3, 2);
+    }
+    putbits(w, &pos, key[KL - 1], 1);
+}
+
+static void unpack(const uint64_t *w, uint8_t *key)
+{
+    int stack[MAXL + 2], sp = 0, m = 0, pos = 0;
+    memset(key, 0, KL);
+    for (int i = 0; i < L; i++) {
+        int code = getbits(w, &pos, 3);
+        switch (code) {
+        case 0: key[i] = 0; break;
+        case 1: key[i] = key[i - 1]; break;
+        case 2: key[i] = ++m; break;
+        case 3: key[i] = ++m; stack[sp++] = m; break;
+        case 4: key[i] = stack[sp - 1]; break;
+        case 5: key[i] = stack[--sp]; break;
+        }
+    }
+    sp = 0;
+    for (int j = 1; j <= m; j++) {
+        int code = getbits(w, &pos, 2);
+        if (code == 0)
+            key[L + j - 1] = PSELF;
+        else if (code == 1)
+            key[L + j - 1] = PGHOST;
+        else if (code == 2)
+            stack[sp++] = j;
+        else {
+            int q = stack[--sp];
+            key[L + j - 1] = q;
+            key[L + q - 1] = j;
+        }
+    }
+    key[KL - 1] = getbits(w, &pos, 1);
+}
+
+static int CHECK = 0;
+
+/* index of the state with this byte key (created if new) */
+static size_t tab_get(table_t *t, const uint8_t *key)
+{
+    uint64_t w[12];
+    pack(key, w);
+    if (CHECK) {
+        uint8_t k2[2 * MAXL + 4];
+        unpack(w, k2);
+        if (memcmp(k2, key, KL)) {
+            fprintf(stderr, "pack/unpack mismatch\n");
+            exit(2);
+        }
+    }
+    size_t p = hkey(w) & t->hmask;
     while (t->hash[p]) {
         size_t i = t->hash[p] - 1;
-        if (!memcmp(t->keys + i * KL, key, KL))
-            return t->cnt + i * NW;
+        if (!memcmp(t->keys + i * KW, w, KW * 8))
+            return i;
         p = (p + 1) & t->hmask;
     }
     if (t->n == t->cap) {
         tab_grow(t);
-        p = hkey(key) & t->hmask;
+        p = hkey(w) & t->hmask;
         while (t->hash[p])
             p = (p + 1) & t->hmask;
     }
     size_t i = t->n++;
     t->hash[p] = i + 1;
-    memcpy(t->keys + i * KL, key, KL);
-    cnt_t *c = t->cnt + i * NW;
-    memset(c, 0, NW * sizeof(cnt_t));
-    return c;
+    memcpy(t->keys + i * KW, w, KW * 8);
+    t->head[i] = 0;
+    return i;
+}
+
+static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
+{
+    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
+        if (t->rec[r - 1].wt == wt) {
+            t->rec[r - 1].c = addm(t->rec[r - 1].c, c);
+            return;
+        }
+    if (t->nrec == t->rcap) {
+        t->rcap *= 2;
+        t->rec = xrealloc(t->rec, t->rcap * sizeof(rec_t));
+    }
+    rec_t *r = &t->rec[t->nrec++];
+    r->c = c;
+    r->wt = wt;
+    r->next = t->head[si];
+    t->head[si] = t->nrec;
+}
+
+/* dense counter vector of state si (gf must be zero on entry) */
+static void tab_load(const table_t *t, size_t si, cnt_t *gf)
+{
+    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
+        gf[t->rec[r - 1].wt] = t->rec[r - 1].c;
+}
+
+static void tab_unload(const table_t *t, size_t si, cnt_t *gf)
+{
+    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
+        gf[t->rec[r - 1].wt] = 0;
 }
 
 /* ------------------------------------------------------------------ */
 /* working state: frontier labels, partners, union-find over classes and
    ghosts.  Nodes 1..MAXC+1 are classes, GH(i) = ghost of class i. */
-#define MAXL 160
 #define MAXN 2 * (MAXL + 4)
 static int GOFF;                  /* ghost(i) = GOFF + i */
 
@@ -357,7 +523,8 @@ static int exact_bound(const uint8_t *key, int tch)
 }
 
 /* ------------------------------------------------------------------ */
-static size_t MAXSTATES;
+static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW;
+static cnt_t *GF;            /* dense scratch counter vector */
 static cnt_t *LT, *EQ;            /* results of one case, indexed by n */
 
 static int uspan(int k) { return 2 * k + 1 - E; }
@@ -386,10 +553,10 @@ static void insert_pruned(table_t *t, const uint8_t *key, const cnt_t *gf,
         }
     if (!any)
         return;
-    cnt_t *c = tab_get(t, key);
+    size_t si = tab_get(t, key);
     for (int wt = 0; wt <= lim; wt++)
         if (gf[wt])
-            c[wt + add] = addm(c[wt + add], gf[wt]);
+            tab_add(t, si, wt + add, gf[wt]);
 }
 
 static void count_case(int c, int d, int vhi)
@@ -413,6 +580,7 @@ static void count_case(int c, int d, int vhi)
     MAXC = (L + 1) / 2 + 1;
     GOFF = MAXC + 1;
     KL = L + MAXC + 1;
+    KW = (3 * L + 2 * MAXC + 1 + 63) / 64;
     NW = NMAX + 1;
 
     int kmin = 0;
@@ -487,8 +655,10 @@ static void count_case(int c, int d, int vhi)
             int last = ci == nu - 1;
             tab_clear(nxt);
             for (size_t si = 0; si < cur->n; si++) {
-                const uint8_t *sk = cur->keys + si * KL;
-                const cnt_t *gf = cur->cnt + si * NW;
+                uint8_t sk[MAXL * 2 + 4];
+                unpack(cur->keys + si * KW, sk);
+                const cnt_t *gf = GF;
+                tab_load(cur, si, GF);
                 int tch = sk[KL - 1];
                 int empty = 1;
                 for (int j = 0; j < L; j++)
@@ -556,19 +726,24 @@ static void count_case(int c, int d, int vhi)
                     }
                     insert_pruned(nxt, key, gf, add, lb);
                 }
+                tab_unload(cur, si, GF);
             }
             table_t *x = cur;
             cur = nxt;
             nxt = x;
             if (cur->n > MAXSTATES)
                 MAXSTATES = cur->n;
+            size_t by = tab_bytes(cur) + tab_bytes(nxt);
+            if (by > MAXBYTES)
+                MAXBYTES = by, MAXRECS = cur->nrec, MAXKW = KW;
         }
         if (REFLECT && T == 0 && cur->n) {
             /* merge each state with its mirror image v -> -v */
             tab_clear(nxt);
             uint8_t rkey[MAXL * 2 + 4];
             for (size_t si = 0; si < cur->n; si++) {
-                const uint8_t *sk = cur->keys + si * KL;
+                uint8_t sk[MAXL * 2 + 4];
+                unpack(cur->keys + si * KW, sk);
                 decode(&w, sk);
                 for (int a = 0, b = L - 1; a < b; a++, b--) {
                     int x = w.f[a];
@@ -577,7 +752,9 @@ static void count_case(int c, int d, int vhi)
                 }
                 encode(&w, rkey, sk[KL - 1]);
                 const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
-                insert_pruned(nxt, use, cur->cnt + si * NW, 0, 0);
+                tab_load(cur, si, GF);
+                insert_pruned(nxt, use, GF, 0, 0);
+                tab_unload(cur, si, GF);
             }
             table_t *x = cur;
             cur = nxt;
@@ -594,6 +771,8 @@ int main(int argc, char **argv)
     while (a < argc && argv[a][0] == '-') {
         if (!strcmp(argv[a], "-m") && a + 1 < argc)
             MOD = strtoull(argv[++a], 0, 10), a++;
+        else if (!strcmp(argv[a], "-C"))
+            CHECK = 1, a++;
         else if (!strcmp(argv[a], "-R"))
             REFLECT = 0, a++;
         else
@@ -606,6 +785,7 @@ int main(int argc, char **argv)
     NMAX = atoi(argv[a]);
     NW = NMAX + 1;
     LT = calloc(NW, sizeof(cnt_t));
+    GF = calloc(NW, sizeof(cnt_t));
     EQ = calloc(NW, sizeof(cnt_t));
     clock_t t0 = clock();
     if (argc - a == 4) {
@@ -633,6 +813,8 @@ int main(int argc, char **argv)
         for (int n = 1; n <= NMAX; n++)
             printf("%d %llu\n", n, (unsigned long long)out[n]);
     }
+    fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu words)\n",
+            MAXBYTES / 1e6, MAXRECS, MAXKW);
     fprintf(stderr, "# max states %zu, %.2fs\n", MAXSTATES,
             (double)(clock() - t0) / CLOCKS_PER_SEC);
     return 0;
