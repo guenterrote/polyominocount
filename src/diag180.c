@@ -61,8 +61,12 @@ static int NW;                    /* counter vector length = NMAX + 1 */
        run starts: 2 class with a single run, 3 first run of a class,
        4 middle run, 5 last run (classes are non-crossing, so a stack
        recovers the labels);
-     per class 2 bits: 0 self, 1 ghost, 2 opens a partner pair, 3 closes
-       the innermost open pair (partner pairs are non-crossing);
+     per class 1 bit: partner present (or self) / ghost.  Classes with a
+       present partner or self-partnered cross the disk between the
+       frontier and its rho-image, and rho reverses their order, so they
+       form one nested chain A1 < ... < Ak < (S) < rho Ak < ... < rho A1:
+       the i-th crossing class from the left is paired with the i-th from
+       the right, and the middle one (odd count) is self;
      1 bit touched.
    Counts per state are a chain of (size, count) records. */
 static int KW;                    /* packed key length in 64-bit words */
@@ -206,10 +210,8 @@ static void pack(const uint8_t *key, uint64_t *w)
             code = lastrun[l] == i ? 5 : 4;
         putbits(w, &pos, code, 3);
     }
-    for (int j = 1; j <= m; j++) {
-        int q = key[L + j - 1];
-        putbits(w, &pos, q == PSELF ? 0 : q == PGHOST ? 1 : q > j ? 2 : 3, 2);
-    }
+    for (int j = 1; j <= m; j++)
+        putbits(w, &pos, key[L + j - 1] != PGHOST, 1);
     putbits(w, &pos, key[KL - 1], 1);
 }
 
@@ -228,20 +230,15 @@ static void unpack(const uint64_t *w, uint8_t *key)
         case 5: key[i] = stack[--sp]; break;
         }
     }
-    sp = 0;
-    for (int j = 1; j <= m; j++) {
-        int code = getbits(w, &pos, 2);
-        if (code == 0)
-            key[L + j - 1] = PSELF;
-        else if (code == 1)
-            key[L + j - 1] = PGHOST;
-        else if (code == 2)
+    sp = 0;                       /* crossing classes, left to right */
+    for (int j = 1; j <= m; j++)
+        if (getbits(w, &pos, 1))
             stack[sp++] = j;
-        else {
-            int q = stack[--sp];
-            key[L + j - 1] = q;
-            key[L + q - 1] = j;
-        }
+        else
+            key[L + j - 1] = PGHOST;
+    for (int a = 0, b = sp - 1; a <= b; a++, b--) {
+        key[L + stack[a] - 1] = a == b ? PSELF : stack[b];
+        key[L + stack[b] - 1] = a == b ? PSELF : stack[a];
     }
     key[KL - 1] = getbits(w, &pos, 1);
 }
@@ -580,7 +577,7 @@ static void count_case(int c, int d, int vhi)
     MAXC = (L + 1) / 2 + 1;
     GOFF = MAXC + 1;
     KL = L + MAXC + 1;
-    KW = (3 * L + 2 * MAXC + 1 + 63) / 64;
+    KW = (3 * L + MAXC + 1 + 63) / 64;
     NW = NMAX + 1;
 
     int kmin = 0;
