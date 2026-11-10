@@ -1181,6 +1181,28 @@ int main(int argc, char **argv)
     EQ = calloc(NW, sizeof(cnt_t));
     clock_t t0 = clock();
     T_START = T_LAST = wall();
+    {
+        /* program parameters, so that every log is self-describing */
+        fprintf(stderr, "# command:");
+        for (int q = 0; q < argc; q++)
+            fprintf(stderr, " %s", argv[q]);
+        fprintf(stderr, "\n# diag180 built %s %s; N=%d", __DATE__, __TIME__, NMAX);
+        if (argc - a == 4)
+            fprintf(stderr, ", single case c=%s d=%s vhi=%s", argv[a + 1], argv[a + 2], argv[a + 3]);
+        if (MOD)
+            fprintf(stderr, ", modulus %llu\n", (unsigned long long)MOD);
+        else
+            fprintf(stderr, ", modulus 2**64\n");
+        fprintf(stderr, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
+                OLDBOUND ? "old Kruskal (-K)" : "cactus", HEIGHT ? "on" : "off (-H)",
+                LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
+                REFLECT ? "on" : "off (-R)", CHECK ? "on (-C)" : "off");
+        fprintf(stderr, "# output: results file %s, split %s, progress -v %d -p %g s\n",
+                RESFILE, SPLIT ? "on" : "off", VERB, PSEC);
+        fprintf(stderr, "# sizes: counter %zu bytes, count record %zu bytes, key word 64 bits\n",
+                sizeof(cnt_t), sizeof(rec_t));
+        fflush(stderr);
+    }
     if (argc - a == 4) {
         int c = atoi(argv[a + 1]), d = atoi(argv[a + 2]), vhi = atoi(argv[a + 3]);
         count_case(c, d, vhi);
@@ -1250,7 +1272,7 @@ int main(int argc, char **argv)
                 printf("%d %llu\n", n, (unsigned long long)tot);
         }
     }
-    fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu words)\n",
+    fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu 64-bit words)\n",
             MAXBYTES / 1e6, MAXRECS, MAXKW);
     fprintf(stderr, "# max states %zu, %.2fs\n", MAXSTATES,
             (double)(clock() - t0) / CLOCKS_PER_SEC);
