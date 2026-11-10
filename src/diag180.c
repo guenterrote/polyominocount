@@ -21,6 +21,7 @@
  *   -R  disable the reflection merge (v -> -v) for t = 0
  *   -N  no one-step lookahead in the bound (default: lookahead at the kink)
  *   -A  one-step lookahead after every cell
+ *   -H  no height term in the bound
  *   -K  use the older, weaker bound (MST only, no self/kink terms)
  *   -C  check that every packed key unpacks to the same state
  */
@@ -541,7 +542,86 @@ static int exact_bound(const uint8_t *key, int tch)
        maxima.
    kink >= 0: the gap ending at position kink costs one more cell (the row
    u-1 cell there is reachable from the left only over its own column).
-   Plus, if the strip edge is not yet touched, the distance to it. */
+   Plus, if the strip edge is not yet touched, the distance to it.
+
+   Height (Rote): H must still reach row USTAR.  A gap path of c cells
+   between frontier cells in rows ra and rb rises at most to
+   (c - 1 + ra + rb + 2) / 2, an edge path of d cells from row r to r + d.
+   Rows above the highest point reached cost one cell each.  Keeping a
+   different gap of a cycle (or the other edge) costs the difference of
+   the gaps but may reach higher; with equal gaps the higher one is kept
+   for free.  The bound is the minimum over these choices. */
+static int CUR_U, USTAR, U0, HEIGHT = 1;
+
+static inline int frow(int j)
+{
+    return ((vlo + j - CUR_U) % 2 + 2) % 2 ? CUR_U - 1 : CUR_U;
+}
+
+static int H0, NOPT, OPTD[2 * MAXL + 4], OPTP[2 * MAXL + 4];
+
+static inline void reach(int h)
+{
+    if (h > H0)
+        H0 = h;
+}
+
+/* a cycle of n gaps (costs g, peaks pk): pay sum - max.  The base choice
+   omits one largest gap; among several largest it omits a lower one, so
+   the highest peak stays reached.  With a single largest gap, keeping it
+   instead is an option costing m1 - m2.  Returns sum - max; *m1p, *p1p
+   receive the largest gap and its peak (for the self term). */
+static int cycle(const int *g, const int *pk, int n, int *m1p, int *p1p)
+{
+    int sum = 0, m1 = -1, n1 = 0, m2 = 0, p1 = -1000;
+    for (int t = 0; t < n; t++) {
+        sum += g[t];
+        if (g[t] > m1) {
+            if (m1 >= 0)
+                m2 = m1;
+            m1 = g[t];
+            n1 = 1;
+            p1 = pk[t];
+        } else if (g[t] == m1) {
+            n1++;
+            if (pk[t] > p1)
+                p1 = pk[t];
+        } else if (g[t] > m2)
+            m2 = g[t];
+    }
+    for (int t = 0; t < n; t++)
+        if (n1 >= 2 || g[t] != m1)
+            reach(pk[t]);
+    if (n1 == 1) {
+        OPTD[NOPT] = m1 - m2;
+        OPTP[NOPT++] = p1;
+    }
+    if (m1p) {
+        *m1p = m1;
+        *p1p = p1;
+    }
+    return sum - m1;
+}
+
+static int NCL, CLD[MAXL], CLP[MAXL];
+
+/* rows above height h still to be reached, using at most one switch */
+static int CUR_TCH;
+
+static int height_extra(int h)
+{
+    if (!HEIGHT || !CUR_TCH)     /* only once the strip edge is touched */
+        return 0;
+    int ex = USTAR - h > 0 ? USTAR - h : 0;
+    for (int o = 0; o < NOPT && ex > 0; o++) {
+        int h2 = OPTP[o] > h ? OPTP[o] : h;
+        int e2 = OPTD[o] + (USTAR - h2 > 0 ? USTAR - h2 : 0);
+        if (e2 < ex)
+            ex = e2;
+    }
+    return ex;
+}
+
 static int cactus_bound(const uint8_t *key, int tch, int kink)
 {
     int rs[MAXL], re[MAXL], rl[MAXL], R = 0;
@@ -558,29 +638,42 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
         }
     if (!R)
         return 0;
+    H0 = -1000;
+    NOPT = 0;
+    NCL = 0;
+    CUR_TCH = tch;
+    for (int i = 0; i < L; i++)
+        if (key[i])
+            reach(frow(i));
     int cost = 0;
-    /* stack of open pockets: class, gap sum, gap max */
-    int sl[MAXL], ss[MAXL], sm[MAXL], sp = 0;
-    int toplab[MAXL], topgap[MAXL], nt = 0;
+    /* open pockets: class and start of its gaps in the gap buffer */
+    int sl[MAXL], sb[MAXL], sp = 0;
+    int gb[MAXL], pb[MAXL], nb = 0;
+    int toplab[MAXL], topgap[MAXL], toppk[MAXL], nt = 0;
     for (int j = 0; j < R; j++) {
         int X = rl[j];
         if (j > 0) {
-            int g = rs[j] - re[j - 1] - 1 + (rs[j] == kink);
+            int a = re[j - 1], b = rs[j];
+            int g = b - a - 1 + (b == kink);
+            /* at the kink the path ends one column beyond b: g + 2 cells */
+            int pk = (g - 1 + (b == kink) + frow(a) + frow(b) + 2) / 2;
             if (sp) {
-                ss[sp - 1] += g;
-                if (g > sm[sp - 1])
-                    sm[sp - 1] = g;
-            } else
+                gb[nb] = g;
+                pb[nb++] = pk;
+            } else {
                 topgap[nt - 1] = g;
+                toppk[nt - 1] = pk;
+            }
         }
         if (sp && sl[sp - 1] == X) {
-            cost += ss[sp - 1] - sm[sp - 1];
             sp--;
+            cost += cycle(gb + sb[sp], pb + sb[sp], nb - sb[sp], 0, 0);
+            nb = sb[sp];
         } else if (!sp)
             toplab[nt++] = X;
         if (j < lastrun[X]) {
             sl[sp] = X;
-            ss[sp] = sm[sp] = 0;
+            sb[sp] = nb;
             sp++;
         }
     }
@@ -590,44 +683,64 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
         if (key[L + toplab[t] - 1] != PGHOST)
             cr[m++] = t;
     if (m) {
-        for (int t = 0; t < cr[0]; t++)
+        for (int t = 0; t < cr[0]; t++) {
             cost += topgap[t];
-        for (int t = cr[m - 1]; t < nt - 1; t++)
-            cost += topgap[t];
-        int k = m / 2, best = 1 << 20;
-        for (int i = 0; i < k; i++) {
-            int sum = 0, mx = 0;
-            /* left side: cr[i] .. cr[i+1] (or the middle) */
-            int a = cr[i], b;
-            if (i < k - 1)
-                b = cr[i + 1];
-            else
-                b = cr[m - 1 - i];          /* middle: A_k .. (S ..) rho A_k */
-            for (int t = a; t < b; t++) {
-                sum += topgap[t];
-                if (topgap[t] > mx)
-                    mx = topgap[t];
-            }
-            if (i < k - 1)                  /* right side of ring i */
-                for (int t = cr[m - 2 - i]; t < cr[m - 1 - i]; t++) {
-                    sum += topgap[t];
-                    if (topgap[t] > mx)
-                        mx = topgap[t];
-                }
-            cost += sum - mx;
-            if (mx < best)
-                best = mx;
+            reach(toppk[t]);
         }
-        if (!(m & 1) && k)
-            cost += best;                   /* no self class */
-    } else {
-        for (int t = 0; t < nt - 1; t++)
+        for (int t = cr[m - 1]; t < nt - 1; t++) {
             cost += topgap[t];
+            reach(toppk[t]);
+        }
+        int k = m / 2;
+        NCL = 0;
+        for (int i = 0; i < k; i++) {
+            int g[2 * MAXL], pk[2 * MAXL], n = 0, m1, p1;
+            int a = cr[i], b = (i < k - 1) ? cr[i + 1] : cr[m - 1 - i];
+            for (int t = a; t < b; t++) {
+                g[n] = topgap[t];
+                pk[n++] = toppk[t];
+            }
+            if (i < k - 1)
+                for (int t = cr[m - 2 - i]; t < cr[m - 1 - i]; t++) {
+                    g[n] = topgap[t];
+                    pk[n++] = toppk[t];
+                }
+            cost += cycle(g, pk, n, &m1, &p1);
+            CLD[NCL] = m1;
+            CLP[NCL++] = p1;
+        }
+        if (m & 1)
+            NCL = 0;                    /* self class present */
+    } else {
+        for (int t = 0; t < nt - 1; t++) {
+            cost += topgap[t];
+            reach(toppk[t]);
+        }
     }
     if (!tch) {
         int d1 = rs[0], d2 = L - 1 - re[R - 1];
-        cost += d1 < d2 ? d1 : d2;
+        int h1 = frow(rs[0]) + d1, h2 = frow(re[R - 1]) + d2;
+        if (d2 < d1 || (d1 == d2 && h2 > h1)) {
+            int x = d1; d1 = d2; d2 = x;
+            x = h1; h1 = h2; h2 = x;
+        }
+        cost += d1;
+        reach(h1);
+        OPTD[NOPT] = d2 - d1;
+        OPTP[NOPT++] = h2;
     }
+    /* without a self class one top-level cycle must be closed completely:
+       pay its largest gap, which then also counts for the height */
+    if (NCL) {
+        int ex = 1 << 20;
+        for (int c = 0; c < NCL; c++) {
+            int e2 = CLD[c] + height_extra(CLP[c] > H0 ? CLP[c] : H0);
+            if (e2 < ex)
+                ex = e2;
+        }
+        cost += ex;
+    } else
+        cost += height_extra(H0);
     return cost;
 }
 
@@ -720,6 +833,8 @@ static int bound(const uint8_t *key, int nt, int k, int kmin, int i, int last, i
         if (!completion_possible(key))
             return -1;
         int kink = (!last && !key[i] && i + 1 < L && key[i + 1]) ? i + 1 : -1;
+        CUR_U = U0 + k - 1;
+        USTAR = U0 + kmin - 1;
         int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
         if (eb > lb)
             lb = eb;
@@ -803,12 +918,14 @@ static void count_case(int c, int d, int vhi)
             insert_pruned(cur, key, one, 0, 0);
         }
         u0 = um + 1;
+        U0 = u0;
     } else {
         memset(key, 0, KL);
         memset(one, 0, sizeof(cnt_t) * NW);
         one[0] = 1;
         insert_pruned(cur, key, one, 0, 0);
         u0 = (S + 1) / 2;
+        U0 = u0;
     }
 
     int cells_u[MAXL];
@@ -930,6 +1047,8 @@ int main(int argc, char **argv)
             LOOKAHEAD = 2, a++;
         else if (!strcmp(argv[a], "-N"))
             LOOKAHEAD = 0, a++;
+        else if (!strcmp(argv[a], "-H"))
+            HEIGHT = 0, a++;
         else if (!strcmp(argv[a], "-K"))
             OLDBOUND = 1, a++;
         else if (!strcmp(argv[a], "-C"))
