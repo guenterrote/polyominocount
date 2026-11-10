@@ -18,6 +18,8 @@
  *
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
+ *   -o F  append results to F (default results180.py) as
+ *         Results[n, m, type] = x, m the modulus, type R180C/R180M/R180V
  *   -s  also print fix(r180) split by centre: in a cell, on an edge, at a vertex
  *   -R  disable the reflection merge (v -> -v) for t = 0
  *   -N  no one-step lookahead in the bound (default: lookahead at the kink)
@@ -38,7 +40,8 @@ static int NMAX;
 static uint64_t MOD = 0;          /* 0: arithmetic mod 2^64 */
 static int REFLECT = 1;
 static int OLDBOUND = 0;
-static int SPLIT = 0;           /* -s: split by centre type */
+static int SPLIT = 0;
+static const char *RESFILE = "results180.py";  /* -o FILE */           /* -s: split by centre type */
 static int LOOKAHEAD = 1;       /* 1: lookahead at the kink, 2 (-A): everywhere, 0 (-N): none */        /* -K: Kruskal bound without self/kink terms */
 
 static inline cnt_t addm(cnt_t a, cnt_t b)
@@ -1104,6 +1107,8 @@ int main(int argc, char **argv)
     while (a < argc && argv[a][0] == '-') {
         if (!strcmp(argv[a], "-m") && a + 1 < argc)
             MOD = strtoull(argv[++a], 0, 10), a++;
+        else if (!strcmp(argv[a], "-o") && a + 1 < argc)
+            RESFILE = argv[++a], a++;
         else if (!strcmp(argv[a], "-s"))
             SPLIT = 1, a++;
         else if (!strcmp(argv[a], "-A"))
@@ -1134,6 +1139,10 @@ int main(int argc, char **argv)
     if (argc - a == 4) {
         int c = atoi(argv[a + 1]), d = atoi(argv[a + 2]), vhi = atoi(argv[a + 3]);
         count_case(c, d, vhi);
+        if (MOD)
+            printf("# modulus %llu; n #(vspan<uspan) #(vspan=uspan)\n", (unsigned long long)MOD);
+        else
+            printf("# modulus 2**64; n #(vspan<uspan) #(vspan=uspan)\n");
         for (int n = 1; n <= NMAX; n++)
             printf("%d %llu %llu\n", n, (unsigned long long)LT[n],
                    (unsigned long long)EQ[n]);
@@ -1155,8 +1164,28 @@ int main(int argc, char **argv)
                     }
                 }
             }
+        /* results file for the final combination (CRT, Burnside) in Python;
+           appended, so runs with different moduli accumulate */
+        FILE *rf = fopen(RESFILE, "a");
+        if (!rf) {
+            perror(RESFILE);
+            return 1;
+        }
+        char mstr[32];
+        if (MOD)
+            snprintf(mstr, sizeof mstr, "%llu", (unsigned long long)MOD);
+        else
+            snprintf(mstr, sizeof mstr, "2**64");
+        fprintf(rf, "# diag180 N=%d modulus %s\ntry:\n    Results\nexcept NameError:\n    Results = {}\n", NMAX, mstr);
+        static const char *tyname[3] = {"R180C", "R180M", "R180V"};
+        for (int n = 1; n <= NMAX; n++)
+            for (int ty = 0; ty < 3; ty++)
+                fprintf(rf, "Results[%d, %s, '%s'] = %llu\n", n, mstr, tyname[ty],
+                        (unsigned long long)out[ty * NW + n]);
+        fclose(rf);
+        printf("# modulus %s; results appended to %s\n", mstr, RESFILE);
         if (SPLIT)
-            printf("# n fix(r180) centre-in-cell centre-on-edge centre-at-vertex\n");
+            printf("# n fix(r180) R180C(centre in a cell) R180M(edge midpoint) R180V(vertex)\n");
         for (int n = 1; n <= NMAX; n++) {
             cnt_t tot = addm(addm(out[n], out[NW + n]), out[2 * NW + n]);
             if (SPLIT)
