@@ -1196,7 +1196,12 @@ int main(int argc, char **argv)
         cnt_t *out = calloc(3 * NW, sizeof(cnt_t));
         for (int c = 0; c <= 1; c++)
             for (int d = 0; d <= 1; d++) {
-                int t = c - d, ty = c + d;
+                /* (c, d) = (0, 1) is the mirror image (x <-> y, v -> -v) of
+                   (1, 0) with vhi one smaller: same counts, so count (1, 0)
+                   twice instead */
+                if (c == 0 && d == 1)
+                    continue;
+                int t = c - d, ty = c + d, twice = c != d;
                 int vhi = t >= 0 ? (t + 1) / 2 : 0;
                 for (; 2 * vhi - t + 1 <= NMAX; vhi++) {
                     if (2 * vhi - t + 1 < 1)
@@ -1206,6 +1211,10 @@ int main(int argc, char **argv)
                         cnt_t *o = &out[ty * NW + n];
                         *o = addm(*o, addm(LT[n], LT[n]));
                         *o = addm(*o, EQ[n]);
+                        if (twice) {
+                            *o = addm(*o, addm(LT[n], LT[n]));
+                            *o = addm(*o, EQ[n]);
+                        }
                     }
                 }
             }
