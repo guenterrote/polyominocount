@@ -19,6 +19,7 @@
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
  *   -R  disable the reflection merge (v -> -v) for t = 0
+ *   -K  use the older, weaker bound (MST only, no self/kink terms)
  *   -C  check that every packed key unpacks to the same state
  */
 #include <stdio.h>
@@ -32,6 +33,7 @@ typedef uint64_t cnt_t;
 static int NMAX;
 static uint64_t MOD = 0;          /* 0: arithmetic mod 2^64 */
 static int REFLECT = 1;
+static int OLDBOUND = 0;        /* -K: Kruskal bound without self/kink terms */
 
 static inline cnt_t addm(cnt_t a, cnt_t b)
 {
@@ -519,6 +521,113 @@ static int exact_bound(const uint8_t *key, int tch)
     return cost;
 }
 
+/* Cells of H still needed (Rote): on the diagonal lattice, connections
+   between frontier runs use disjoint v columns, one cell per column.  The
+   graph of gaps between consecutive runs (classes identified with their
+   partners) is a cactus, because classes are non-crossing:
+     - the pocket between two consecutive runs of a class X, containing
+       classes C1..Cr, is the cycle X - C1 - ... - Cr - X: pay the sum of
+       its gaps minus the largest;
+     - at the top level, the crossing classes nest as
+       A1 < ... < Ak < (S) < rho Ak < ... < rho A1; outer gaps (left of A1,
+       right of rho A1) are paths and are paid in full; ring i (A_i..A_i+1
+       and rho A_i+1..rho A_i) and the middle (A_k..S..rho A_k, or
+       A_k..rho A_k) are cycles: sum minus max;
+     - without a self class some X must be joined to rho X, which closes
+       one of the top-level cycles completely: add the smallest of their
+       maxima.
+   kink >= 0: the gap ending at position kink costs one more cell (the row
+   u-1 cell there is reachable from the left only over its own column).
+   Plus, if the strip edge is not yet touched, the distance to it. */
+static int cactus_bound(const uint8_t *key, int tch, int kink)
+{
+    int rs[MAXL], re[MAXL], rl[MAXL], R = 0;
+    int lastrun[MAXL + 2];
+    for (int i = 0; i < L; i++)
+        if (key[i]) {
+            if (i == 0 || !key[i - 1]) {
+                rs[R] = i;
+                rl[R] = key[i];
+                R++;
+            }
+            re[R - 1] = i;
+            lastrun[key[i]] = R - 1;
+        }
+    if (!R)
+        return 0;
+    int cost = 0;
+    /* stack of open pockets: class, gap sum, gap max */
+    int sl[MAXL], ss[MAXL], sm[MAXL], sp = 0;
+    int toplab[MAXL], topgap[MAXL], nt = 0;
+    for (int j = 0; j < R; j++) {
+        int X = rl[j];
+        if (j > 0) {
+            int g = rs[j] - re[j - 1] - 1 + (rs[j] == kink);
+            if (sp) {
+                ss[sp - 1] += g;
+                if (g > sm[sp - 1])
+                    sm[sp - 1] = g;
+            } else
+                topgap[nt - 1] = g;
+        }
+        if (sp && sl[sp - 1] == X) {
+            cost += ss[sp - 1] - sm[sp - 1];
+            sp--;
+        } else if (!sp)
+            toplab[nt++] = X;
+        if (j < lastrun[X]) {
+            sl[sp] = X;
+            ss[sp] = sm[sp] = 0;
+            sp++;
+        }
+    }
+    /* top level */
+    int cr[MAXL], m = 0;
+    for (int t = 0; t < nt; t++)
+        if (key[L + toplab[t] - 1] != PGHOST)
+            cr[m++] = t;
+    if (m) {
+        for (int t = 0; t < cr[0]; t++)
+            cost += topgap[t];
+        for (int t = cr[m - 1]; t < nt - 1; t++)
+            cost += topgap[t];
+        int k = m / 2, best = 1 << 20;
+        for (int i = 0; i < k; i++) {
+            int sum = 0, mx = 0;
+            /* left side: cr[i] .. cr[i+1] (or the middle) */
+            int a = cr[i], b;
+            if (i < k - 1)
+                b = cr[i + 1];
+            else
+                b = cr[m - 1 - i];          /* middle: A_k .. (S ..) rho A_k */
+            for (int t = a; t < b; t++) {
+                sum += topgap[t];
+                if (topgap[t] > mx)
+                    mx = topgap[t];
+            }
+            if (i < k - 1)                  /* right side of ring i */
+                for (int t = cr[m - 2 - i]; t < cr[m - 1 - i]; t++) {
+                    sum += topgap[t];
+                    if (topgap[t] > mx)
+                        mx = topgap[t];
+                }
+            cost += sum - mx;
+            if (mx < best)
+                best = mx;
+        }
+        if (!(m & 1) && k)
+            cost += best;                   /* no self class */
+    } else {
+        for (int t = 0; t < nt - 1; t++)
+            cost += topgap[t];
+    }
+    if (!tch) {
+        int d1 = rs[0], d2 = L - 1 - re[R - 1];
+        cost += d1 < d2 ? d1 : d2;
+    }
+    return cost;
+}
+
 /* ------------------------------------------------------------------ */
 static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW;
 static cnt_t *GF;            /* dense scratch counter vector */
@@ -717,7 +826,8 @@ static void count_case(int c, int d, int vhi)
                     if (!first_twin || last) {
                         if (!completion_possible(key))
                             continue;
-                        int eb = 2 * exact_bound(key, nt);
+                        int kink = (!last && !key[i] && i + 1 < L && key[i + 1]) ? i + 1 : -1;
+                        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
                         if (eb > lb)
                             lb = eb;
                     }
@@ -768,6 +878,8 @@ int main(int argc, char **argv)
     while (a < argc && argv[a][0] == '-') {
         if (!strcmp(argv[a], "-m") && a + 1 < argc)
             MOD = strtoull(argv[++a], 0, 10), a++;
+        else if (!strcmp(argv[a], "-K"))
+            OLDBOUND = 1, a++;
         else if (!strcmp(argv[a], "-C"))
             CHECK = 1, a++;
         else if (!strcmp(argv[a], "-R"))
