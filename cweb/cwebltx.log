@@ -1,0 +1,2314 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Debian) (preloaded format=pdflatex 2023.5.22)  15 JAN 2024 14:13
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**cwebltx.tex
+(./cwebltx.tex
+LaTeX2e <2020-10-01> patch level 4
+L3 programming layer <2021-01-09> xparse <2020-03-03> (./progltx.cls
+\char_count=\count177
+\count_mod_viii=\count178
+\pre_sect_skip=\skip47
+)
+(./cweb-doc.sty
+Package: cweb-doc 
+ (./cweb.cls))
+(/usr/share/texlive/texmf-dist/tex/latex/preprint/fullpage.sty
+Package: fullpage 1999/02/23 1.1 (PWD)
+\FP@margin=\skip48
+)
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2020-01-29 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count179
+\l__pdf_internal_box=\box47
+)
+(./cwebltx.aux)
+\openout1 = `cwebltx.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.26 \begin{document}
+                     
+? 
+! Undefined control sequence.
+l.44 \maketitle
+               
+? 
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.53 \chap Introduction.
+                        
+? 
+! Undefined control sequence.
+<argument> \normalsize \bf 
+                           
+l.53 \chap Introduction.
+                        
+? 
+
+Overfull \hbox (202.0679pt too wide) in paragraph at lines 53--53
+[]\OT1/cmr/m/n/10 Introduction. 
+ []
+
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 57.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 57.
+
+Overfull \hbox (164.04001pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 This
+ []
+
+
+Overfull \hbox (164.26224pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 code
+ []
+
+
+Overfull \hbox (164.59558pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 shall
+ []
+
+
+Overfull \hbox (156.20667pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in-
+ []
+
+
+Overfull \hbox (160.12332pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ter-
+ []
+
+
+Overfull \hbox (162.34557pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 pret
+ []
+
+
+Overfull \hbox (160.65114pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 and
+ []
+
+
+Overfull \hbox (161.79pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ren-
+ []
+
+
+Overfull \hbox (158.45667pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 der
+ []
+
+
+Overfull \hbox (158.4289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 the
+ []
+
+
+Overfull \hbox (158.42891pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 tag
+ []
+
+
+Overfull \hbox (156.81776pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 set
+ []
+
+
+Overfull \hbox (162.3178pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 out-
+ []
+
+
+Overfull \hbox (159.54002pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 put
+ []
+
+
+Overfull \hbox (155.09557pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 by
+ []
+
+
+Overfull \hbox (178.81749pt too wide) in paragraph at lines 55--61
+\OT1/cmtt/m/n/10 CWEAVE\OT1/cmr/m/n/10 .
+ []
+
+
+Overfull \hbox (172.92892pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 That's
+ []
+
+
+Overfull \hbox (156.23442pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 re-
+ []
+
+
+Overfull \hbox (155.65111pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 al-
+ []
+
+
+Overfull \hbox (161.76222pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ized
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (160.70668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 this
+ []
+
+
+Overfull \hbox (167.04004pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 mod-
+ []
+
+
+Overfull \hbox (157.31778pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ule
+ []
+
+
+Overfull \hbox (153.48444pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 as
+ []
+
+
+Overfull \hbox (157.9289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 it's
+ []
+
+
+Overfull \hbox (174.54002pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 needed
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (164.26224pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 mul-
+ []
+
+
+Overfull \hbox (154.54pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ti-
+ []
+
+
+Overfull \hbox (157.31778pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ple
+ []
+
+
+Overfull \hbox (170.70668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 places
+ []
+
+
+Overfull \hbox (149.54pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 --
+ []
+
+
+Overfull \hbox (144.53998pt too wide) in paragraph at lines 55--61
+
+ []
+
+
+Overfull \hbox (167.3178pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 when
+ []
+
+
+Overfull \hbox (155.92886pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 we
+ []
+
+
+Overfull \hbox (165.65112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 want
+ []
+
+
+Overfull \hbox (153.4289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 to
+ []
+
+
+Overfull \hbox (158.48444pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 use
+ []
+
+
+Overfull \hbox (170.20366pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 L[]T[]X
+ []
+
+
+Overfull \hbox (178.17897pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 markup
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (168.31758pt too wide) in paragraph at lines 55--61
+\OT1/cmtt/m/n/10 CWEB\OT1/cmr/m/n/10 ,
+ []
+
+
+Overfull \hbox (167.3178pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 when
+ []
+
+
+Overfull \hbox (155.92886pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 we
+ []
+
+
+Overfull \hbox (165.65112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 want
+ []
+
+
+Overfull \hbox (153.4289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 to
+ []
+
+
+Overfull \hbox (156.20667pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in-
+ []
+
+
+Overfull \hbox (161.23444pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 cor-
+ []
+
+
+Overfull \hbox (158.70668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 po-
+ []
+
+
+Overfull \hbox (161.79001pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 rate
+ []
+
+
+Overfull \hbox (165.5398pt too wide) in paragraph at lines 55--61
+\OT1/cmtt/m/n/10 CWEB
+ []
+
+
+Overfull \hbox (170.15111pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 pieces
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (170.20366pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 L[]T[]X
+ []
+
+
+Overfull \hbox (163.15112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 doc-
+ []
+
+
+Overfull \hbox (153.42888pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 u-
+ []
+
+
+Overfull \hbox (170.42891pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ments
+ []
+
+
+Overfull \hbox (157.37334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 (as
+ []
+
+
+Overfull \hbox (157.59555pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ex-
+ []
+
+
+Overfull \hbox (161.20668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 am-
+ []
+
+
+Overfull \hbox (164.04001pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ples,
+ []
+
+
+Overfull \hbox (153.45667pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 or
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (165.37335pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 text-
+ []
+
+
+Overfull \hbox (176.54008pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 books),
+ []
+
+
+Overfull \hbox (160.65114pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 and
+ []
+
+
+Overfull \hbox (167.3178pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 when
+ []
+
+
+Overfull \hbox (155.92886pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 we
+ []
+
+
+Overfull \hbox (165.65112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 want
+ []
+
+
+Overfull \hbox (153.4289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 to
+ []
+
+
+Overfull \hbox (156.20667pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in-
+ []
+
+
+Overfull \hbox (161.23444pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 cor-
+ []
+
+
+Overfull \hbox (158.70668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 po-
+ []
+
+
+Overfull \hbox (161.79001pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 rate
+ []
+
+
+Overfull \hbox (169.54002pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 whole
+ []
+
+
+Overfull \hbox (165.5398pt too wide) in paragraph at lines 55--61
+\OT1/cmtt/m/n/10 CWEB
+ []
+
+
+Overfull \hbox (163.15112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 doc-
+ []
+
+
+Overfull \hbox (153.42888pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 u-
+ []
+
+
+Overfull \hbox (170.42891pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ments
+ []
+
+
+Overfull \hbox (152.87334pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 in
+ []
+
+
+Overfull \hbox (149.54pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 a
+ []
+
+
+Overfull \hbox (170.20366pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 L[]T[]X
+ []
+
+
+Overfull \hbox (163.15112pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 doc-
+ []
+
+
+Overfull \hbox (153.42888pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 u-
+ []
+
+
+Overfull \hbox (169.26225pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 ment.
+ []
+
+
+Overfull \hbox (176.81783pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 (That's
+ []
+
+
+Overfull \hbox (155.09557pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 by
+ []
+
+
+Overfull \hbox (156.51224pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 far
+ []
+
+
+Overfull \hbox (158.4289pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 the
+ []
+
+
+Overfull \hbox (165.7067pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 most
+ []
+
+
+Overfull \hbox (159.26224pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 dif-
+ []
+
+
+Overfull \hbox (153.42888pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 fi-
+ []
+
+
+Overfull \hbox (161.20668pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 cult
+ []
+
+
+Overfull \hbox (169.31783pt too wide) in paragraph at lines 55--61
+\OT1/cmr/m/n/10 task.) 
+ []
+
+
+Overfull \vbox (178.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+? 
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+? 
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+! Undefined control sequence.
+<write> ...line {section}{Introduction.}{\thepage 
+                                                  }{}\protected@file@percent }
+l.61 
+     
+? 
+]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+? s
+OK, entering \scrollmode...
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[2]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[3]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[4]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[5]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[6]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[7]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[8]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[9]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[10]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[11]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[12]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[13]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[14]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[15]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[16]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[17]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[18]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[19]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[20]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[21]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[22]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[23]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[24]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[25]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[26]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[27]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[28]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[29]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[30]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[31]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[32]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[33]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[34]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[35]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[36]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[37]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[38]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[39]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[40]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[41]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[42]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[43]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[44]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[45]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[46]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[47]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[48]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[49]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[50]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Undefined control sequence.
+\@oddfoot ->\reset@font \hfil \thepage 
+                                       \hfil 
+l.61 
+     
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (144.53998pt too wide) has occurred while \output is active
+  
+ []
+
+[51]
+Overfull \vbox (154.53998pt too high) has occurred while \output is active []
+
+
+
+! LaTeX Error: The font size command \normalsize is not defined:
+               there is probably something wrong with the class file.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.61 
+     
+(That makes 100 errors; please try again.) 
+Here is how much of TeX's memory you used:
+ 331 strings out of 479304
+ 7025 string characters out of 5869779
+ 278591 words of memory out of 5000000
+ 17598 multiletter control sequences out of 15000+600000
+ 403849 words of font info for 29 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 38i,4n,46p,139b,76s stack positions out of 5000i,500n,10000p,200000b,80000s
+
+!  ==> Fatal error occurred, no output PDF file produced!
