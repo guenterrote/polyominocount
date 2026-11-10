@@ -18,6 +18,7 @@
  *
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
+ *   -s  also print fix(r180) split by centre: in a cell, on an edge, at a vertex
  *   -R  disable the reflection merge (v -> -v) for t = 0
  *   -N  no one-step lookahead in the bound (default: lookahead at the kink)
  *   -A  one-step lookahead after every cell
@@ -37,6 +38,7 @@ static int NMAX;
 static uint64_t MOD = 0;          /* 0: arithmetic mod 2^64 */
 static int REFLECT = 1;
 static int OLDBOUND = 0;
+static int SPLIT = 0;           /* -s: split by centre type */
 static int LOOKAHEAD = 1;       /* 1: lookahead at the kink, 2 (-A): everywhere, 0 (-N): none */        /* -K: Kruskal bound without self/kink terms */
 
 static inline cnt_t addm(cnt_t a, cnt_t b)
@@ -537,9 +539,10 @@ static int exact_bound(const uint8_t *key, int tch)
        right of rho A1) are paths and are paid in full; ring i (A_i..A_i+1
        and rho A_i+1..rho A_i) and the middle (A_k..S..rho A_k, or
        A_k..rho A_k) are cycles: sum minus max;
-     - without a self class some X must be joined to rho X, which closes
-       one of the top-level cycles completely: add the smallest of their
-       maxima.
+     - without a self class some X must be joined to rho X; only a path
+       across the middle A_k .. rho A_k does that (the right side of a
+       ring is the image of its left side), so the middle cycle is closed
+       completely: add its largest gap.
    kink >= 0: the gap ending at position kink costs one more cell (the row
    u-1 cell there is reachable from the left only over its own column).
    Plus, if the strip edge is not yet touched, the distance to it.
@@ -764,9 +767,14 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
                     pk[n++] = toppk[t];
                 }
             cost += cycle(g, pk, scs, n, &m1, &p1, &s1);
-            CLD[NCL] = m1;
-            CLS[NCL] = s1;
-            CLP[NCL++] = p1;
+            if (i == k - 1) {
+                /* only a path across the middle (A_k .. rho A_k) can join
+                   some X to rho X: a ring's right side is just the image
+                   of its left side */
+                CLD[NCL] = m1;
+                CLS[NCL] = s1;
+                CLP[NCL++] = p1;
+            }
         }
         if (m & 1)
             NCL = 0;                    /* self class present */
@@ -782,7 +790,7 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
         int d1 = rs[0], d2 = L - 1 - re[R - 1];
         DEDGE = d1 < d2 ? d1 : d2;
     }
-    /* without a self class one top-level cycle must be closed completely:
+    /* without a self class the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
     if (NCL) {
         int ex = 1 << 20;
@@ -1096,6 +1104,8 @@ int main(int argc, char **argv)
     while (a < argc && argv[a][0] == '-') {
         if (!strcmp(argv[a], "-m") && a + 1 < argc)
             MOD = strtoull(argv[++a], 0, 10), a++;
+        else if (!strcmp(argv[a], "-s"))
+            SPLIT = 1, a++;
         else if (!strcmp(argv[a], "-A"))
             LOOKAHEAD = 2, a++;
         else if (!strcmp(argv[a], "-N"))
@@ -1128,23 +1138,34 @@ int main(int argc, char **argv)
             printf("%d %llu %llu\n", n, (unsigned long long)LT[n],
                    (unsigned long long)EQ[n]);
     } else {
-        cnt_t *out = calloc(NW, sizeof(cnt_t));
+        /* centre types: 0 cell (c=d=0), 1 edge midpoint (c != d), 2 vertex */
+        cnt_t *out = calloc(3 * NW, sizeof(cnt_t));
         for (int c = 0; c <= 1; c++)
             for (int d = 0; d <= 1; d++) {
-                int t = c - d;
+                int t = c - d, ty = c + d;
                 int vhi = t >= 0 ? (t + 1) / 2 : 0;
                 for (; 2 * vhi - t + 1 <= NMAX; vhi++) {
                     if (2 * vhi - t + 1 < 1)
                         continue;
                     count_case(c, d, vhi);
                     for (int n = 1; n <= NMAX; n++) {
-                        out[n] = addm(out[n], addm(LT[n], LT[n]));
-                        out[n] = addm(out[n], EQ[n]);
+                        cnt_t *o = &out[ty * NW + n];
+                        *o = addm(*o, addm(LT[n], LT[n]));
+                        *o = addm(*o, EQ[n]);
                     }
                 }
             }
-        for (int n = 1; n <= NMAX; n++)
-            printf("%d %llu\n", n, (unsigned long long)out[n]);
+        if (SPLIT)
+            printf("# n fix(r180) centre-in-cell centre-on-edge centre-at-vertex\n");
+        for (int n = 1; n <= NMAX; n++) {
+            cnt_t tot = addm(addm(out[n], out[NW + n]), out[2 * NW + n]);
+            if (SPLIT)
+                printf("%d %llu %llu %llu %llu\n", n, (unsigned long long)tot,
+                       (unsigned long long)out[n], (unsigned long long)out[NW + n],
+                       (unsigned long long)out[2 * NW + n]);
+            else
+                printf("%d %llu\n", n, (unsigned long long)tot);
+        }
     }
     fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu words)\n",
             MAXBYTES / 1e6, MAXRECS, MAXKW);
