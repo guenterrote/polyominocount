@@ -19,6 +19,8 @@
  * usage: diag180 [-m M] [-R] N              all cases, prints n and fix(r180)(n)
  *        diag180 [-m M] [-R] N c d vhi      one case, prints n, #lt, #eq
  *   -R  disable the reflection merge (v -> -v) for t = 0
+ *   -N  no one-step lookahead in the bound (default: lookahead at the kink)
+ *   -A  one-step lookahead after every cell
  *   -K  use the older, weaker bound (MST only, no self/kink terms)
  *   -C  check that every packed key unpacks to the same state
  */
@@ -33,7 +35,8 @@ typedef uint64_t cnt_t;
 static int NMAX;
 static uint64_t MOD = 0;          /* 0: arithmetic mod 2^64 */
 static int REFLECT = 1;
-static int OLDBOUND = 0;        /* -K: Kruskal bound without self/kink terms */
+static int OLDBOUND = 0;
+static int LOOKAHEAD = 1;       /* 1: lookahead at the kink, 2 (-A): everywhere, 0 (-N): none */        /* -K: Kruskal bound without self/kink terms */
 
 static inline cnt_t addm(cnt_t a, cnt_t b)
 {
@@ -665,6 +668,65 @@ static void insert_pruned(table_t *t, const uint8_t *key, const cnt_t *gf,
             tab_add(t, si, wt + add, gf[wt]);
 }
 
+/* one transition: decide position i of the current row */
+static int step(work_t *w, const uint8_t *sk, int tch, int i, int occ, int last,
+                int first_twin, uint8_t *key, int *ntp, int *mp)
+{
+    decode(w, sk);
+    if (occ) {
+        int nw = w->next++;
+        w->partner[nw] = -2;
+        w->f[i] = nw;
+        for (int nb = i - 1; nb <= i + 1; nb += 2)
+            if (nb >= 0 && nb < L && w->f[nb])
+                unite(w, nw, w->f[nb]);
+        if (first_twin) {
+            for (int jj = L - 2 - i; jj <= L - i; jj += 2) {
+                if (jj == i)
+                    unite(w, nw, rho(w, nw));
+                else if (jj >= 0 && jj < L && jj < i && w->f[jj])
+                    unite(w, nw, rho(w, w->f[jj]));
+            }
+        }
+    }
+    int status = OK;
+    if (i - 1 >= 0)
+        status = retire(w, i - 1);
+    if (status == OK && last && i + 1 < L)
+        status = retire(w, i + 1);
+    if (status != OK)
+        return status;
+    *ntp = tch || (occ && (i == 0 || i == L - 1));
+    *mp = encode(w, key, *ntp);
+    return OK;
+}
+
+/* lower bound (in weight) on what a nonempty state still needs; -1: never completes */
+static int bound(const uint8_t *key, int nt, int k, int kmin, int i, int last, int first_twin)
+{
+    int lb = kmin > k ? 2 * (kmin - k) : 0;
+    if (!nt) {
+        int dist = L;
+        for (int j = 0; j < L; j++)
+            if (key[j]) {
+                int dd = j < L - 1 - j ? j : L - 1 - j;
+                if (dd < dist)
+                    dist = dd;
+            }
+        if (2 * dist > lb)
+            lb = 2 * dist;
+    }
+    if (!first_twin || last) {
+        if (!completion_possible(key))
+            return -1;
+        int kink = (!last && !key[i] && i + 1 < L && key[i + 1]) ? i + 1 : -1;
+        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
+        if (eb > lb)
+            lb = eb;
+    }
+    return lb;
+}
+
 static void count_case(int c, int d, int vhi)
 {
     S = c + d;
@@ -775,61 +837,47 @@ static void count_case(int c, int d, int vhi)
                 for (int occ = 0; occ <= 1; occ++) {
                     if (occ && k > 1 && empty)
                         continue;
-                    decode(&w, sk);
-                    if (occ) {
-                        int nw = w.next++;
-                        w.partner[nw] = -2;
-                        w.f[i] = nw;
-                        for (int nb = i - 1; nb <= i + 1; nb += 2)
-                            if (nb >= 0 && nb < L && w.f[nb])
-                                unite(&w, nw, w.f[nb]);
-                        if (first_twin) {
-                            for (int jj = L - 2 - i; jj <= L - i; jj += 2) {
-                                if (jj == i)
-                                    unite(&w, nw, rho(&w, nw));
-                                else if (jj >= 0 && jj < L && jj < i && w.f[jj])
-                                    unite(&w, nw, rho(&w, w.f[jj]));
-                            }
-                        }
-                    }
-                    int status = OK;
-                    if (i - 1 >= 0)
-                        status = retire(&w, i - 1);
-                    if (status == OK && last && i + 1 < L)
-                        status = retire(&w, i + 1);
+                    int nt, m;
+                    int status = step(&w, sk, tch, i, occ, last, first_twin, key, &nt, &m);
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
                         record(k - 1, gf, tch);
                         continue;
                     }
-                    int nt = tch || (occ && (i == 0 || i == L - 1));
-                    int m = encode(&w, key, nt);
                     int add = occ ? 2 : 0;
                     if (m == 0) {
                         if (first_twin && !last)
                             insert_pruned(nxt, key, gf, add, 0);
                         continue;
                     }
-                    int lb = kmin > k ? 2 * (kmin - k) : 0;
-                    if (!nt) {
-                        int dist = L;
-                        for (int j = 0; j < L; j++)
-                            if (key[j]) {
-                                int dd = j < L - 1 - j ? j : L - 1 - j;
-                                if (dd < dist)
-                                    dist = dd;
+                    int lb = bound(key, nt, k, kmin, i, last, first_twin);
+                    if (lb < 0)
+                        continue;
+                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < L && key[i + 1]))) {
+                        /* one step ahead: the next cell is present or not */
+                        int i2 = cells_u[ci + 1], last2 = ci + 1 == nu - 1;
+                        int la = 1 << 20;
+                        uint8_t k2[MAXL * 2 + 4];
+                        for (int o2 = 0; o2 <= 1 && la; o2++) {
+                            int nt2, m2;
+                            int st2 = step(&w, key, nt, i2, o2, last2, 0, k2, &nt2, &m2);
+                            if (st2 == DEAD)
+                                continue;
+                            int val = 2 * o2;
+                            if (st2 == OK) {
+                                if (m2 == 0)
+                                    continue;
+                                int lb2 = bound(k2, nt2, k, kmin, i2, last2, 0);
+                                if (lb2 < 0)
+                                    continue;
+                                val += lb2;
                             }
-                        if (2 * dist > lb)
-                            lb = 2 * dist;
-                    }
-                    if (!first_twin || last) {
-                        if (!completion_possible(key))
-                            continue;
-                        int kink = (!last && !key[i] && i + 1 < L && key[i + 1]) ? i + 1 : -1;
-                        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
-                        if (eb > lb)
-                            lb = eb;
+                            if (val < la)
+                                la = val;
+                        }
+                        if (la > lb)
+                            lb = la;
                     }
                     insert_pruned(nxt, key, gf, add, lb);
                 }
@@ -878,6 +926,10 @@ int main(int argc, char **argv)
     while (a < argc && argv[a][0] == '-') {
         if (!strcmp(argv[a], "-m") && a + 1 < argc)
             MOD = strtoull(argv[++a], 0, 10), a++;
+        else if (!strcmp(argv[a], "-A"))
+            LOOKAHEAD = 2, a++;
+        else if (!strcmp(argv[a], "-N"))
+            LOOKAHEAD = 0, a++;
         else if (!strcmp(argv[a], "-K"))
             OLDBOUND = 1, a++;
         else if (!strcmp(argv[a], "-C"))
