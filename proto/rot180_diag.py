@@ -72,7 +72,7 @@ PRUNE_EXACT = True
 REFLECT = True
 
 
-def exact_bound(f, p, touched):
+def exact_bound(f, p, touched, kink=None):
     """Cells still needed (Rote's observation: on the diagonal lattice the
     connections do not overlap).  A path between frontier positions i < j
     needs one cell for every v strictly between them, and paths for
@@ -92,7 +92,7 @@ def exact_bound(f, p, touched):
         while parent.get(a, a) != a:
             a = parent[a]
         return a
-    edges = sorted((b - a - 1, sup[f[a]], sup[f[b]]) for a, b in zip(occ, occ[1:]))
+    edges = sorted((b - a - 1 + (b == kink), sup[f[a]], sup[f[b]]) for a, b in zip(occ, occ[1:]))
     ncls = len(set(sup[f[i]] for i in occ))
     cost = 0
     for wgt, x, y in edges:
@@ -106,6 +106,55 @@ def exact_bound(f, p, touched):
     if not touched:
         cost += min(occ[0], len(f) - 1 - occ[-1])
     return cost
+
+
+SELF_BOUND = True
+KINK = True
+
+
+def self_extra(f, p, kink=None):
+    """Extra cells needed to create the self class when there is none.
+    Present-partner classes nest as A1 < ... < Ak < rho Ak < ... < rho A1.
+    With A_i ~ rho A_i, the top-level gaps form cycles: ring i (left path
+    A_i..A_{i+1} plus right path rho A_{i+1}..rho A_i) and the middle
+    path A_k..rho A_k.  The MST omits the largest gap of every cycle; but
+    some X must get joined to rho X, which needs one of these cycles to be
+    closed completely, i.e. its largest gap paid as well."""
+    part = dict(p)
+    if any(q == 's' for q in part.values()):
+        return 0
+    runs = []
+    for i, v in enumerate(f):
+        if v and (i == 0 or not f[i - 1]):
+            runs.append([i, i, v])
+        elif v:
+            runs[-1][1] = i
+    lastrun = {}
+    for j, r in enumerate(runs):
+        lastrun[r[2]] = j
+    top, gaps = [], []
+    j = 0
+    while j < len(runs):
+        lab = runs[j][2]
+        top.append(lab)
+        jl = lastrun[lab]
+        if jl + 1 < len(runs):
+            gaps.append(runs[jl + 1][0] - runs[jl][1] - 1 + (runs[jl + 1][0] == kink))
+        j = jl + 1
+    cross = [t for t, lab in enumerate(top) if part[lab] != 'g']
+    m = len(cross)
+    if m < 2:
+        return 0
+    k = m // 2
+    best = None
+    for i in range(k):
+        if i < k - 1:
+            seg = gaps[cross[i]:cross[i + 1]] + gaps[cross[m - 2 - i]:cross[m - 1 - i]]
+        else:
+            seg = gaps[cross[k - 1]:cross[k]]
+        mx = max(seg)
+        best = mx if best is None else min(best, mx)
+    return best
 
 
 def count_case_width(nmax, c, d, vhi):
@@ -228,7 +277,15 @@ def count_case_width(nmax, c, d, vhi):
                     if not completion_possible(p):
                         continue
                     if PRUNE_EXACT:
-                        lb = max(lb, 2 * exact_bound(f, p, tch))
+                        # kink: position i decided empty in row u, i+1 holds a
+                        # row u-1 cell b; a path from the left reaches b only
+                        # via (u, i+2), crossing column i+1 above b: +1 cell
+                        kk = (i + 1 if KINK and ci < len(cells_u) - 1 and not f[i]
+                              and i + 1 < L and f[i + 1] else None)
+                        eb = exact_bound(f, p, tch, kk)
+                        if SELF_BOUND:
+                            eb += self_extra(f, p, kk)
+                        lb = max(lb, 2 * eb)
                     else:
                         lb = max(lb, 2 * gap_bound(f, p))
                 gf2 = {wt: cnt for wt, cnt in gf.items() if wt + lb <= nmax}
