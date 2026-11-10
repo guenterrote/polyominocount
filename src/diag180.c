@@ -27,6 +27,10 @@
  *   -H  no height term in the bound
  *   -K  use the older, weaker bound (MST only, no self/kink terms)
  *   -C  check that every packed key unpacks to the same state
+ *   -v V  progress on stderr (flushed): 0 none, 1 a line per row (default),
+ *         2 also a line per cell
+ *   -p S  with -v 1, also a line within a row when S seconds (default 60)
+ *         passed since the last line
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -906,8 +910,37 @@ static int bound(const uint8_t *key, int nt, int k, int kmin, int i, int last, i
     return lb;
 }
 
+/* ------------------------------------------------------------------ */
+/* progress statistics on stderr, flushed after every line */
+static int VERB = 1;              /* -v: 0 none, 1 per row, 2 per cell */
+static double PSEC = 60;          /* -p: within a row, a line at most every PSEC s */
+static int G_C, G_D, G_VHI;
+static double T_START, T_LAST;
+static double wall(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + 1e-9 * ts.tv_nsec;
+}
+static void stat_line(const char *tag, int k, int u, int ci, int nu,
+                      const table_t *cur, const table_t *nxt)
+{
+    double now = wall();
+    T_LAST = now;
+    cnt_t done = 0;
+    for (int n = 0; n <= NMAX; n++)
+        done = addm(done, addm(LT[n], EQ[n]));
+    fprintf(stderr, "%s c=%d d=%d vhi=%d L=%d row k=%d u=%d cell %d/%d: "
+            "%zu states, %zu records, %.1f MB, done %llu, %.1fs wall, %.1fs cpu\n",
+            tag, G_C, G_D, G_VHI, L, k, u, ci, nu, cur->n, cur->nrec,
+            (tab_bytes(cur) + tab_bytes(nxt)) / 1e6, (unsigned long long)done,
+            now - T_START, (double)clock() / CLOCKS_PER_SEC);
+    fflush(stderr);
+}
+
 static void count_case(int c, int d, int vhi)
 {
+    G_C = c, G_D = d, G_VHI = vhi;
     S = c + d;
     T = c - d;
     vlo = T - vhi;
@@ -1075,6 +1108,8 @@ static void count_case(int c, int d, int vhi)
             size_t by = tab_bytes(cur) + tab_bytes(nxt);
             if (by > MAXBYTES)
                 MAXBYTES = by, MAXRECS = cur->nrec, MAXKW = KW;
+            if (!last && (VERB >= 2 || (VERB == 1 && wall() - T_LAST >= PSEC)))
+                stat_line("#cell", k, u, ci + 1, nu, cur, nxt);
         }
         if (REFLECT && T == 0 && cur->n) {
             /* merge each state with its mirror image v -> -v */
@@ -1099,6 +1134,8 @@ static void count_case(int c, int d, int vhi)
             cur = nxt;
             nxt = x;
         }
+        if (VERB >= 1)
+            stat_line("#row ", k, u, nu, nu, cur, nxt);
     }
     tab_free(&A);
     tab_free(&B);
@@ -1124,6 +1161,10 @@ int main(int argc, char **argv)
             OLDBOUND = 1, a++;
         else if (!strcmp(argv[a], "-C"))
             CHECK = 1, a++;
+        else if (!strcmp(argv[a], "-v") && a + 1 < argc)
+            VERB = atoi(argv[++a]), a++;
+        else if (!strcmp(argv[a], "-p") && a + 1 < argc)
+            PSEC = atof(argv[++a]), a++;
         else if (!strcmp(argv[a], "-R"))
             REFLECT = 0, a++;
         else
@@ -1139,6 +1180,7 @@ int main(int argc, char **argv)
     GF = calloc(NW, sizeof(cnt_t));
     EQ = calloc(NW, sizeof(cnt_t));
     clock_t t0 = clock();
+    T_START = T_LAST = wall();
     if (argc - a == 4) {
         int c = atoi(argv[a + 1]), d = atoi(argv[a + 2]), vhi = atoi(argv[a + 3]);
         count_case(c, d, vhi);
