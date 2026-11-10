@@ -1045,6 +1045,9 @@ static void count_case(int c, int d, int vhi)
                             int st2 = step(&w, key, nt, i2, o2, last2, 0, k2, &nt2, &m2);
                             if (st2 == DEAD)
                                 continue;
+                            /* a completion only counts if it is a valid polyomino */
+                            if (st2 == COMPLETE && !(nt && uspan(k - 1) >= L))
+                                continue;
                             int val = 2 * o2;
                             if (st2 == OK) {
                                 if (m2 == 0)
