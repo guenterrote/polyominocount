@@ -68,6 +68,45 @@ def gap_bound(f, p):
     return need
 
 
+PRUNE_EXACT = True
+
+
+def exact_bound(f, p, touched):
+    """Cells still needed (Rote's observation: on the diagonal lattice the
+    connections do not overlap).  A path between frontier positions i < j
+    needs one cell for every v strictly between them, and paths for
+    different gaps use disjoint v ranges, so the cheapest way to join the
+    super-classes is a minimum spanning tree over the gaps between
+    consecutive occupied positions, with weight (j - i - 1).  Reaching an
+    edge of the strip (if not yet touched) costs the distance from the
+    outermost occupied position, in v columns no gap uses."""
+    part = dict(p)
+    sup = {lab: (min(lab, q) if isinstance(q, int) else lab) for lab, q in part.items()}
+    occ = [i for i, v in enumerate(f) if v]
+    if not occ:
+        return 0
+    parent = {}
+
+    def find(a):
+        while parent.get(a, a) != a:
+            a = parent[a]
+        return a
+    edges = sorted((b - a - 1, sup[f[a]], sup[f[b]]) for a, b in zip(occ, occ[1:]))
+    ncls = len(set(sup[f[i]] for i in occ))
+    cost = 0
+    for wgt, x, y in edges:
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[rx] = ry
+            cost += wgt
+            ncls -= 1
+            if ncls == 1:
+                break
+    if not touched:
+        cost += min(occ[0], len(f) - 1 - occ[-1])
+    return cost
+
+
 def count_case_width(nmax, c, d, vhi):
     s, t = c + d, c - d
     vlo = t - vhi
@@ -187,7 +226,10 @@ def count_case_width(nmax, c, d, vhi):
                 if not first_twin or ci == len(cells_u) - 1:
                     if not completion_possible(p):
                         continue
-                    lb = max(lb, 2 * gap_bound(f, p))
+                    if PRUNE_EXACT:
+                        lb = max(lb, 2 * exact_bound(f, p, tch))
+                    else:
+                        lb = max(lb, 2 * gap_bound(f, p))
                 gf2 = {wt: cnt for wt, cnt in gf.items() if wt + lb <= nmax}
                 if gf2:
                     cur[(f, p, tch)] = gf2
