@@ -69,6 +69,7 @@ def gap_bound(f, p):
 
 
 PRUNE_EXACT = True
+REFLECT = True
 
 
 def exact_bound(f, p, touched):
@@ -234,6 +235,20 @@ def count_case_width(nmax, c, d, vhi):
                 if gf2:
                     cur[(f, p, tch)] = gf2
             STATS['states'] = max(STATS['states'], len(cur))
+        if REFLECT and t == 0:
+            # Between rows the frontier holds one full diagonal; for t = 0 the
+            # reflection v -> -v (x <-> y) commutes with rho and maps the strip
+            # to itself, so a state and its mirror image have the same future.
+            merged = defaultdict(lambda: defaultdict(int))
+            for (f, p, tch), gf in cur.items():
+                key = (f, p, tch)
+                st = State(tuple(reversed(f)), dict(p))
+                rf, rp = st.canon()
+                rkey = (rf, rp, tch)
+                key = min(key, rkey, key=repr)
+                for wt, cnt in gf.items():
+                    merged[key][wt] += cnt
+            cur = {k: dict(v) for k, v in merged.items()}
         states = cur
         k += 1
     return lt, eq
