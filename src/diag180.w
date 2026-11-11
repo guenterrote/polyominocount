@@ -1756,7 +1756,10 @@ The line names the type of centre, the width with the range of $u$, the
 height with the range of $v$, and then the nonzero counts in the form
 \texttt{n=}$n$\texttt{:}count.  (The counts are modulo $M$, like
 everything else, and they are complete only for $n\le N$.)
-Only rectangles that are at least as high as wide are reported.  The
+Only rectangles that are at least as high as wide are reported;
+the caller tests this.  (A line without any counts would mean that no
+polyomino with at most $N$ cells has this bounding rectangle, although
+some state survived the pruning up to this row.)  The
 numbers for a rectangle that is wider than high are those of the
 transposed rectangle, with the same type of centre, except that the
 vertical edge becomes a horizontal edge; and the case $(M_x,M_y)=(1,0)$
@@ -1774,12 +1777,7 @@ static void rect_line(int ktop)
         "R180C centre in a cell",
         "R180M centre on the midpoint of a vertical edge",
         "R180V centre at a vertex"};
-    int h = vspan(ktop), any = 0;
-    for (int n = 0; n <= NMAX; n++)
-        if (RECT[n])
-            any = 1;
-    if (!any)
-        return;
+    int h = vspan(ktop);
     int vtop = E ? (M_v + 1) / 2 + ktop - 1 : M_v / 2 + ktop;
     if (VERB >= 1) {
         fprintf(stderr, "#rect %s (Mx=%d My=%d): width %d (u=%d..%d) x height %d (v=%d..%d):",
@@ -1843,7 +1841,8 @@ static void count_case(void)
         @<Merge every state with its mirror image@>@;
         if (VERB >= 1)
             stat_line("#row ", k, v, nu, nu, cur, nxt);
-        rect_line(k - 1);
+        if (vspan(k - 1) >= L) /* lower rectangles are not counted in this case */
+            rect_line(k - 1);
     }
     tab_free(&A);
     tab_free(&B);
