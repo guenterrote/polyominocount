@@ -135,8 +135,9 @@ $$\rhoo(x,y)=(c-x,\,d-y)\qquad\hbox{with } c,d\in\{0,1\}.$$
 The centre is the point $(c/2,d/2)$.  There are three types of centres:
 \begin{itemize}
 \item $(c,d)=(0,0)$: the centre of a cell.  The centre cell is the only
-  cell that is its own image, hence $n$ is odd.  (Type R180C in
-  Shirakawa's notation~\cite{Shirakawa}.)
+  cell that is its own image.  Hence $n$ is odd if the centre cell
+  belongs to $P$, and even if it does not (as for a ring around an empty
+  centre).  (Type R180C in Shirakawa's notation~\cite{Shirakawa}.)
 \item $(c,d)=(1,0)$ or $(0,1)$: the midpoint of a vertical or horizontal
   edge.  Here $n$ is even.  The two cases are mirror images of each other
   under $x\leftrightarrow y$ and give the same counts; we compute only
@@ -144,8 +145,9 @@ The centre is the point $(c/2,d/2)$.  There are three types of centres:
 \item $(c,d)=(1,1)$: a vertex of the grid; $n$ is even.  (Type R180V.)
 \end{itemize}
 These sets are disjoint, and $\fix_{\rhoo}(n)$ is the sum of the counts
-over all centres.  Since odd $n$ involves only the centre type C, the
-run for $N=2k+1$ needs no larger tables than the run for $N=2k$.
+over all centres.  For odd $n$, only the centre type C contributes, and
+in our experiments the run for $N=2k+1$ needed no larger tables than the
+run for $N=2k$.
 
 @*1 Diagonal coordinates.
 We use the coordinates
