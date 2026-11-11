@@ -50,6 +50,7 @@
   cells.  For small $n$ we have checked that this bound is exact.  The numbers are one of
   the ingredients that are needed to extend the count of \emph{free}
   polyominoes (OEIS A000105) beyond $n=59$.
+  The program is written in CWEB~\cite{cweb}.
 \end{abstract}
 
 @* Introduction.
@@ -62,23 +63,25 @@ $$ \frac18 \sum_{g\in D_4} \fix_g(n),$$
 where $\fix_g(n)$ is the number of fixed polyominoes with $n$ cells
 that are invariant under the symmetry~$g$ of the square, up to
 translation.  For the identity this is the number of all fixed
-polyominoes (OEIS A001168), which is known up to $n=70$ by the work of
-Barequet and Ben-Shachar.  The other seven terms count symmetric
+polyominoes (OEIS A001168~\cite{oeis}), which is known up to $n=70$ by the
+work of Barequet and Ben-Shachar~\cite{BB}.  The other seven terms count symmetric
 polyominoes.  The number of free polyominoes is currently known up to
-$n=59$ (Shirakawa, arXiv:2510.22446), and in that computation the
+$n=59$ (Shirakawa~\cite{Shirakawa}), and in that computation the
 polyominoes with a $180^\circ$ rotational symmetry were the bottleneck:
 they were enumerated one by one.
 
 This program computes $\fix_{\rhoo}(n)$ for the rotation $\rhoo$ by
 $180^\circ$ with a transfer-matrix method, in the spirit of Jensen's
-algorithm and of Knuth's programs {\sc POLYNUM} and {\sc POLYSLAVE},
+algorithm~\cite{Jensen01,Jensen03} and of Knuth's programs {\sc POLYNUM} and
+{\sc POLYSLAVE}~\cite{polynum,polyslave},
 but with three special features:
 \begin{enumerate}
 \item We do not build the polyomino~$P$ but its ``half'', the quotient
   of $P$ under~$\rhoo$.  The connectivity information in the state has to
   keep track of how each component is related to its own mirror image.
 \item The half is built along the diagonals $x+y=\mathrm{const}$ of the
-  grid, as in the work of Barequet and Ben-Shachar on fixed polyominoes.
+  grid, as in the work of Barequet and Ben-Shachar on fixed
+  polyominoes~\cite{BB}.
   Connections between neighbouring components then use \emph{disjoint
   sets of columns}, which makes it possible to compute the cost of the
   cheapest completion of a state almost exactly.
@@ -131,7 +134,7 @@ The centre is the point $(c/2,d/2)$.  There are three types of centres:
 \begin{itemize}
 \item $(c,d)=(0,0)$: the centre of a cell.  The centre cell is the only
   cell that is its own image, hence $n$ is odd.  (Type R180C in
-  Shirakawa's notation.)
+  Shirakawa's notation~\cite{Shirakawa}.)
 \item $(c,d)=(1,0)$ or $(0,1)$: the midpoint of a vertical or horizontal
   edge.  Here $n$ is even.  The two cases are mirror images of each other
   under $x\leftrightarrow y$ and give the same counts; we compute only
@@ -273,8 +276,14 @@ any more.  (See Figure~\ref{fig:frontier}.)
 @ {\bf Classes and partners.}
 Consider the part of $P$ that is known so far: the decided cells of $H$
 and their images.  Its connected components that contain a frontier cell
-are the \emph{classes}.  The frontier cells of a class form one or more
-\emph{runs} of consecutive positions.  Since the components are
+are the \emph{classes}.  A \emph{run} is a maximal block of
+consecutive positions that hold frontier cells.  Since the cells of a
+row occupy only every other position, and the cells in between have
+already left the frontier, most runs consist of a single cell; only at
+the kink, the positions $i$ and $i+1$ can both hold a frontier cell,
+and these two cells are neighbours.  The frontier cells of a class form
+one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of class
+$A$ are two runs, and class $B$ has one run of two cells.)  Since the components are
 separated by the frontier line from the undecided region, two classes
 cannot \emph{cross}: the pattern $A\ldots B\ldots A\ldots B$ does not
 occur.
@@ -575,6 +584,8 @@ stored as a bit string in |KW| 64-bit words:
 This is far from the information-theoretic minimum, but with pruning,
 the set of states is a sparse subset of all syntactically possible
 states anyway, and the keys are only a moderate part of the memory.
+(Ranking the states, as in~\cite{twisted}, would give shorter keys, but
+it is slow.)
 
 @<Glob...@>=
 static int KW; /* length of a packed key in 64-bit words */
@@ -594,7 +605,7 @@ number of crossing classes is odd.  In particular, there is at most one
 self class.  Thus the $j$-th crossing class from the left is the partner
 of the $j$-th crossing class from the right, and it suffices to know
 \emph{which} classes are crossing.
-With the option \.{-C}, the program checks for every state that
+With the option \texttt{-C}, the program checks for every state that
 unpacking the packed key gives back the original byte key.  We have run
 this check for $N\le 30$.
 
@@ -690,11 +701,11 @@ The numbers that we count exceed $2^{64}$ at $n=66$.  There are two ways
 to deal with this.
 By default, the counters are unsigned 64-bit integers, and the
 arithmetic is modulo $2^{64}$, or modulo a number $M<2^{64}$ given by
-the option \.{-m}.  The true values can then be recovered by the
+the option \texttt{-m}.  The true values can then be recovered by the
 Chinese remainder theorem from two runs with different moduli, for
-example $2^{64}$ and $2^{61}-1$.  (The script \.{tools/crt180.py} does
+example $2^{64}$ and $2^{61}-1$.  (The script \texttt{tools/crt180.py} does
 this.)
-Alternatively, if the program is compiled with \.{-DCNT128}, the
+Alternatively, if the program is compiled with \texttt{-DCNT128}, the
 counters have 128 bits, and a single run gives the exact values.
 The records become twice as large, but memory is not a bottleneck.
 @<Type...@>=
@@ -720,10 +731,10 @@ static inline cnt_t addm(cnt_t a, cnt_t b)
     return s;
 }
 
-@ There is no \.{printf} format for 128-bit numbers.  The function |cs|
+@ There is no \texttt{printf} format for 128-bit numbers.  The function |cs|
 converts a counter to a decimal string.  It uses eight buffers in
 rotation, so that several results can be used in the same call of
-\.{printf}.
+\texttt{printf}.
 @<Sub...@>=
 static const char *cs(cnt_t x)
 {
@@ -1154,7 +1165,7 @@ side and the top separately, at a cost of (distance to the side) $+$
 parameter lists short.
 @<Glob...@>=
 static int CUR_U, USTAR, U0; /* current row $u$, target row $\Ustar$, first row $u_0$ */
-static int HEIGHT = 1; /* use the height terms? (option \.{-H} turns them off) */
+static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int H0, S0; /* best height and best score reached for free */
 static int NOPT, OPTD[2 * MAXL + 4], OPTP[2 * MAXL + 4], OPTS[2 * MAXL + 4]; /* options */
 static int NCL, CLD[MAXL], CLP[MAXL], CLS[MAXL]; /* the middle cycle: largest gap, its peak and score */
@@ -1447,7 +1458,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
         cost += height_extra(H0, S0);
 
 @ An older and weaker bound is retained for comparison (option
-\.{-K}).  It computes a minimum spanning tree over the gaps by
+\texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the self term, and the height.
 @<Sub...@>=
@@ -1573,7 +1584,7 @@ static void record(int ktop, const cnt_t *gf, int tch)
 }
 
 @ Progress is reported on the standard error stream, after every row
-(\.{-v 1}, the default) or after every cell (\.{-v 2}).  With \.{-v 1},
+(\texttt{-v 1}, the default) or after every cell (\texttt{-v 2}).  With \texttt{-v 1},
 a line is also written within a row when more than |PSEC| seconds
 have passed since the last line.  Every line is flushed immediately.
 The field ``done'' is the number of polyominoes that the current case
@@ -1791,7 +1802,7 @@ that cell depends entirely on the next cell |i2| of the row.  We
 therefore try both possibilities for the next cell and take the smaller
 of the two bounds, including the weight of the cell.  A completion in
 the lookahead counts only if it would be a valid polyomino.  With the
-option \.{-A} the lookahead is done for every cell, and with \.{-N} it
+option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
 @<Sharpen |lb|...@>=
                     if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < L && key[i + 1]))) {
@@ -1840,7 +1851,7 @@ If $t=0$, the strip is symmetric under $v\to-v$, and at the end of a row
 the mirror image of a state is again a valid state with the same
 number of completions.  We merge each state with its mirror image by
 keeping the lexicographically smaller byte key.  This almost halves
-the number of states for these cases.  (The option \.{-R} disables it.)
+the number of states for these cases.  (The option \texttt{-R} disables it.)
 Positions are reversed in the working state, and |encode| then
 renumbers the classes.
 @<Merge every state with its mirror image@>=
@@ -1872,7 +1883,6 @@ renumbers the classes.
 \begin{verbatim}
   -m M   count modulo M (default: modulo 2^64, or 2^128 with CNT128)
   -o F   append the results to the file F (default results180.py)
-  -s     print the results split by the type of centre
   -v V   progress report: 0 none, 1 per row (default), 2 per cell
   -p S   with -v 1, report within a row every S seconds (default 60)
   -R     do not merge mirror states
@@ -1883,11 +1893,10 @@ renumbers the classes.
 \end{verbatim}
 @<Glob...@>=
 static int REFLECT = 1; /* merge mirror states? */
-static int OLDBOUND = 0; /* \.{-K} */
-static int SPLIT = 0; /* \.{-s} */
-static const char *RESFILE = "results180.py"; /* \.{-o} */
+static int OLDBOUND = 0; /* \texttt{-K} */
+static const char *RESFILE = "results180.py"; /* \texttt{-o} */
 static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
-static int CHECK = 0; /* \.{-C} */
+static int CHECK = 0; /* \texttt{-C} */
 
 @ @<The main program@>=
 int main(int argc, char **argv)
@@ -1914,8 +1923,6 @@ int main(int argc, char **argv)
             MOD = strtoull(argv[++a], 0, 10), a++;
         else if (!strcmp(argv[a], "-o") && a + 1 < argc)
             RESFILE = argv[++a], a++;
-        else if (!strcmp(argv[a], "-s"))
-            SPLIT = 1, a++;
         else if (!strcmp(argv[a], "-A"))
             LOOKAHEAD = 2, a++;
         else if (!strcmp(argv[a], "-N"))
@@ -1935,6 +1942,10 @@ int main(int argc, char **argv)
         else
             break;
     }
+    if (a < argc && argv[a][0] == '-') {
+        fprintf(stderr, "%s: unknown option %s\n", argv[0], argv[a]);
+        return 1;
+    }
     if (a >= argc) {
         fprintf(stderr, "usage: %s [-m M] [-R] N [c d vhi]\n", argv[0]);
         return 1;
@@ -1945,29 +1956,32 @@ int main(int argc, char **argv)
     GF = calloc(NW, sizeof(cnt_t));
     EQ = calloc(NW, sizeof(cnt_t));
 
-@ Every log file starts with the parameters of the run.
+@ Both output streams start with the parameters of the run, beginning
+with the complete command line (including the name |argv[0]| of the
+program), so that every log file and every result file is
+self-describing.
 @<Print the program parameters@>=
-    {
-        /* program parameters, so that every log is self-describing */
-        fprintf(stderr, "# command:");
+    for (int str = 0; str < 2; str++) {
+        FILE *f = str ? stdout : stderr;
+        fprintf(f, "# command:");
         for (int q = 0; q < argc; q++)
-            fprintf(stderr, " %s", argv[q]);
-        fprintf(stderr, "\n# diag180 built %s %s; N=%d", __DATE__, __TIME__, NMAX);
+            fprintf(f, " %s", argv[q]);
+        fprintf(f, "\n# diag180 built %s %s; N=%d", __DATE__, __TIME__, NMAX);
         if (argc - a == 4)
-            fprintf(stderr, ", single case c=%s d=%s vhi=%s", argv[a + 1], argv[a + 2], argv[a + 3]);
+            fprintf(f, ", single case c=%s d=%s vhi=%s", argv[a + 1], argv[a + 2], argv[a + 3]);
         if (MOD)
-            fprintf(stderr, ", modulus %llu\n", (unsigned long long)MOD);
+            fprintf(f, ", modulus %llu\n", (unsigned long long)MOD);
         else
-            fprintf(stderr, ", modulus 2**" CNT_BITS "\n");
-        fprintf(stderr, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
+            fprintf(f, ", modulus 2**" CNT_BITS "\n");
+        fprintf(f, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 OLDBOUND ? "old Kruskal (-K)" : "cactus", HEIGHT ? "on" : "off (-H)",
                 LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
                 REFLECT ? "on" : "off (-R)", CHECK ? "on (-C)" : "off");
-        fprintf(stderr, "# output: results file %s, split %s, progress -v %d -p %g s\n",
-                RESFILE, SPLIT ? "on" : "off", VERB, PSEC);
-        fprintf(stderr, "# sizes: counter %zu bytes, count record %zu bytes, key word 64 bits\n",
+        fprintf(f, "# output: results file %s, progress -v %d -p %g s\n",
+                RESFILE, VERB, PSEC);
+        fprintf(f, "# sizes: counter %zu bytes, count record %zu bytes, key word 64 bits\n",
                 sizeof(cnt_t), sizeof(rec_t));
-        fflush(stderr);
+        fflush(f);
     }
 
 @ A single case can be run separately, for example for distributing the
@@ -2043,16 +2057,14 @@ lemma) can be done in Python with integers of unlimited size.
         fclose(rf);
         printf("# modulus %s; results appended to %s\n", mstr, RESFILE);
 
-@ @<Print the table of results@>=
-        if (SPLIT)
-            printf("# n fix(r180) R180C(centre in a cell) R180M(edge midpoint) R180V(vertex)\n");
+@ The table of results has a line for each $n$ with the total
+$\fix_{\rhoo}(n)$ and its three parts for the three types of centres.
+@<Print the table of results@>=
+        printf("# n fix(r180) R180C(centre in a cell) R180M(edge midpoint) R180V(vertex)\n");
         for (int n = 1; n <= NMAX; n++) {
             cnt_t tot = addm(addm(out[n], out[NW + n]), out[2 * NW + n]);
-            if (SPLIT)
-                printf("%d %s %s %s %s\n", n, cs(tot), cs(out[n]), cs(out[NW + n]),
-                       cs(out[2 * NW + n]));
-            else
-                printf("%d %s\n", n, cs(tot));
+            printf("%d %s %s %s %s\n", n, cs(tot), cs(out[n]), cs(out[NW + n]),
+                   cs(out[2 * NW + n]));
         }
 
 @ @<Print the final statistics@>=
@@ -2064,10 +2076,10 @@ lemma) can be done in Python with integers of unlimited size.
 @* Results and experiments.
 \textbf{Correctness.}  The program has been checked in several ways.
 The results agree with a direct enumeration of all polyominoes by
-Redelmeier's algorithm for $n\le 16$, and with an independent Python
+Redelmeier's algorithm~\cite{Redelmeier} for $n\le 16$, and with an independent Python
 prototype of the same method for $n\le 36$.  Runs with different moduli
-are consistent.  Different variants of the bound (\.{-K}, \.{-H},
-\.{-N}, \.{-A}) lead to the same counts; this is a strong test, since an
+are consistent.  Different variants of the bound (\texttt{-K}, \texttt{-H},
+\texttt{-N}, \texttt{-A}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 
 \textbf{Tightness of the bound.}  For all states that arise for
@@ -2152,7 +2164,41 @@ $n$ & $\fix_{\rhoo}(n)$ & $n$ & $\fix_{\rhoo}(n)$\\
 \label{tab:values}
 \end{table}
 
-@* Index.
+@* References.
+\begin{thebibliography}{9}
+\bibitem{BB} Gill Barequet and Gil Ben-Shachar.
+  Counting polyominoes, revisited.
+  In: \emph{Proc.\ Symposium on Algorithm Engineering and Experiments
+  (ALENEX)}, SIAM, 2024, pp.~133--143.
+\bibitem{twisted} Gill Barequet, Micha Moffie, Ares Rib\'o, and G\"unter Rote.
+  Counting polyominoes on twisted cylinders.
+  \emph{Integers} \textbf{6} (2006), Article A22.
+\bibitem{Jensen01} Iwan Jensen.
+  Enumerations of lattice animals and trees.
+  \emph{Journal of Statistical Physics} \textbf{102} (2001), 865--881.
+\bibitem{Jensen03} Iwan Jensen.
+  Counting polyominoes: a parallel implementation for cluster computing.
+  In: \emph{Computational Science --- ICCS 2003}, Lecture Notes in
+  Computer Science 2659, Springer, 2003, pp.~203--212.
+\bibitem{polynum} Donald E. Knuth.
+  {\sc POLYNUM}.  CWEB program, 2016.
+  \url{https://cs.stanford.edu/~knuth/programs.html}
+\bibitem{polyslave} Donald E. Knuth.
+  {\sc POLYSLAVE}.  CWEB program, 2024.
+  \url{https://cs.stanford.edu/~knuth/programs.html}
+\bibitem{cweb} Donald E. Knuth and Silvio Levy.
+  \emph{The CWEB System of Structured Documentation}.
+  Addison-Wesley, 1994.
+\bibitem{oeis} OEIS Foundation.
+  \emph{The On-Line Encyclopedia of Integer Sequences},
+  sequences A000105 and A001168.  \url{https://oeis.org}
+\bibitem{Redelmeier} D. Hugh Redelmeier.
+  Counting polyominoes: yet another attack.
+  \emph{Discrete Mathematics} \textbf{36} (1981), 191--203.
+\bibitem{Shirakawa} Toshihiro Shirakawa.
+  Enumeration of polyominoes up to size $N=59$.
+  Preprint, arXiv:2510.22446, October 2025.
+\end{thebibliography}
 
 \markboth{}{Table of contents}
 \tableofcontents
