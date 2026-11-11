@@ -6,8 +6,8 @@ Prints
   1. a table n, R180C, R180M, R180V, total;
   2. for each column the bare comma-separated list of numbers, as wanted for
      the OEIS data field (with the OEIS number where the column is an OEIS
-     sequence), and the same list restricted to the n for which the column
-     can be nonzero (R180C: odd n; R180M, R180V: even n);
+     sequence); for R180M and R180V, which are zero for odd n, also the
+     list for even n only;
   3. with -b PREFIX, b-files PREFIX-R180C.txt, ... in OEIS format
      (lines "n a(n)").
 
@@ -28,7 +28,7 @@ from math import prod
 
 # column -> (description, OEIS number or None, parity of n with nonzero terms)
 COLUMNS = {
-    "R180C": ("fixed polyominoes invariant under r180, centre in a cell", None, 1),
+    "R180C": ("fixed polyominoes invariant under r180, centre in a cell", None, None),
     "R180M": ("fixed polyominoes invariant under r180, centre on an edge midpoint", None, 0),
     "R180V": ("fixed polyominoes invariant under r180, centre at a vertex", None, 0),
     "total": ("fixed polyominoes invariant under r180", None, None),
