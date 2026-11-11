@@ -144,6 +144,11 @@ The centre is the point $(c/2,d/2)$.  There are three types of centres:
   $(1,0)$ and count it twice.  (Type R180M.)
 \item $(c,d)=(1,1)$: a vertex of the grid; $n$ is even.  (Type R180V.)
 \end{itemize}
+In the OEIS~\cite{oeis}, the three counts are the sequences A390653
+(type C), A390654 (type M, for $2n$ cells and for horizontal edges only,
+which is half of our count) and A390655 (type V, for $2n$ cells), with
+terms up to 59 and 58 cells from Shirakawa's computation.
+
 These sets are disjoint, and $\fix_{\rhoo}(n)$ is the sum of the counts
 over all centres.  For odd $n$, only the centre type C contributes, and
 in our experiments the run for $N=2k+1$ needed no larger tables than the
@@ -2085,7 +2090,11 @@ $\fix_{\rhoo}(n)$ and its three parts for the three types of centres.
 The results agree with a direct enumeration of all polyominoes by
 Redelmeier's algorithm~\cite{Redelmeier} for $n\le 16$, and with an independent Python
 prototype of the same method for $n\le 36$.  Runs with different moduli
-are consistent.  Different variants of the bound (\texttt{-K}, \texttt{-H},
+are consistent.  For $n\le 59$, the totals of our run with $N=60$ agree
+with the values in the OEIS (sequences A390653--A390655), which were
+computed by Shirakawa~\cite{Shirakawa} with a completely different
+method; for $n\le 32$ we have also compared the three types of centres
+separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
 \texttt{-N}, \texttt{-A}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 
@@ -2203,7 +2212,7 @@ $n$ & $\fix_{\rhoo}(n)$ & $n$ & $\fix_{\rhoo}(n)$\\
   Addison-Wesley, 1994.
 \bibitem{oeis} OEIS Foundation.
   \emph{The On-Line Encyclopedia of Integer Sequences},
-  sequences A000105 and A001168.  \url{https://oeis.org}
+  sequences A000105, A001168, and A390653--A390655.  \url{https://oeis.org}
 \bibitem{Redelmeier} D. Hugh Redelmeier.
   Counting polyominoes: yet another attack.
   \emph{Discrete Mathematics} \textbf{36} (1981), 191--203.

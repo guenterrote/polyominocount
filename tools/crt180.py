@@ -1,15 +1,15 @@
 """Combine diag180 results modulo several moduli (file results180.py) by CRT.
 
-usage: python3 tools/crt180.py [results180.py] [bits] [-b PREFIX]
+usage: python3 tools/crt180.py [results180.py] [bits] [-b PREFIX] [-c DIR]
 
 Prints
   1. a table n, R180C, R180M, R180V, total;
-  2. for each column the bare comma-separated list of numbers, as wanted for
-     the OEIS data field (with the OEIS number where the column is an OEIS
-     sequence); for R180M and R180V, which are zero for odd n, also the
-     list for even n only;
-  3. with -b PREFIX, b-files PREFIX-R180C.txt, ... in OEIS format
-     (lines "n a(n)").
+  2. for each OEIS sequence (and for the total) the bare comma-separated
+     list of numbers, as wanted for the OEIS data field;
+  3. with -b PREFIX, b-files PREFIXb390653.txt, ... in OEIS format
+     (lines "n a(n)");
+  4. with -c DIR, a comparison with the OEIS b-files b390653.txt, ... in the
+     directory DIR (the repository has them in b-files/).
 
 A value is accepted only if its CRT reconstruction is below 2**bits
 (default 72); a wrong run would give a value of the size of the product of
@@ -17,22 +17,36 @@ the moduli.  A result file with modulus 2**128 (128-bit build) needs no
 second modulus.
 
 The columns count FIXED polyominoes that are invariant under the rotation by
-180 degrees (whatever other symmetries they have), by the type of centre:
-    fix(r180) = 4*A006747 + 2*A056877 + 2*A056878 + 2*A144553 + A142886.
-The OEIS sequences A351615 / A234008 / A351616 (centre in a cell / on an edge
-/ at a vertex) count FREE polyominoes with exactly this symmetry, so they
-are not our columns; they follow once the other symmetry classes are known.
+180 degrees (whatever other symmetries they have), by the type of centre.
+They are in the OEIS (John Mason, 2025, from Shirakawa's table):
+    A390653(n) = R180C(n)        centre in a cell
+    A390654(n) = R180M(2n) / 2   centre on the midpoint of a horizontal edge
+                                 (R180M counts horizontal and vertical edges)
+    A390655(n) = R180V(2n)       centre at a vertex
 """
 import sys
 from math import prod
 
-# column -> (description, OEIS number or None, parity of n with nonzero terms)
-COLUMNS = {
-    "R180C": ("fixed polyominoes invariant under r180, centre in a cell", None, None),
-    "R180M": ("fixed polyominoes invariant under r180, centre on an edge midpoint", None, 0),
-    "R180V": ("fixed polyominoes invariant under r180, centre at a vertex", None, 0),
-    "total": ("fixed polyominoes invariant under r180", None, None),
-}
+# name, OEIS number, description, index n -> (polyomino size, column, divisor)
+SEQUENCES = [
+    ("R180C", "A390653", "n-celled fixed polyominoes with at least 180 degree rotational symmetry about the center of a square",
+     lambda n: (n, "R180C", 1)),
+    ("R180M/2", "A390654", "2n-celled fixed polyominoes with at least 180 degree rotational symmetry about the midpoint of a horizontal edge",
+     lambda n: (2 * n, "R180M", 2)),
+    ("R180V", "A390655", "2n-celled fixed polyominoes with at least 180 degree rotational symmetry about a vertex",
+     lambda n: (2 * n, "R180V", 1)),
+    ("total", None, "n-celled fixed polyominoes with at least 180 degree rotational symmetry",
+     lambda n: (n, "total", 1)),
+]
+
+
+def read_bfile(fn):
+    d = {}
+    for line in open(fn):
+        if line.strip() and not line.startswith("#"):
+            n, v = line.split()[:2]
+            d[int(n)] = int(v)
+    return d
 
 
 def combine(fn, bits):
@@ -64,11 +78,15 @@ def combine(fn, bits):
 
 def main():
     args = sys.argv[1:]
-    prefix = None
-    if "-b" in args:
-        i = args.index("-b")
-        prefix = args[i + 1]
-        del args[i:i + 2]
+    prefix = checkdir = None
+    for opt in ("-b", "-c"):
+        if opt in args:
+            i = args.index(opt)
+            if opt == "-b":
+                prefix = args[i + 1]
+            else:
+                checkdir = args[i + 1]
+            del args[i:i + 2]
     fn = args[0] if len(args) > 0 else "results180.py"
     bits = int(args[1]) if len(args) > 1 else 72
     ns, mods, table = combine(fn, bits)
@@ -79,24 +97,37 @@ def main():
         v = table[n]
         print(n, v["R180C"], v["R180M"], v["R180V"], v["total"])
 
-    for col, (desc, oeis, parity) in COLUMNS.items():
-        name = f"{col} ({oeis})" if oeis else f"{col} (no OEIS number known)"
+    for n in ns:
+        if n % 2 and (table[n]["R180M"] or table[n]["R180V"]):
+            sys.exit(f"R180M or R180V is nonzero for odd n={n}?")
+        if table[n]["R180M"] % 2:
+            sys.exit(f"R180M({n}) is odd?")
+    for name, oeis, desc, idx in SEQUENCES:
+        seq = {}
+        k = 1
+        while idx(k)[0] <= ns[-1]:
+            n, col, div = idx(k)
+            if n in table:
+                seq[k] = table[n][col] // div
+            k += 1
+        ks = sorted(seq)
         print()
-        print(f"# {name}: {desc}, n = {ns[0]}..{ns[-1]}")
-        print(", ".join(str(table[n][col]) for n in ns))
-        if parity is not None:
-            sub = [n for n in ns if n % 2 == parity]
-            for n in ns:
-                if n % 2 != parity and table[n][col] != 0:
-                    sys.exit(f"{col} is nonzero for n={n}?")
-            print(f"# {col}, only {'odd' if parity else 'even'} n = {sub[0]}, {sub[1]}, ..., {sub[-1]}")
-            print(", ".join(str(table[n][col]) for n in sub))
-        if prefix:
-            bname = f"{prefix}-{oeis or col}.txt"
+        print(f"# {oeis or 'no OEIS number'}: {name}, {desc}; n = {ks[0]}..{ks[-1]}")
+        print(", ".join(str(seq[k]) for k in ks))
+        if prefix is not None:
+            bname = f"{prefix}b{oeis[1:]}.txt" if oeis else f"{prefix}b-{name}.txt"
             with open(bname, "w") as f:
-                for n in ns:
-                    f.write(f"{n} {table[n][col]}\n")
+                for k in ks:
+                    f.write(f"{k} {seq[k]}\n")
             print(f"# b-file written: {bname}")
+        if checkdir is not None and oeis:
+            old = read_bfile(f"{checkdir}/b{oeis[1:]}.txt")
+            common = [k for k in ks if k in old]
+            bad = [k for k in common if old[k] != seq[k]]
+            new = [k for k in ks if k not in old]
+            print(f"# compared with {checkdir}/b{oeis[1:]}.txt: {len(common)} common terms, "
+                  + (f"MISMATCH at n = {bad}" if bad else "all equal")
+                  + (f"; new terms n = {new[0]}..{new[-1]}" if new else ""))
 
 
 if __name__ == "__main__":
