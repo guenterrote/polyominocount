@@ -915,6 +915,15 @@ per weight for which the count is nonzero.  This is much more compact
 than a full vector of $N+1$ counters, because the weights of a state
 are confined to a narrow range: the pruning removes all weights that are
 too large, and at the peak there are only about two records per state.
+The list of a state is sorted by increasing weight.
+The weights in a list almost always form a contiguous range, in steps
+of~2 if the parity of the weight is fixed.  This is the case for the
+centres of types M and~V, where every weight is even.  For type~C, the
+parity of the weight tells whether the centre cell is occupied, and about a third of
+the lists contain weights of both parities.
+(In a run with $N=40$, the lists had 2.5 records on average and at most
+28, and only 20 out of 9.9 million lists had a gap of more than~2 between
+successive weights.)
 @<Type...@>=
 typedef struct {
     cnt_t c;
@@ -1053,65 +1062,56 @@ static size_t tab_get(table_t *t, const uint8_t *key)
     return i;
 }
 
-@ Adding |c| to the counter for weight |wt| of state |si|.
+@ Adding |c| to the counter for weight |wt| of state |si|.  The list is
+kept sorted by increasing weight.  In the variable |prev| we remember
+the record after which a new record has to be inserted (0 for the
+beginning of the list), as an index and not as a pointer, because the
+array of records may be moved when it grows.
 @<Sub...@>=
 static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
 {
-    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
-        if (t->rec[r - 1].wt == wt) {
-            t->rec[r - 1].c = addm(t->rec[r - 1].c, c);
-            return;
-        }
+    uint32_t prev = 0, r = t->head[si];
+    while (r && t->rec[r - 1].wt < wt) {
+        prev = r;
+        r = t->rec[r - 1].next;
+    }
+    if (r && t->rec[r - 1].wt == wt) {
+        t->rec[r - 1].c = addm(t->rec[r - 1].c, c);
+        return;
+    }
     if (t->nrec == t->rcap) {
         t->rcap *= 2;
         t->rec = xrealloc(t->rec, t->rcap * sizeof(rec_t));
     }
-    rec_t *r = &t->rec[t->nrec++];
-    r->c = c;
-    r->wt = wt;
-    r->next = t->head[si];
-    t->head[si] = t->nrec;
+    rec_t *q = &t->rec[t->nrec++];
+    q->c = c;
+    q->wt = wt;
+    q->next = r;
+    if (prev)
+        t->rec[prev - 1].next = t->nrec;
+    else
+        t->head[si] = t->nrec;
 }
 
-@ For processing a state, its counters are copied into a dense vector
-|gf| (``generating function''), which must be zero beforehand, and
-|tab_unload| clears it again without touching the whole vector.
+@ Inserting into a table with pruning.  The counters of the state |si|
+of the table |src|, shifted by the weight |add| of the newly added cell,
+are added to the state |key| of the table |t|, but only for the weights
+that can still lead to a polyomino with at most $N$ cells, given that at
+least |lb| further units of weight are necessary.  Since the list is
+sorted, we can stop at the first weight that is too large.  If already
+the smallest weight is too large, the state is not even created.
+(The tables |src| and |t| are always different.)
 @<Sub...@>=
-static void tab_load(const table_t *t, size_t si, cnt_t *gf)
-{
-    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
-        gf[t->rec[r - 1].wt] = t->rec[r - 1].c;
-}
-
-static void tab_unload(const table_t *t, size_t si, cnt_t *gf)
-{
-    for (uint32_t r = t->head[si]; r; r = t->rec[r - 1].next)
-        gf[t->rec[r - 1].wt] = 0;
-}
-
-@ Inserting into a table with pruning.  The counters |gf| of a state,
-shifted by the weight |add| of the newly added cell, are added to the
-state |key| of table |t|, but only for the weights that can still lead
-to a polyomino with at most $N$ cells, given that at least |lb| further
-units of weight are necessary.  If nothing remains, the state is not
-even created.
-@<Sub...@>=
-static void insert_pruned(table_t *t, const uint8_t *key, const cnt_t *gf,
-                          int add, int lb)
+static void insert_pruned(table_t *t, const uint8_t *key, const table_t *src,
+                          size_t si, int add, int lb)
 {
     int lim = NMAX - lb - add;
-    int any = 0;
-    for (int wt = 0; wt <= lim; wt++)
-        if (gf[wt]) {
-            any = 1;
-            break;
-        }
-    if (!any)
+    uint32_t r = src->head[si];
+    if (!r || src->rec[r - 1].wt > lim)
         return;
-    size_t si = tab_get(t, key);
-    for (int wt = 0; wt <= lim; wt++)
-        if (gf[wt])
-            tab_add(t, si, wt + add, gf[wt]);
+    size_t ti = tab_get(t, key);
+    for (; r && src->rec[r - 1].wt <= lim; r = src->rec[r - 1].next)
+        tab_add(t, ti, src->rec[r - 1].wt + add, src->rec[r - 1].c);
 }
 
 @* The lower bound.
@@ -1724,7 +1724,6 @@ The results of a case are collected in two vectors, indexed by~$n$:
 |LT| for $\hbox{uspan}<\hbox{vspan}$ and |EQ| for
 $\hbox{uspan}=\hbox{vspan}$.
 @<Glob...@>=
-static cnt_t *GF; /* dense scratch vector of counters */
 static cnt_t *LT, *EQ; /* results of one case */
 static cnt_t *RECT; /* results for the current height */
 static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW; /* statistics */
@@ -1732,17 +1731,17 @@ static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW; /* statistics */
 @ When a polyomino is complete after |ktop| rows, it is counted if it
 touches the sides and is at least as high as wide.
 @<Sub...@>=
-static void record(int ktop, const cnt_t *gf, int tch)
+static void record(int ktop, const table_t *src, size_t si, int tch)
 {
     int h = vspan(ktop);
     if (!tch || h < L)
         return;
     cnt_t *tgt = h == L ? EQ : LT;
-    for (int wt = 0; wt <= NMAX; wt++)
-        if (gf[wt]) {
-            tgt[wt] = addm(tgt[wt], gf[wt]);
-            RECT[wt] = addm(RECT[wt], gf[wt]);
-        }
+    for (uint32_t r = src->head[si]; r; r = src->rec[r - 1].next) {
+        int wt = src->rec[r - 1].wt;
+        tgt[wt] = addm(tgt[wt], src->rec[r - 1].c);
+        RECT[wt] = addm(RECT[wt], src->rec[r - 1].c);
+    }
 }
 
 @ {\bf Bounding rectangles.}
@@ -1885,7 +1884,6 @@ current cell and |nxt| for the states after it.
     tab_init(&A, 1024);
     tab_init(&B, 1024);
     uint8_t key[MAXL * 2 + 4];
-    cnt_t one[MAXL * 2 + 4];
     int v0;
 
 @ {\bf Initial states.}
@@ -1926,17 +1924,13 @@ If $M_v$ is odd, we start with the empty state before the twin row.
             }
             int tch = isc[0] || isc[L - 1];
             canon(f, par, tch, key);
-            memset(one, 0, sizeof(cnt_t) * NW);
-            one[nc] = 1;
-            insert_pruned(cur, key, one, 0, 0);
+            tab_add(cur, tab_get(cur, key), nc, 1);
         }
         v0 = vm + 1;
         V0 = v0;
     } else {
         memset(key, 0, KL);
-        memset(one, 0, sizeof(cnt_t) * NW);
-        one[0] = 1;
-        insert_pruned(cur, key, one, 0, 0);
+        tab_add(cur, tab_get(cur, key), 0, 1);
         v0 = (M_v + 1) / 2;
         V0 = v0;
     }
@@ -1964,8 +1958,6 @@ is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |si|...@>=
                 uint8_t sk[MAXL * 2 + 4];
                 unpack(cur->keys + si * KW, sk);
-                const cnt_t *gf = GF;
-                tab_load(cur, si, GF);
                 int tch = sk[KL - 1];
                 int empty = 1;
                 for (int j = 0; j < L; j++)
@@ -1981,22 +1973,21 @@ is completed while row $k$ is processed has its top in row $k-1$.
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
-                        record(k - 1, gf, tch);
+                        record(k - 1, cur, si, tch);
                         continue;
                     }
                     int add = occ ? 2 : 0;
                     if (m == 0) {
                         if (first_twin && !last)
-                            insert_pruned(nxt, key, gf, add, 0);
+                            insert_pruned(nxt, key, cur, si, add, 0);
                         continue;
                     }
                     int lb = bound(key, nt, k, kmin, i, last, first_twin);
                     if (lb < 0)
                         continue;
 @<Sharpen |lb| by looking one cell ahead@>@;
-                    insert_pruned(nxt, key, gf, add, lb);
+                    insert_pruned(nxt, key, cur, si, add, lb);
                 }
-                tab_unload(cur, si, GF);
 
 @ {\bf Lookahead.}
 The bound does not know which cells of the current row are already
@@ -2071,9 +2062,7 @@ renumbers the classes.
                     f[a] = sk[L - 1 - a];
                 canon(f, sk + L - 1, sk[KL - 1], rkey);
                 const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
-                tab_load(cur, si, GF);
-                insert_pruned(nxt, use, GF, 0, 0);
-                tab_unload(cur, si, GF);
+                insert_pruned(nxt, use, cur, si, 0, 0);
             }
             table_t *x = cur;
             cur = nxt;
@@ -2155,7 +2144,6 @@ int main(int argc, char **argv)
     NMAX = atoi(argv[a]);
     NW = NMAX + 1;
     LT = calloc(NW, sizeof(cnt_t));
-    GF = calloc(NW, sizeof(cnt_t));
     EQ = calloc(NW, sizeof(cnt_t));
     RECT = calloc(NW, sizeof(cnt_t));
 
