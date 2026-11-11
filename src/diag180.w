@@ -477,6 +477,56 @@ In its unpacked form, a state is a \emph{byte key} of |KL=W+MAXC+1| bytes:
 A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAXC| classes.
 
+Figure~\ref{fig:example} shows an example.  The labels at the 17
+positions are given below the picture.  The partners of the classes
+$1,2,3,4$ are $4$, |PSELF|, |PGHOST|, $1$, and the touched bit
+is~1, because the columns $u=-8$ and $u=8$ are occupied.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia]
+  \foreach \v in {-4,...,4} \foreach \u in {-8,...,8} {
+    \pgfmathparse{int(mod(\v+\u+16,2))}
+    \ifnum\pgfmathresult=0
+      \pgfmathparse{int(or(abs(\v)==4, or(and(\v==3, \u>1), and(\v==-3, \u<-1))))}
+      \ifnum\pgfmathresult=1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
+    \fi }
+  \foreach \v/\u in {1/-7,1/-5,2/-8,2/-6,3/-7,3/-5,1/-1,1/1,
+    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} \dc[occ]{\v}{\u}
+  \foreach \v/\u in {0/-6,0/0,0/6} \dc[mid]{\v}{\u}
+  \foreach \v/\u in {-1/7,-1/5,-2/8,-2/6,-3/7,-3/5,-1/1,-1/-1,
+    -2/2,-2/-2,-3/3,-3/1,-3/-1,-1/-7,-2/-8,-2/-4} \dc[img]{\v}{\u}
+  \fill[red] (0,0) circle (1.5pt);
+  \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
+    --(-3,4)--(-2,3)--(-1,4)--(0,3)--(1,4)--(2,3)--(3,2)--(4,3)--(5,2)
+    --(6,3)--(7,2)--(8,3)--(9,2);
+  \foreach \u/\l in {-7/A,-5/A,-3/B,-1/B,1/B} \node at (\u,3) {\color{white}$\l$};
+  \foreach \u/\l in {2/B,4/C,8/D} \node at (\u,2) {\color{white}$\l$};
+  \foreach \v in {-4,-2,0,2,4} \node[left] at (-9.6,\v) {$v=\v$};
+  \node[left] at (-9.6,-6) {position $i$};
+  \node[left] at (-9.6,-7.3) {|f[i]|};
+  \node[left] at (-9.6,-8.6) {code};
+  \foreach \i in {0,...,16} \node at (\i-8,-6) {\scriptsize\i};
+  \foreach \l [count=\i from 0] in {0,1,0,1,0,2,0,2,0,2,2,0,3,0,0,0,4} \node at (\i-8,-7.3) {\l};
+  \foreach \l [count=\i from 0] in {E,F,E,L,E,F,E,M,E,L,C,E,S,E,E,E,S} \node at (\i-8,-8.6) {\texttt{\l}};
+\end{tikzpicture}
+\caption{A state for the center type~C with $W=17$ columns, $u=-8\dts8$, after the cell
+  $(u,v)=(1,3)$ at position $i=9$ has been decided.  The upper half
+  $P^+$ has 3 cells in the middle row (dark) and 16 other cells (blue), so
+  the weight is $3+2\cdot16=35$.  The images are light blue.
+  There are four classes.  Class $A$ (label~1) reaches down through the
+  middle row to the image of the right arm; its image is the class $D$
+  (label~4), so $A$ and $D$ are partners.  Class $B$ (label~2) contains
+  the center: it is a self class.  Class $C$ (label~3) is a new cell
+  in row~2; its image is not on the frontier: a ghost.
+  Below the picture: the first part of the byte key, and the codes of
+  the packed key (Section~\ref{sec:packed}), abbreviated by their
+  initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
+  \texttt{F}irst, \texttt{M}iddle, \texttt{L}ast.}
+\label{fig:example}
+\end{figure}
+
+
 @d PSELF 0xFF /* the class is its own image */
 @d PGHOST 0xFE /* the image of the class has left the frontier */
 @<Glob...@>=
@@ -720,6 +770,15 @@ stored as a bit string in |KW| 64-bit words:
 \item 1 bit per class: 0 if the partner is a ghost, 1 otherwise.
 \item 1 bit: touched.
 \end{itemize}
+For the state of Figure~\ref{fig:example}, the codes are shown below the
+picture.  Class~1 has two runs, at the positions 1 and~3
+(\texttt{F},~\texttt{L}).  Class~2 has three runs: at position~5
+(\texttt{F}), at position~7 (\texttt{M}), and at the positions 9 and~10
+(\texttt{L}, \texttt{C}), which are adjacent because the kink is between
+them.  The classes 3 and~4 are single cells (\texttt{S}).  The 17 codes
+are followed by the bits $1,1,0,1$ for the four classes (only class~3
+has a ghost as its partner) and by the touched bit~1.
+These are $3\cdot17+4+1=56$ bits, which fit into one word.
 {\bf How long must a key be?}
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
 of valid sequences of the five codes other than |C_CONTINUE| for $m$
@@ -1307,7 +1366,8 @@ side and the top separately, at a cost of (distance to the side) $+$
   \foreach \v in {0,...,4} \foreach \u in {-4,...,4} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
-  \foreach \v/\u in {0/-4,0/-2,0/2,0/4,1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
+  \foreach \v/\u in {0/-4,0/-2,0/2,0/4,
+    1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
   \dc[mid]{0}{0} \dc[occ]{1}{-1}
   \foreach \v/\u in {2/-2,3/-3,4/-4} \dc[ass]{\v}{\u}
   \node at (-1,1) {\color{white}$b$};
@@ -1317,7 +1377,8 @@ side and the top separately, at a cost of (distance to the side) $+$
   \foreach \v in {0,...,4} \foreach \u in {-4,...,4} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
-  \foreach \v/\u in {0/-4,0/-2,0/2,0/4,1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
+  \foreach \v/\u in {0/-4,0/-2,0/2,0/4,
+    1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
   \dc[mid]{0}{0} \dc[occ]{1}{-1}
   \foreach \v/\u in {2/0,3/-1,4/-2,3/-3,4/-4} \dc[new]{\v}{\u}
   \node at (-1,1) {\color{white}$b$};
@@ -1468,6 +1529,90 @@ static int height_extra(int h, int s)
     }
     return ex;
 }
+
+@ {\bf Two examples.}
+Figure~\ref{fig:boundex} shows how the parts of the bound work together.
+
+(a)~This is the state of Figure~\ref{fig:example}.  The runs of
+class~$B$ enclose two pockets without other classes; they cost nothing.
+At the top level, the crossing classes are $A$, $B$, $D$, where $B$ is
+the self class and $D=\rhoo A$.  The middle cycle leads from $A$ over
+$B$ and the ghost class $C$ to $D$, and its gaps have 1, 1, and 3
+columns.  The largest gap is omitted, and the other two are bridged
+with one cell each.  There is no need to bridge the gap between $C$
+and~$D$: when $A$ is connected to~$B$, the image of this connection
+connects $D=\rhoo A$ to $\rhoo B=B$.  A self class exists and the sides
+are touched, so no further connections are needed.  For the height,
+the polyomino must reach row $\Vstar=8$.  The frontier is in row~3, and
+the bridge between $A$ and $B$ is a tent of one cell, whose peak is in
+row~4.  The rows $5,\ldots,8$ need one cell each.  The bound is
+therefore $2+4=6$ cells, or a weight of~12.  With the weight 35 of the
+state, this state is kept if and only if $N\ge47$.  The bound is tight:
+the picture shows a completion with 6 cells.
+
+(b)~Here $W=9$ and $\Vstar=4$, and row~1 has just been finished.  The
+middle row contains the cells $u=\pm2$, but not the center.  The two
+frontier cells form the classes $A$ and $\rhoo A$.  In the cactus, they
+are the same node, and connecting the cactus costs nothing.  But there
+is no self class, and therefore the single gap of the middle cycle, with
+3 columns, must be bridged.  The tent over this gap can reach row~3.
+No side has been touched.  The best cell of the structure for reaching
+both the right side and the top is the cell of the tent in
+row $h=2$ at position $j=6$: its score is
+$\max(\Vstar-h,\min(j,W-1-j))=\max(2,2)=2$.  The bound is $3+2=5$ cells,
+a weight of~10, and again there is a completion with this weight.  It
+is a polyomino with $6+10=16$ cells.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia]
+  \foreach \v in {0,...,8} \foreach \u in {-8,...,8} {
+    \pgfmathparse{int(mod(\v+\u+16,2))}
+    \ifnum\pgfmathresult=0
+      \pgfmathparse{int(or(\v>3, and(\v==3, \u>1)))}
+      \ifnum\pgfmathresult=1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
+    \fi }
+  \foreach \v/\u in {1/-7,1/-5,2/-8,2/-6,3/-7,3/-5,1/-1,1/1,
+    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} \dc[occ]{\v}{\u}
+  \foreach \v/\u in {0/-6,0/0,0/6} \dc[mid]{\v}{\u}
+  \foreach \v/\u in {4/-4,3/3,5/-5,6/-6,7/-7,8/-8} \dc[new]{\v}{\u}
+  \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
+    --(-3,4)--(-2,3)--(-1,4)--(0,3)--(1,4)--(2,3)--(3,2)--(4,3)--(5,2)
+    --(6,3)--(7,2)--(8,3)--(9,2);
+  \foreach \u/\l in {-7/A,-5/A,-3/B,-1/B,1/B} \node at (\u,3) {\color{white}$\l$};
+  \foreach \u/\l in {2/B,4/C,8/D} \node at (\u,2) {\color{white}$\l$};
+  \draw[dashed] (-9,-1)--(-9,9.3) (9,-1)--(9,9.3);
+  \foreach \v in {0,2,4,6,8} \node[left] at (-9.6,\v) {$v=\v$};
+  \node[below] at (0,-1.4) {(a) 6 cells: two bridges and four rows};
+\begin{scope}[xshift=7.6cm]
+  \foreach \v in {0,...,4} \foreach \u in {-4,...,4} {
+    \pgfmathparse{int(mod(\v+\u+16,2))}
+    \ifnum\pgfmathresult=0
+      \ifnum\v>1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
+    \fi }
+  \foreach \v/\u in {1/-1,1/3} \dc[occ]{\v}{\u}
+  \foreach \v/\u in {0/-2,0/2} \dc[mid]{\v}{\u}
+  \foreach \v/\u in {2/0,3/1,2/2,3/3,4/4} \dc[new]{\v}{\u}
+  \fill[red] (0,0) circle (1.5pt);
+  \draw[very thick,red!80!black] (-4,1)--(-3,2)--(-2,1)--(-1,2)--(0,1)
+    --(1,2)--(2,1)--(3,2)--(4,1);
+  \node at (-1,1) {\color{white}$A$};
+  \node at (3,1) {\color{white}$B$};
+  \draw[dashed] (-5,-1)--(-5,5.3) (5,-1)--(5,5.3);
+  \foreach \v in {0,2,4} \node[left] at (-5.6,\v) {$\v$};
+  \node[below] at (0,-1.4) {(b) 5 cells: self term and staircase};
+\end{scope}
+\end{tikzpicture}
+\caption{Two states and cheapest completions (orange).  Only the upper
+  half is shown; the image of every orange cell is added as well.
+  (a)~The state of Figure~\ref{fig:example}: the gaps $A$--$B$ and
+  $B$--$C$ are bridged, the largest gap $C$--$D$ of the middle cycle is
+  omitted, and a staircase leads to row~8.
+  (b)~The classes $A$ and $B=\rhoo A$ are partners, and there is no self
+  class: the gap between them must be bridged, and a staircase from the
+  tent reaches the right side and row~4 simultaneously.}
+\label{fig:boundex}
+\end{figure}
 
 @*1 Putting the bound together.
 The parameter |kink| is the position of the frontier cell right of the
