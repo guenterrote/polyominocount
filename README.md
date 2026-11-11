@@ -61,5 +61,18 @@ explanations, figures and results is `doc/diag180.pdf`.
   ctangle and is kept in the repository. `make CNT128=1 build/diag180` uses
   128-bit counters.
 - `make tangle` regenerates `src/diag180.c` from `src/diag180.w`.
-- `make doc` regenerates `doc/diag180.pdf` (cweave and pdflatex).
+- `make doc` regenerates `doc/diag180.pdf` and `doc/diag180p.pdf` (cweave,
+  pdflatex, bibtex with the style plainurl).
+
+### Two versions from one source
+
+`src/production.ch` is a CWEB change file. Together with `src/diag180.w` it
+gives the production version `diag180p` (`src/diag180p.c`,
+`doc/diag180p.pdf`, `make build/diag180p`), which lacks the experimental
+options `-K`, `-A`, `-N` and `-H`. There is only one text: an improvement in
+`diag180.w` appears in both versions after `make tangle` and `make doc`.
+If a passage that the change file replaces is edited in `diag180.w`, ctangle
+and cweave stop with "Change file entry did not match"; then copy the new
+lines into the corresponding `@x` part of `production.ch`. `make test` checks
+that both versions give the same counts.
 - `tools/crt180.py` combines the result files of runs with different moduli.
