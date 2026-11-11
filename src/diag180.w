@@ -53,6 +53,10 @@
   The program is written in CWEB~\cite{cweb}.
 \end{abstract}
 
+\markboth{}{Table of contents}
+\tableofcontents
+
+
 @* Introduction.
 A \emph{polyomino} is a finite set of cells of the square grid that is
 connected through common edges.  \emph{Fixed} polyominoes are counted
@@ -62,7 +66,7 @@ of free polyominoes with $n$ cells is
 $$ \frac18 \sum_{g\in D_4} \fix_g(n),$$
 where $\fix_g(n)$ is the number of fixed polyominoes with $n$ cells
 that are invariant under the symmetry~$g$ of the square, up to
-translation.  For the identity this is the number of all fixed
+translation.  For the identity this is the number $A(n)$ of all fixed
 polyominoes (OEIS A001168~\cite{oeis}), which is known up to $n=70$ by the
 work of Barequet and Ben-Shachar~\cite{BB,BBcorr}.  (The value for
 $n=67$ printed in~\cite{BB} is too large by~2; it is corrected
@@ -92,6 +96,15 @@ but with three special features:
   of states is about $1.25$ per cell, compared to roughly $1.43$ for
   counting all fixed polyominoes with the same technique.
 \end{enumerate}
+
+Polyominoes with symmetries are easier to count, because they are more restricted and hence fewer in number.
+We can expect the number of polyominoes that have a rotational symmetry to be roughly
+$\sqrt{A(n)}$, because the inclusion or exclusion of one cell decides about its
+mirror symmetric cell as well (except possibly for one cell at the rotation center), and thus the number on independent choices is only half as big as without any constraints.
+[CLAUDE: verify this on some examples with rot180]
+Generally, we can expect the number of polyominoes
+that have the symmetries in some given symmetry group of order $g$ to be roughly $\sqrt[g]{A(n)}$.
+
 
 The program is called in one of the following ways:
 \begin{verbatim}
@@ -132,7 +145,13 @@ The options are described in the section on the command line.
 The rotation $\rhoo$ of a polyomino $P$ that is invariant under it has a
 centre, and after a translation we may assume that
 $$\rhoo(x,y)=(c-x,\,d-y)\qquad\hbox{with } c,d\in\{0,1\}.$$
-The centre is the point $(c/2,d/2)$.  There are three types of centres:
+[ CLAUDE: Rename c,d to |M_x| and |M_y|. (The \emph{mirror} of the origin)
+The @@f CWEB command provides a facility to print them as
+ $M_x$ and $M_y$ in the programs. Similarly rename |vlo| to |vmin| and
+ let it be printed as $v_{\min}$. and |rho| as $\rho$.
+See cwebman.pdf in the repository ].
+The centre is the point $(c/2,d/2)$.  There are three types of
+centres:
 \begin{itemize}
 \item $(c,d)=(0,0)$: the centre of a cell.  The centre cell is the only
   cell that is its own image.  Hence $n$ is odd if the centre cell
@@ -144,7 +163,9 @@ The centre is the point $(c/2,d/2)$.  There are three types of centres:
   $(1,0)$ and count it twice.  (Type R180M.)
 \item $(c,d)=(1,1)$: a vertex of the grid; $n$ is even.  (Type R180V.)
 \end{itemize}
-In the OEIS~\cite{oeis}, the three counts are the sequences A390653
+In the OEIS~\cite{oeis}, the three counts are the sequences
+\href{https://oeis.org/A390653}{A390653}
+%[Claude, provide links in this form for all OEIS references]
 (type C), A390654 (type M, for $2n$ cells and for horizontal edges only,
 which is half of our count) and A390655 (type V, for $2n$ cells), with
 terms up to 59 and 58 cells from Shirakawa's computation.
@@ -153,6 +174,22 @@ These sets are disjoint, and $\fix_{\rhoo}(n)$ is the sum of the counts
 over all centres.  For odd $n$, only the centre type C contributes, and
 in our experiments the run for $N=2k+1$ needed no larger tables than the
 run for $N=2k$.
+
+[CLAUDE, provide the bibliography in bibtex format]
+
+[CLAUDE, add a section with options how to save space
+in potentially larger runs when space is at premium. E.g. 32bit
+counting. The master-slave architecture of Knuth, which codes the
+transfer matrix method as a sequence of command, which is written to a
+file and then executed by another program.
+Intermediate storage of the tables to external files (as in cite ...).
+More aggressive compression of states, see Section~\ref{sec:packed}.
+]
+
+[CLAUDE, put hyperlink cross-references where appropriate, as
+for  Section~\ref{sec:packed}.]
+
+provide the bibliography in bibtex format]
 
 @*1 Diagonal coordinates.
 We use the coordinates
@@ -164,7 +201,17 @@ are $(u\pm1,v\pm1)$.  The set of cells with a fixed $u$ is a \emph{row}
 \emph{and} in an adjacent column.  In the pictures, $u$ increases
 upwards and $v$ to the right, so cells appear as diamonds.
 
-In these coordinates, $\rhoo(u,v)=(s-u,\,t-v)$ with $s=c+d$ and $t=c-d$.
+In these coordinates, $\rhoo(u,v)=(s-u,\,t-v)$ with $s=c+d$ and
+$t=c-d$.
+[CLAUDE: Swap u and v throughout. u should go horizontal.
+``$ u=x-y,\qquad v=x+y$ so that''.
+Then
+Rename s,t to |M_u|,|M_v| (in the appropriate order), as above].
+So the triples corresponding to the three cases are
+$(M_u,M_v)=(0,0), (), ()$, see Figure X.
+[CLAUDE: finish, and extend Figure 1 with an illustration of a symmetric polyomino
+for the other two cases.]
+
 Let $v_{\max}$ be the largest $v$-coordinate of~$P$.  By symmetry the
 smallest is $t-v_{\max}$.  A \emph{case} is a triple
 $(c,d,v_{\max})$: we count the symmetric polyominoes that live in the
@@ -207,7 +254,9 @@ generate the polyominoes with $\hbox{vspan}\le\hbox{uspan}$:
 $$ \fix_{\rhoo}(n) = \sum_{\hbox{\scriptsize cases}}
   \bigl(2\cdot\#\{\hbox{vspan}<\hbox{uspan}\} + \#\{\hbox{vspan}=\hbox{uspan}\}\bigr).$$
 This has two advantages: the strips are narrow ($L\le N/2$ or so matters
-most), and the requirement that $P$ must still grow to a height of at
+most),
+[CLAUDE: Expand and explain what matters most]
+and the requirement that $P$ must still grow to a height of at
 least~$L$ rows strengthens the pruning.
 
 @ The geometry of the current case is kept in global variables.
@@ -250,6 +299,11 @@ called the \emph{kink}.
 A frontier cell is dropped from the frontier as soon as both of its
 upper neighbours have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
+
+It is useful to imagine that we are simultanously building the
+polyomino downwards from the center. Thus, there is a lower frontier,
+at the mirror position of the upper frontier, and if we decide to
+place a cell at the kink, its mirror will be placed below the lower frontier.
 
 \begin{figure}[htb]
 \centering
@@ -304,7 +358,9 @@ part.  There are three possibilities:
   already connects $H$ to its image.
 \item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are
   \emph{partners}.
-\item $\rhoo(X)$ has no cell on the frontier.  We say that the partner
+\item $\rhoo(X)$ has no cell on the frontier.
+This means that  $\rhoo(X)$ touches the lower frontier.
+  We say that the partner
   of $X$ is a \emph{ghost}.
 \end{itemize}
 When two classes $X$ and $Y$ are joined by a new cell, their images are
@@ -574,10 +630,11 @@ decided.  The parameter |first_twin| is true while the twin row is
 processed.
 
 @* Packed keys.
+\label{sec:packed}
 The byte keys are convenient but wasteful.  In the tables, a state is
 stored as a bit string in |KW| 64-bit words:
 \begin{itemize}
-\item 3 bits per position, with one of the following codes:
+\item 3 bits per position, with one of the following six codes 0--5:
   |C_EMPTY| for an empty position;
   |C_CONTINUE| if the cell continues the run of its left neighbour;
   and for the first cell of a run:
@@ -590,11 +647,20 @@ stored as a bit string in |KW| 64-bit words:
 \item 1 bit per class: 0 if the partner is a ghost, 1 otherwise.
 \item 1 bit: touched.
 \end{itemize}
-This is far from the information-theoretic minimum, but with pruning,
-the set of states is a sparse subset of all syntactically possible
-states anyway, and the keys are only a moderate part of the memory.
-(Ranking the states, as in~\cite{twisted}, would give shorter keys, but
-it is slow.)
+Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
+of valid bit strings with $k$ positions
+[CLAUDE: replace k  by the name used elsewhere]
+grows like $5^k k^{-3/2}$.
+The |C_CONTINUE| code can occur only in one position, at the kink,
+since this is the only cell that has a neighbor on the frontier.
+Thus, with our essentially 5 choices per position
+we are not far from the information-theoretic minimum.
+If storage is at premium,
+ranking the states, as in~\cite{twisted}, would give the shortest possible keys, but
+it is slow.
+The 3-bit encoding is simple,
+and anyway, the keys are only a moderate part of the memory.
+
 
 @<Glob...@>=
 static int KW; /* length of a packed key in 64-bit words */
@@ -714,12 +780,13 @@ to deal with this.
 By default, the counters are unsigned 64-bit integers, and the
 arithmetic is modulo $2^{64}$, or modulo a number $M<2^{64}$ given by
 the option \texttt{-m}.  The true values can then be recovered by the
-Chinese remainder theorem from two runs with different moduli, for
+Chinese remainder theorem from two runs with different moduli, which
+should be relatively prime, for
 example $2^{64}$ and $2^{61}-1$.  (The script \texttt{tools/crt180.py} does
 this.)
 Alternatively, if the program is compiled with \texttt{-DCNT128}, the
 counters have 128 bits, and a single run gives the exact values.
-The records become twice as large, but memory is not a bottleneck.
+The records become twice as large, but for our runs with $n$ up to 70, memory is not a bottleneck.
 @<Type...@>=
 #ifdef CNT128
 typedef unsigned __int128 cnt_t;  /* make CNT128=1: exact to 2\^{}128 */
@@ -2331,8 +2398,6 @@ $n$ & centre in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
   Preprint, arXiv:2510.22446, October 2025.
 \end{thebibliography}
 
-\markboth{}{Table of contents}
-\tableofcontents
 \eject\markboth{}{Index}
 \iftrue % to offset a dangling \fi
 \end{document}
