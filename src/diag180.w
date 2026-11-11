@@ -568,14 +568,14 @@ processed.
 The byte keys are convenient but wasteful.  In the tables, a state is
 stored as a bit string in |KW| 64-bit words:
 \begin{itemize}
-\item 3 bits per position:
-  0~for an empty position;
-  1~if the cell continues the run of its left neighbour;
+\item 3 bits per position, with one of the following codes:
+  |C_EMPTY| for an empty position;
+  |C_CONTINUE| if the cell continues the run of its left neighbour;
   and for the first cell of a run:
-  2~if the class consists of this single run,
-  3~for the first run of a class with several runs,
-  4~for a middle run,
-  5~for the last run.
+  |C_SINGLETON| if the class consists of this single run,
+  |C_FIRST| for the first run of a class with several runs,
+  |C_MIDDLE| for a middle run,
+  |C_LAST| for the last run.
   Since classes do not cross, a stack is sufficient to recover the
   labels, like for a sequence of parentheses.
 \item 1 bit per class: 0 if the partner is a ghost, 1 otherwise.
@@ -589,6 +589,9 @@ it is slow.)
 
 @<Glob...@>=
 static int KW; /* length of a packed key in 64-bit words */
+
+@ @<Type...@>=
+enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST };
 
 @ {\bf Why one bit per class is enough.}
 Call a class \emph{crossing} if it is a self class or has a partner on
@@ -651,13 +654,13 @@ static void pack(const uint8_t *key, uint64_t *w)
     for (int i = 0; i < L; i++) {
         int l = key[i], code;
         if (!l)
-            code = 0;
+            code = C_EMPTY;
         else if (i > 0 && key[i - 1])
-            code = 1;
+            code = C_CONTINUE;
         else if (first[l] == i)
-            code = lastrun[l] == i ? 2 : 3;
+            code = lastrun[l] == i ? C_SINGLETON : C_FIRST;
         else
-            code = lastrun[l] == i ? 5 : 4;
+            code = lastrun[l] == i ? C_LAST : C_MIDDLE;
         putbits(w, &pos, code, 3);
     }
     for (int j = 1; j <= m; j++)
@@ -675,12 +678,12 @@ static void unpack(const uint64_t *w, uint8_t *key)
     for (int i = 0; i < L; i++) {
         int code = getbits(w, &pos, 3);
         switch (code) {
-        case 0: key[i] = 0; break;
-        case 1: key[i] = key[i - 1]; break;
-        case 2: key[i] = ++m; break;
-        case 3: key[i] = ++m; stack[sp++] = m; break;
-        case 4: key[i] = stack[sp - 1]; break;
-        case 5: key[i] = stack[--sp]; break;
+        case C_EMPTY: key[i] = 0; break;
+        case C_CONTINUE: key[i] = key[i - 1]; break;
+        case C_SINGLETON: key[i] = ++m; break;
+        case C_FIRST: key[i] = ++m; stack[sp++] = m; break;
+        case C_MIDDLE: key[i] = stack[sp - 1]; break;
+        case C_LAST: key[i] = stack[--sp]; break;
         }
     }
     sp = 0;                       /* crossing classes, left to right */
