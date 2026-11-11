@@ -64,7 +64,9 @@ where $\fix_g(n)$ is the number of fixed polyominoes with $n$ cells
 that are invariant under the symmetry~$g$ of the square, up to
 translation.  For the identity this is the number of all fixed
 polyominoes (OEIS A001168~\cite{oeis}), which is known up to $n=70$ by the
-work of Barequet and Ben-Shachar~\cite{BB}.  The other seven terms count symmetric
+work of Barequet and Ben-Shachar~\cite{BB,BBcorr}.  (The value for
+$n=67$ printed in~\cite{BB} is too large by~2; it is corrected
+in~\cite{BBcorr}.)  The other seven terms count symmetric
 polyominoes.  The number of free polyominoes is currently known up to
 $n=59$ (Shirakawa~\cite{Shirakawa}), and in that computation the
 polyominoes with a $180^\circ$ rotational symmetry were the bottleneck:
@@ -2168,11 +2170,16 @@ $n$ & $\fix_{\rhoo}(n)$ & $n$ & $\fix_{\rhoo}(n)$\\
 \end{table}
 
 @* References.
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 \bibitem{BB} Gill Barequet and Gil Ben-Shachar.
   Counting polyominoes, revisited.
-  In: \emph{Proc.\ Symposium on Algorithm Engineering and Experiments
-  (ALENEX)}, SIAM, 2024, pp.~133--143.
+  \emph{Algorithmica} \textbf{88} (2026), Article 51.
+  \url{https://doi.org/10.1007/s00453-026-01392-6}.
+  Preliminary version in: \emph{Proc.\ Symposium on Algorithm Engineering
+  and Experiments (ALENEX)}, SIAM, 2024, pp.~133--143.
+\bibitem{BBcorr} Gill Barequet and Gil Ben-Shachar.
+  Counting polyominoes, revisited: Corrigendum and addendum.
+  Preprint, arXiv:2610.10632, October 2026.
 \bibitem{twisted} Gill Barequet, Micha Moffie, Ares Rib\'o, and G\"unter Rote.
   Counting polyominoes on twisted cylinders.
   \emph{Integers} \textbf{6} (2006), Article A22.
