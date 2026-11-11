@@ -189,6 +189,9 @@ More aggressive compression of states, see Section~\ref{sec:packed}.
 [CLAUDE, put hyperlink cross-references where appropriate, as
 for  Section~\ref{sec:packed}.]
 
+[CLAUDE, comment on the odd-even effect in  Table~\ref{tab:values}.
+For $n\ge ...$ the values even go down from $n=2k$ to $n=2k+1$.]
+
 provide the bibliography in bibtex format]
 
 @*1 Diagonal coordinates.
