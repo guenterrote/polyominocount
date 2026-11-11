@@ -1579,6 +1579,7 @@ $\hbox{vspan}=\hbox{uspan}$.
 @<Glob...@>=
 static cnt_t *GF; /* dense scratch vector of counters */
 static cnt_t *LT, *EQ; /* results of one case */
+static cnt_t *RECT; /* results for the current height */
 static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW; /* statistics */
 
 @ When a polyomino is complete after |ktop| rows, it is counted if it
@@ -1591,8 +1592,58 @@ static void record(int ktop, const cnt_t *gf, int tch)
         return;
     cnt_t *tgt = h == L ? EQ : LT;
     for (int wt = 0; wt <= NMAX; wt++)
-        if (gf[wt])
+        if (gf[wt]) {
             tgt[wt] = addm(tgt[wt], gf[wt]);
+            RECT[wt] = addm(RECT[wt], gf[wt]);
+        }
+}
+
+@ {\bf Bounding rectangles.}
+The polyominoes of one case with a given number of rows have the same
+bounding rectangle in diagonal coordinates: $L$ columns wide and
+|uspan(ktop)| rows high.  All polyominoes with |ktop| rows are completed
+while row $|ktop|+1$ is processed.  At the end of that row, the function
+|rect_line| writes one line to the log with the number of polyominoes
+in this rectangle for every $n$, and clears the vector |RECT|.
+The line names the type of centre, the width with the range of $v$, the
+height with the range of $u$, and then the nonzero counts in the form
+\texttt{n=}$n$\texttt{:}count.  (The counts are modulo $M$, like
+everything else, and they are complete only for $n\le N$.)
+Only rectangles that are at least as high as wide are reported.  The
+numbers for a rectangle that is wider than high are those of the
+transposed rectangle, with the same type of centre, except that the
+vertical edge becomes a horizontal edge; and the case $(c,d)=(1,0)$
+of a vertical edge that we compute stands also for the case $(0,1)$ of a
+horizontal edge with the same numbers.
+The type of centre is not determined by the size of the rectangle alone:
+if both sides are even, the centre is the midpoint of an edge, but if
+both sides are odd, the centre can be the centre of a cell or a vertex
+of the grid.
+
+@<Sub...@>=
+static void rect_line(int ktop)
+{
+    static const char *tyname[3] = {
+        "R180C centre in a cell",
+        "R180M centre on the midpoint of a vertical edge",
+        "R180V centre at a vertex"};
+    int h = uspan(ktop), any = 0;
+    for (int n = 0; n <= NMAX; n++)
+        if (RECT[n])
+            any = 1;
+    if (!any)
+        return;
+    int utop = E ? (S + 1) / 2 + ktop - 1 : S / 2 + ktop;
+    if (VERB >= 1) {
+        fprintf(stderr, "#rect %s (c=%d d=%d): width %d (v=%d..%d) x height %d (u=%d..%d):",
+                tyname[G_C + G_D], G_C, G_D, L, vlo, vlo + L - 1, h, S - utop, utop);
+        for (int n = 0; n <= NMAX; n++)
+            if (RECT[n])
+                fprintf(stderr, " n=%d:%s", n, cs(RECT[n]));
+        fprintf(stderr, "\n");
+        fflush(stderr);
+    }
+    memset(RECT, 0, NW * sizeof(cnt_t));
 }
 
 @ Progress is reported on the standard error stream, after every row
@@ -1646,6 +1697,7 @@ static void count_case(int c, int d, int vhi)
         @<Merge every state with its mirror image@>@;
         if (VERB >= 1)
             stat_line("#row ", k, u, nu, nu, cur, nxt);
+        rect_line(k - 1);
     }
     tab_free(&A);
     tab_free(&B);
@@ -1662,8 +1714,11 @@ static void count_case(int c, int d, int vhi)
     memset(LT, 0, NW * sizeof(cnt_t));
     memset(EQ, 0, NW * sizeof(cnt_t));
     if (L == 1) {
-        if (c == 0 && d == 0)
+        if (c == 0 && d == 0) {
             EQ[1] = addm(EQ[1], 1);
+            RECT[1] = 1;
+            rect_line(0);
+        }
         return;
     }
     if (L > MAXL) {
@@ -1967,6 +2022,7 @@ int main(int argc, char **argv)
     LT = calloc(NW, sizeof(cnt_t));
     GF = calloc(NW, sizeof(cnt_t));
     EQ = calloc(NW, sizeof(cnt_t));
+    RECT = calloc(NW, sizeof(cnt_t));
 
 @ Both output streams start with the parameters of the run, beginning
 with the complete command line (including the name |argv[0]| of the

@@ -14,6 +14,7 @@ Formulas (John Mason, OEIS):
 The divisions by 4 and 2 must be exact, and the old terms must be
 reproduced: both are checked.  New terms are printed.
 """
+import os
 import sys
 
 
@@ -30,7 +31,8 @@ new = sys.argv[1]
 old = sys.argv[2] if len(sys.argv) > 2 else "b-files"
 C, M, V = (bf(f"{new}b{a}.txt") for a in ("390653", "390654", "390655"))
 B = {a: bf(f"{old}/b{a}.txt") for a in
-     "351615 351190 351159 351142 351127 351616 351191 351160 234007 346800 346799 006747".split()}
+     "351615 351190 351159 351142 351127 351616 351191 351160 234007 346800 346799 006747 234008".split()
+     if os.path.exists(f"{old}/b{a}.txt")}
 
 
 def half(a, n):
