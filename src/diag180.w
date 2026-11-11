@@ -25,7 +25,7 @@
 \newcommand{\Mxv}{\ensuremath{M_v}}
 \newcommand{\umin}{\ensuremath{u_{\min}}}
 \newcommand{\umax}{\ensuremath{u_{\max}}}
-% \dc{v}{u}: the cell (u,v) of the diagonal lattice, a diamond centred at
+% \dc{v}{u}: the cell (u,v) of the diagonal lattice, a diamond centerd at
 % the point with horizontal coordinate u and vertical coordinate v
 \newcommand{\dc}[3][]{\draw[#1] (#3-1,#2)--(#3,#2+1)--(#3+1,#2)--(#3,#2-1)--cycle;}
 \tikzset{
@@ -97,7 +97,7 @@ but with three special features:
 \item The half is built along the diagonals $x+y=\mathrm{const}$ of the
   grid, as in the work of Barequet and Ben-Shachar on fixed
   polyominoes~\cite{BB}.
-  Connections between neighbouring components then use \emph{disjoint
+  Connections between neighboring components then use \emph{disjoint
   sets of columns}, which makes it possible to compute the cost of the
   cheapest completion of a state almost exactly.
 \item States that cannot lead to a polyomino with at most $N$ cells are
@@ -111,7 +111,7 @@ restricted and hence fewer in number.  We can expect the number of
 polyominoes that have a rotational symmetry to be roughly
 $\sqrt{A(n)}$, because the inclusion or exclusion of one cell decides
 about its mirror cell as well (except possibly for one cell at the
-centre of the rotation), and thus the number of independent choices is
+center of the rotation), and thus the number of independent choices is
 only half as big as without any constraints.
 Our results (Table~\ref{tab:values}) confirm this very well: the quotient
 $\fix_{\rhoo}(n)/\sqrt{A(n)}$ lies between $1.60$ and $1.64$ for every
@@ -146,7 +146,7 @@ $70$ & $2.178\cdot10^{20}$ & $1.360\cdot10^{20}$ & $1.602$ & $69$ & $5.353\cdot1
 The program is called in one of the following ways:
 \begin{verbatim}
   diag180 [options] N           all cases; prints n and fix(n) for n = 1..N
-  diag180 [options] N Mx My umax   one case (see below); prints n, #lt, #eq
+  diag180 [options] N Mx My umax   one case (see below); prints n, #portrait, #square
 \end{verbatim}
 The options are described in Section~\ref{sec:cmdline}.
 
@@ -186,16 +186,16 @@ The options are described in Section~\ref{sec:cmdline}.
 @*1 Symmetry classes and cases.
 \label{sec:cases}
 The rotation $\rhoo$ of a polyomino $P$ that is invariant under it has a
-centre, and after a translation we may assume that
+center, and after a translation we may assume that
 $$\rhoo(x,y)=(M_x-x,\,M_y-y)\qquad\hbox{with } M_x,M_y\in\{0,1\}.$$
-The point $(M_x,M_y)$ is the mirror image of the origin, and the centre
+The point $(M_x,M_y)$ is the mirror image of the origin, and the center
 of the rotation is the point $(M_x/2,M_y/2)$.  There are three types of
-centres:
+centers:
 \begin{itemize}
-\item $(M_x,M_y)=(0,0)$: the centre of a cell.  The centre cell is the only
-  cell that is its own image.  Hence $n$ is odd if the centre cell
+\item $(M_x,M_y)=(0,0)$: the center of a cell.  The center cell is the only
+  cell that is its own image.  Hence $n$ is odd if the center cell
   belongs to $P$, and even if it does not (as for a ring around an empty
-  centre).  (Type R180C in Shirakawa's notation~\cite{Shirakawa}.)
+  center).  (Type R180C in Shirakawa's notation~\cite{Shirakawa}.)
 \item $(M_x,M_y)=(1,0)$ or $(0,1)$: the midpoint of a vertical or horizontal
   edge.  Here $n$ is even.  The two cases are mirror images of each other
   under $x\leftrightarrow y$ and give the same counts; we compute only
@@ -209,7 +209,7 @@ horizontal edges only, which is half of our count) and \oeis{A390655}
 Shirakawa's computation.
 
 These sets are disjoint, and $\fix_{\rhoo}(n)$ is the sum of the counts
-over all centres.  For odd $n$, only the centre type C contributes, and
+over all centers.  For odd $n$, only the center type C contributes, and
 in our experiments the run for $N=2k+1$ needed no larger tables than the
 run for $N=2k$.
 
@@ -217,18 +217,18 @@ run for $N=2k$.
 \label{sec:coords}
 We use the coordinates
 $$ u=x-y,\qquad v=x+y, $$
-so that $u$ increases to the right and $v$ increases upwards when the
+so that $u$ increases to the right and $v$ increases upward when the
 grid is turned by $45^\circ$; the cells appear as diamonds in the
 pictures.
-A cell $(u,v)$ exists whenever $u+v$ is even, and its four neighbours
+A cell $(u,v)$ exists whenever $u+v$ is even, and its four neighbors
 are $(u\pm1,v\pm1)$.  The set of cells with a fixed $v$ is a \emph{row}
 (a diagonal of the original grid); the set of cells with fixed~$u$ is a
-\emph{column}.  A neighbour of a cell is always in an adjacent row
+\emph{column}.  A neighbor of a cell is always in an adjacent row
 \emph{and} in an adjacent column.
 
 In these coordinates,
 $$\rhoo(u,v)=(M_u-u,\,M_v-v)\qquad\hbox{with } M_u=M_x-M_y \hbox{ and } M_v=M_x+M_y,$$
-and the centre is the point $(M_u/2,M_v/2)$.
+and the center is the point $(M_u/2,M_v/2)$.
 The pairs that correspond to the three cases
 $(M_x,M_y)=(0,0)$, $(1,0)$, $(1,1)$ are
 $(M_u,M_v)=(0,0)$, $(1,1)$, $(0,2)$, see Figure~\ref{fig:coords}.
@@ -237,16 +237,16 @@ Let $u_{\max}$ be the largest $u$-coordinate of~$P$.  By symmetry the
 smallest is $u_{\min}=M_u-u_{\max}$.  A \emph{case} is a triple
 $(M_x,M_y,u_{\max})$: we count the symmetric polyominoes that live in the
 strip $u_{\min}\le u\le u_{\max}$ of
-$$ L=u_{\max}-u_{\min}+1=2u_{\max}-M_u+1 $$
+$$ W=u_{\max}-u_{\min}+1=2u_{\max}-M_u+1 $$
 columns and touch its two sides.  (Touching one side implies touching
 the other.)  Inside the program the columns are numbered by their
-\emph{position} $i=u-u_{\min}$, $0\le i<L$, and the image of position
-$i$ is position $L-1-i$.
+\emph{position} $i=u-u_{\min}$, $0\le i<W$, and the image of position
+$i$ is position $W-1-i$.
 
 \begin{figure}[htb]
 \centering
 \begin{tikzpicture}[dia]
-  % (a) centre in a cell
+  % (a) center in a cell
   \foreach \v in {-4,...,4} \foreach \u in {-4,...,4} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
@@ -259,7 +259,7 @@ $i$ is position $L-1-i$.
   \foreach \u in {-4,-2,0,2,4} \node[below] at (\u,-5.4) {$\u$};
   \node[below] at (-6.6,-5.4) {$u$};
   \node[below] at (0,-7.2) {(a) $(M_x,M_y)=(0,0)$, $(M_u,M_v)=(0,0)$};
-  % (b) centre on the midpoint of an edge
+  % (b) center on the midpoint of an edge
   \begin{scope}[xshift=5.6cm]
   \foreach \v in {-4,...,4} \foreach \u in {-1,...,2} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
@@ -272,7 +272,7 @@ $i$ is position $L-1-i$.
   \foreach \u in {-1,0,1,2} \node[below] at (\u,-5.4) {$\u$};
   \node[below] at (0.5,-7.2) {(b) $(1,0)$, $(1,1)$};
   \end{scope}
-  % (c) centre at a vertex
+  % (c) center at a vertex
   \begin{scope}[xshift=10.4cm]
   \foreach \v in {-4,...,4} \foreach \u in {-2,...,2} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
@@ -288,18 +288,18 @@ $i$ is position $L-1-i$.
   \end{scope}
 \end{tikzpicture}
 \caption{Symmetric polyominoes in diagonal coordinates for the three
-  types of centres (red dot).  The cells of the half $H$
+  types of centers (red dot).  The cells of the half $P^+$
   (Section~\ref{sec:half}) are drawn in blue, their images in light
   blue, and the cells of the middle row are dark.
-  (a)~Centre in a cell, $(M_x,M_y)=(0,0)$: a
-  polyomino with 14 cells, a $3\times3$ ring around the empty centre
-  with two arms.  The strip has $L=9$ columns, $u=-4\dts4$, and the
+  (a)~Center in a cell, $(M_x,M_y)=(0,0)$: a
+  polyomino with 14 cells, a $3\times3$ ring around the empty center
+  with two arms.  The strip has $W=9$ columns, $u=-4\dts4$, and the
   middle row is $v=0$.
-  (b)~Centre on the midpoint of a vertical edge, $(M_x,M_y)=(1,0)$: 6
-  cells, $L=4$, $u=-1\dts2$.  There is no middle row; the twin row
+  (b)~Center on the midpoint of a vertical edge, $(M_x,M_y)=(1,0)$: 6
+  cells, $W=4$, $u=-1\dts2$.  There is no middle row; the twin row
   $v=1$ is adjacent to its image, the row $v=0$.
-  (c)~Centre at a vertex, $(M_x,M_y)=(1,1)$: 8 cells, a $2\times2$ block
-  with two arms, $L=5$, $u=-2\dts2$, middle row $v=1$.}
+  (c)~Center at a vertex, $(M_x,M_y)=(1,1)$: 8 cells, a $2\times2$ block
+  with two arms, $W=5$, $u=-2\dts2$, middle row $v=1$.}
 \label{fig:coords}
 \end{figure}
 
@@ -307,57 +307,59 @@ $i$ is position $L-1-i$.
 exchanges $v$ and $u$.  It maps polyominoes with a $180^\circ$ symmetry
 to polyominoes with a $180^\circ$ symmetry, and it exchanges the extent in
 the $v$-direction (the number of rows, \emph{vspan}) with the extent in
-the $u$-direction (\emph{uspan}${}=L$).  It is therefore sufficient to
-generate the polyominoes with $\hbox{uspan}\le\hbox{vspan}$:
+the $u$-direction (\emph{uspan}${}=W$).  Following
+Jensen~\cite{Jensen01} and his followers, we therefore
+generate only the polyominoes with $\hbox{uspan}\le\hbox{vspan}$, and we
+count those with $\hbox{uspan}<\hbox{vspan}$ twice:
 $$ \fix_{\rhoo}(n) = \sum_{\hbox{\scriptsize cases}}
   \bigl(2\cdot\#\{\hbox{uspan}<\hbox{vspan}\} + \#\{\hbox{uspan}=\hbox{vspan}\}\bigr).$$
 This has two advantages.
 
-First, the strips are narrow.  Going from a cell to a neighbour changes
+First, the strips are narrow.  Going from a cell to a neighbor changes
 both $u$ and $v$ by~1, and hence
 $\hbox{uspan}+\hbox{vspan}\le 2n$ for a polyomino with $n$ cells.
-With $\hbox{uspan}\le\hbox{vspan}$ this gives $L\le n$, so that we have
-to treat the strips with $L\le N$ columns.  However, the wide strips
-among them are cheap: a polyomino that is $L$ columns wide and at least
-$L$ rows high needs many cells just for reaching the two sides, the
+With $\hbox{uspan}\le\hbox{vspan}$ this gives $W\le n$, so that we have
+to treat the strips with $W\le N$ columns.  However, the wide strips
+among them are cheap: a polyomino that is $W$ columns wide and at least
+$W$ rows high needs many cells just for reaching the two sides, the
 top, and the bottom, so that few cells remain for variation, and the
 pruning leaves few states.  The narrow strips are cheap as well, because
 the number of states is limited by the width.  The work is concentrated
-in the strips of intermediate width, around $L\approx 0.4N$.
-In the run for $N=71$, the largest tables occurred for $L=28$ and
-$L=29$ (15 to 20 million states), the strips with $22\le L\le34$ took
-83\,\% of the running time, and the strips with $L>40$ less than
-3\,\%.  (The three types of centres C, M, and V took 37\,\%, 42\,\%,
+in the strips of intermediate width, around $W\approx 0.4N$.
+In the run for $N=71$, the largest tables occurred for $W=28$ and
+$W=29$ (15 to 20 million states), the strips with $22\le W\le34$ took
+83\,\% of the running time, and the strips with $W>40$ less than
+3\,\%.  (The three types of centers C, M, and V took 37\,\%, 42\,\%,
 and 21\,\% of the time.)
 
 Second, the requirement that $P$ must still grow to a height of at
-least~$L$ rows strengthens the pruning (Section~\ref{sec:height}).
+least~$W$ rows strengthens the pruning (Section~\ref{sec:height}).
 
 @ The geometry of the current case is kept in global variables.
-@d MAXL 160 /* maximum number of columns of the strip */
+@d MAXW 160 /* maximum number of columns of the strip */
 @<Glob...@>=
 static int NMAX; /* the bound $N$ on the number of cells */
-static int M_x, M_y; /* the centre of the rotation is $(M_x/2,M_y/2)$ */
+static int M_x, M_y; /* the center of the rotation is $(M_x/2,M_y/2)$ */
 static int M_u, M_v; /* the same in diagonal coordinates: $M_u=M_x-M_y$, $M_v=M_x+M_y$ */
 static int umin, umax; /* the strip: $u_{\min}\le u\le u_{\max}$ */
-static int L; /* number of columns of the strip */
+static int W; /* number of columns of the strip */
 static int E; /* $M_v \bmod 2$ */
-static int NW; /* length of a vector of counters, |NMAX+1| */
+static int NMAX_plus_1; /* length of a vector of counters, |NMAX+1| */
 
 @*1 The half polyomino.
 \label{sec:half}
-Let $H$ be the set of cells of $P$ with $v>M_v/2$, together with the cells
-of the \emph{middle row} $v=M_v/2$ if $M_v$ is even.  Then $P=H\cup\rhoo(H)$.
-The program constructs $H$ row by row, with increasing~$v$, starting
+Let the \emph{upper half} $P^+$ be the set of cells of $P$ with $v>M_v/2$, together with the cells
+of the \emph{middle row} $v=M_v/2$ if $M_v$ is even.  Then $P=P^+\cup\rhoo(P^+)$.
+The program constructs $P^+$ row by row, with increasing~$v$, starting
 at the middle, and within each row from left to right, deciding for each
-cell whether it belongs to $H$ or not.
+cell whether it belongs to $P^+$ or not.
 
-Every cell of $H$ outside the middle row stands for two cells of $P$ and
+Every cell of $P^+$ outside the middle row stands for two cells of $P$ and
 contributes 2 to the size~$n$.  We call the contribution to $n$ the
 \emph{weight}.  If $M_v$ is even, the middle row is mapped to itself.
 We do not build it cell by cell; we start with all possible symmetric
 subsets of the middle row.  If $M_v$ is odd, there is no middle row,
-but the first row $v_0=(M_v+1)/2$ of $H$ is adjacent to its own image, the
+but the first row $v_0=(M_v+1)/2$ of $P^+$ is adjacent to its own image, the
 row $v_0-1$.  We call it the \emph{twin row}; it needs a special
 treatment of adjacencies.
 
@@ -377,11 +379,11 @@ columns of the right parity).  These cells form the \emph{frontier}.
 The place where the frontier steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
 A frontier cell is dropped from the frontier as soon as both of its
-upper neighbours have been decided, since nothing can be attached to it
+upper neighbors have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
 
 It is useful to imagine that we are simultanously building the
-polyomino downwards from the center. Thus, there is a lower frontier,
+polyomino downward from the center. Thus, there is a lower frontier,
 at the mirror position of the upper frontier, and if we decide to
 place a cell at the kink, its mirror will be placed below the lower frontier.
 
@@ -406,9 +408,11 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   \node[left] at (-1.8,6) {row $v$};
   \node[left] at (-1.8,5) {row $v-1$};
 \end{tikzpicture}
-\caption{The frontier (thick line) after position $i=6$ of row $v$ has
-  been decided.  Blue cells belong to $H$, grey cells are decided and
-  empty, white cells are undecided.  The frontier consists of the cells
+\caption{The situation after position $i=6$ of row $v$ has
+  been decided.  Blue cells belong to $P^+$, gray cells are decided and
+  empty, white cells are undecided.  The thick red line separates the
+  decided cells from the unprocessed cells, and the frontier consists of
+  all cells that touch an edge of the red line from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
   classes $A$, $B$, $C$ with four runs.  The frontier steps down at the
@@ -417,14 +421,14 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
 \end{figure}
 
 @ {\bf Classes and partners.}
-Consider the part of $P$ that is known so far: the decided cells of $H$
+Consider the part of $P$ that is known so far: the decided cells of $P^+$
 and their images.  Its connected components that contain a frontier cell
 are the \emph{classes}.  A \emph{run} is a maximal block of
 consecutive positions that hold frontier cells.  Since the cells of a
 row occupy only every other position, and the cells in between have
 already left the frontier, most runs consist of a single cell; only at
 the kink, the positions $i$ and $i+1$ can both hold a frontier cell,
-and these two cells are neighbours.  The frontier cells of a class form
+and these two cells are neighbors.  The frontier cells of a class form
 one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of class
 $A$ are two runs, and class $B$ has one run of two cells.)  Since the components are
 separated by the frontier line from the undecided region, two classes
@@ -435,7 +439,7 @@ The image $\rhoo(X)$ of a class $X$ is again a component of the known
 part.  There are three possibilities:
 \begin{itemize}
 \item $\rhoo(X)=X$.  We call $X$ a \emph{self} class.  Such a component
-  already connects $H$ to its image.
+  already connects $P^+$ to its image.
 \item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are
   \emph{partners}.
 \item $\rhoo(X)$ has no cell on the frontier.
@@ -460,17 +464,17 @@ For each state we store how many different sets of decided cells lead to
 it, separately for each weight (number of cells of $P$ so far).
 
 @*1 Byte keys.
-In its unpacked form, a state is a \emph{byte key} of |KL=L+MAXC+1| bytes:
+In its unpacked form, a state is a \emph{byte key} of |KL=W+MAXC+1| bytes:
 \begin{itemize}
-\item |key[i]|, $0\le i<L$: the class label of the frontier cell at
+\item |key[i]|, $0\le i<W$: the class label of the frontier cell at
   position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots$
   in the order of their first appearance from left to right, which makes
   the key canonical.
-\item |key[L+j-1]|, for each class $j$: its partner, which is another
+\item |key[W+j-1]|, for each class $j$: its partner, which is another
   class label, or |PSELF|, or |PGHOST|.
 \item |key[KL-1]|: the \emph{touched} bit.
 \end{itemize}
-A frontier contains at most $\lceil L/2\rceil+1$ cells, hence at most
+A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAXC| classes.
 
 @d PSELF 0xFF /* the class is its own image */
@@ -489,13 +493,13 @@ During a transition the labels need not be numbered consecutively, and
 there may be one label more than in a canonical key.
 All operations are simple sweeps over the positions.
 
-@d MAXLAB (MAXL + 2) /* bound on the labels in the working arrays */
+@d MAXLAB (MAXW + 2) /* bound on the labels in the working arrays */
 @<Sub...@>=
 static inline int is_class(int p) { return p != PSELF && p != PGHOST; }
 
 static inline void relabel(uint8_t *f, int from, int to)
 {
-    for (int j = 0; j < L; j++)
+    for (int j = 0; j < W; j++)
         if (f[j] == from)
             f[j] = to;
 }
@@ -570,13 +574,13 @@ static void join_image(uint8_t *f, uint8_t *par, int a, int b)
 @ The canonical byte key is obtained by renumbering the classes from
 left to right.  The function returns the number of classes.
 @<Sub...@>=
-static int canon(const uint8_t *f, const uint8_t *par, int tch, uint8_t *key)
+static int canon(const uint8_t *f, const uint8_t *par, int touches, uint8_t *key)
 {
     uint8_t map[MAXLAB], old[MAXLAB];
     int m = 0;
     memset(map, 0, sizeof(map));
     memset(key, 0, KL);
-    for (int i = 0; i < L; i++) {
+    for (int i = 0; i < W; i++) {
         if (!f[i])
             continue;
         if (!map[f[i]]) {
@@ -587,15 +591,15 @@ static int canon(const uint8_t *f, const uint8_t *par, int tch, uint8_t *key)
     }
     for (int j = 1; j <= m; j++) {
         int q = par[old[j]];
-        key[L + j - 1] = is_class(q) ? map[q] : q;
+        key[W + j - 1] = is_class(q) ? map[q] : q;
     }
-    key[KL - 1] = tch;
+    key[KL - 1] = touches;
     return m;
 }
 
 @*1 Removing a cell from the frontier.
 When the frontier cell at position~|i| can no longer get new
-neighbours, it is \emph{retired}.  If other frontier cells of the same
+neighbors, it is \emph{retired}.  If other frontier cells of the same
 class remain, nothing happens.  Otherwise the class $X$ disappears from
 the frontier, and there are several cases:
 \begin{itemize}
@@ -619,7 +623,7 @@ static int retire(uint8_t *f, uint8_t *par, int i)
         return OK;
     f[i] = 0;
     int any = 0;
-    for (int j = 0; j < L; j++)
+    for (int j = 0; j < W; j++)
         if (f[j]) {
             any = 1;
             if (f[j] == lab)
@@ -636,28 +640,28 @@ static int retire(uint8_t *f, uint8_t *par, int i)
 
 @*1 A transition.
 The function |step| takes the byte key |sk| of a state (with touched
-bit |tch|) and decides the cell at position~|i| of the current row:
-|occ| tells whether the cell belongs to~$H$.  The parameter |last| is
+bit |touches|) and decides the cell at position~|i| of the current row:
+|occ| tells whether the cell belongs to~$P^+$.  The parameter |last| is
 true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
 |OK|; in the last case the new canonical key is stored in |key|, its
-touched bit in |*ntp| and its number of classes in |*mp|.
+touched bit in |*result_touches| and its number of classes in |*mp|.
 
 A new cell gets a new class label whose partner is a ghost (its image),
 and it is joined with the frontier cells at positions $i-1$ and $i+1$.
-These are its two lower neighbours: at this moment, both positions hold
+These are its two lower neighbors: at this moment, both positions hold
 cells of the previous row, see Figure~\ref{fig:frontier}.
 (The class that is given as the first argument of |join| keeps its label.)
 
 After the decision, the cell at position $i-1$ has no undecided
-neighbours any more and is retired; at the end of a row, the same holds
+neighbors any more and is retired; at the end of a row, the same holds
 for position $i+1$.  (Retiring an empty position does no harm.)
 @<Sub...@>=
-static int step(const uint8_t *sk, int tch, int i, int occ, int last,
-                int first_twin, uint8_t *key, int *ntp, int *mp)
+static int step(const uint8_t *sk, int touches, int i, int occ, int last,
+                int first_twin, uint8_t *key, int *result_touches, int *mp)
 {
-    uint8_t f[MAXL], par[MAXLAB];
-    memcpy(f, sk, L);
-    memcpy(par + 1, sk + L, MAXC);
+    uint8_t f[MAXW], par[MAXLAB];
+    memcpy(f, sk, W);
+    memcpy(par + 1, sk + W, MAXC);
     if (occ) {
         int nw = 1;
         while (nw <= MAXC && par[nw]) /* the first unused label */
@@ -665,10 +669,10 @@ static int step(const uint8_t *sk, int tch, int i, int occ, int last,
         par[nw] = PGHOST;
         f[i] = nw;
         for (int nb = i - 1; nb <= i + 1; nb += 2)
-            if (nb >= 0 && nb < L && f[nb])
+            if (nb >= 0 && nb < W && f[nb])
                 join(f, par, nw, f[nb]);
         if (first_twin) {
-            for (int jj = L - 2 - i; jj <= L - i; jj += 2)
+            for (int jj = W - 2 - i; jj <= W - i; jj += 2)
                 if (jj >= 0 && jj <= i && f[jj])
                     join_image(f, par, nw, f[jj]);
         }
@@ -676,20 +680,20 @@ static int step(const uint8_t *sk, int tch, int i, int occ, int last,
     int status = OK;
     if (i - 1 >= 0)
         status = retire(f, par, i - 1);
-    if (status == OK && last && i + 1 < L)
+    if (status == OK && last && i + 1 < W)
         status = retire(f, par, i + 1);
     if (status != OK)
         return status;
-    *ntp = tch || (occ && (i == 0 || i == L - 1));
-    *mp = canon(f, par, *ntp, key);
+    *result_touches = touches || (occ && (i == 0 || i == W - 1));
+    *mp = canon(f, par, *result_touches, key);
     return OK;
 }
 
 @ {\bf The twin row.}
 In the twin row $v_0=(M_v+1)/2$, which exists if $M_v$ is odd, the lower
-neighbours of the cell $(u,v_0)$ at position~$i$ are the cells $(u\pm1,v_0-1)$.
+neighbors of the cell $(u,v_0)$ at position~$i$ are the cells $(u\pm1,v_0-1)$.
 They are the images of the cells of the twin row itself at the
-positions $L-1-(i\pm1)$, that is, $L-2-i$ and $L-i$.
+positions $W-1-(i\pm1)$, that is, $W-2-i$ and $W-i$.
 If such a position equals $i$, the new cell is adjacent to its own
 image and becomes a self class.  If it is smaller than $i$ and occupied,
 the new cell is joined with the \emph{image} of that cell.  (Both
@@ -705,7 +709,7 @@ stored as a bit string in |KW| 64-bit words:
 \begin{itemize}
 \item 3 bits per position, with one of the following six codes 0--5:
   |C_EMPTY| for an empty position;
-  |C_CONTINUE| if the cell continues the run of its left neighbour;
+  |C_CONTINUE| if the cell continues the run of its left neighbor;
   and for the first cell of a run:
   |C_SINGLETON| if the class consists of this single run,
   |C_FIRST| for the first run of a class with several runs,
@@ -722,12 +726,12 @@ of valid sequences of the five codes other than |C_CONTINUE| for $m$
 frontier cells grows like $5^m m^{-3/2}$.  Thus,
 $\log_2 5\approx 2.32$ bits per frontier cell are necessary, and
 3~bits per frontier cell are close to this information-theoretic minimum.
-However, our key has 3~bits for each of the $L$ positions, and
+However, our key has 3~bits for each of the $W$ positions, and
 only every other position can hold a frontier cell: the
 frontier cells of a row occupy the positions of one parity.  The only
 exception is the kink, where a cell of row $v$ and a cell of row $v-1$
 are in adjacent positions.  (This is also the only place where
-the code |C_CONTINUE| can occur.)  Thus there are only about $m=L/2$
+the code |C_CONTINUE| can occur.)  Thus there are only about $m=W/2$
 frontier cells, the other positions are always empty, and the key is about
 twice as long as it would have to be with the same simple encoding, and
 2.6 times as long as the minimum.
@@ -788,10 +792,10 @@ where its first and its last run start.
 @<Sub...@>=
 static void pack(const uint8_t *key, uint64_t *w)
 {
-    int first[MAXL + 2], lastrun[MAXL + 2];
+    int first[MAXW + 2], lastrun[MAXW + 2];
     int pos = 0, m = 0;
     memset(w, 0, KW * 8);
-    for (int i = 0; i < L; i++)
+    for (int i = 0; i < W; i++)
         if (key[i] && (i == 0 || !key[i - 1])) {
             int l = key[i];
             if (l > m) {
@@ -800,7 +804,7 @@ static void pack(const uint8_t *key, uint64_t *w)
             }
             lastrun[l] = i;
         }
-    for (int i = 0; i < L; i++) {
+    for (int i = 0; i < W; i++) {
         int l = key[i], code;
         if (!l)
             code = C_EMPTY;
@@ -813,7 +817,7 @@ static void pack(const uint8_t *key, uint64_t *w)
         putbits(w, &pos, code, 3);
     }
     for (int j = 1; j <= m; j++)
-        putbits(w, &pos, key[L + j - 1] != PGHOST, 1);
+        putbits(w, &pos, key[W + j - 1] != PGHOST, 1);
     putbits(w, &pos, key[KL - 1], 1);
 }
 
@@ -822,9 +826,9 @@ from left to right, and they are matched from the outside to the inside.
 @<Sub...@>=
 static void unpack(const uint64_t *w, uint8_t *key)
 {
-    int stack[MAXL + 2], sp = 0, m = 0, pos = 0;
+    int stack[MAXW + 2], sp = 0, m = 0, pos = 0;
     memset(key, 0, KL);
-    for (int i = 0; i < L; i++) {
+    for (int i = 0; i < W; i++) {
         int code = getbits(w, &pos, 3);
         switch (code) {
         case C_EMPTY: key[i] = 0; break;
@@ -840,10 +844,10 @@ static void unpack(const uint64_t *w, uint8_t *key)
         if (getbits(w, &pos, 1))
             stack[sp++] = j;
         else
-            key[L + j - 1] = PGHOST;
+            key[W + j - 1] = PGHOST;
     for (int a = 0, b = sp - 1; a <= b; a++, b--) {
-        key[L + stack[a] - 1] = a == b ? PSELF : stack[b];
-        key[L + stack[b] - 1] = a == b ? PSELF : stack[a];
+        key[W + stack[a] - 1] = a == b ? PSELF : stack[b];
+        key[W + stack[b] - 1] = a == b ? PSELF : stack[a];
     }
     key[KL - 1] = getbits(w, &pos, 1);
 }
@@ -918,8 +922,8 @@ too large, and at the peak there are only about two records per state.
 The list of a state is sorted by increasing weight.
 The weights in a list almost always form a contiguous range, in steps
 of~2 if the parity of the weight is fixed.  This is the case for the
-centres of types M and~V, where every weight is even.  For type~C, the
-parity of the weight tells whether the centre cell is occupied, and about a third of
+centers of types M and~V, where every weight is even.  For type~C, the
+parity of the weight tells whether the center cell is occupied, and about a third of
 the lists contain weights of both parities.
 (In a run with $N=40$, the lists had 2.5 records on average and at most
 28, and only 20 out of 9.9 million lists had a gap of more than~2 between
@@ -982,6 +986,15 @@ static size_t tab_bytes(const table_t *t)
 }
 
 @ The hash function mixes all words of the key.
+It is an ad-hoc construction and not a function from the literature:
+each word of the key is added by exclusive-or, and then the value is
+multiplied by an odd 64-bit constant and combined with a shifted copy of itself.
+This multiply-and-shift step is the building block of the mixing
+function of the pseudorandom generator SplitMix64~\cite{SplitMix}, from
+which the multiplier is taken.  The starting value is $2^{64}$ divided by
+the golden ratio, the classical multiplier of Fibonacci hashing.
+We have not analyzed the quality of this function; a poor distribution
+would only cost time through longer probe sequences, never correctness.
 @<Sub...@>=
 static inline uint64_t hkey(const uint64_t *k)
 {
@@ -1035,7 +1048,7 @@ static size_t tab_get(table_t *t, const uint8_t *key)
     uint64_t w[12];
     pack(key, w);
     if (CHECK) {
-        uint8_t k2[2 * MAXL + 4];
+        uint8_t k2[2 * MAXW + 4];
         unpack(w, k2);
         if (memcmp(k2, key, KL)) {
             fprintf(stderr, "pack/unpack mismatch\n");
@@ -1080,7 +1093,11 @@ static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
         return;
     }
     if (t->nrec == t->rcap) {
-        t->rcap *= 2;
+        if (t->rcap >= 0xFFFFFFFFu) {
+            fprintf(stderr, "too many count records for 32-bit links\n");
+            exit(1);
+        }
+        t->rcap = 2 * t->rcap > 0xFFFFFFFFu ? 0xFFFFFFFFu : 2 * t->rcap;
         t->rec = xrealloc(t->rec, t->rcap * sizeof(rec_t));
     }
     rec_t *q = &t->rec[t->nrec++];
@@ -1097,15 +1114,15 @@ static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
 of the table |src|, shifted by the weight |add| of the newly added cell,
 are added to the state |key| of the table |t|, but only for the weights
 that can still lead to a polyomino with at most $N$ cells, given that at
-least |lb| further units of weight are necessary.  Since the list is
+least |lowerbound| further units of weight are necessary.  Since the list is
 sorted, we can stop at the first weight that is too large.  If already
 the smallest weight is too large, the state is not even created.
 (The tables |src| and |t| are always different.)
 @<Sub...@>=
 static void insert_pruned(table_t *t, const uint8_t *key, const table_t *src,
-                          size_t si, int add, int lb)
+                          size_t si, int add, int lowerbound)
 {
-    int lim = NMAX - lb - add;
+    int lim = NMAX - lowerbound - add;
     uint32_t r = src->head[si];
     if (!r || src->rec[r - 1].wt > lim)
         return;
@@ -1121,7 +1138,7 @@ number of cells that must still be added to a state before it can
 become a complete polyomino that is as high as it is wide.  A state
 whose weight plus this bound exceeds $N$ is discarded.
 
-All bounds in this chapter count cells of $H$; each such cell has
+All bounds in this chapter count cells of $P^+$; each such cell has
 weight~2.
 
 @ First, a state in which every class has a ghost partner can never be
@@ -1134,7 +1151,7 @@ static int completion_possible(const uint8_t *key)
 {
     int m = 0;
     for (int j = 0; j < MAXC; j++) {
-        int q = key[L + j];
+        int q = key[W + j];
         if (!q)
             break;
         m++;
@@ -1158,7 +1175,7 @@ to its successor in the row.
 
 There is one exception, \emph{at the kink} (Figure~\ref{fig:gap}).
 Suppose position $i$ has just been decided to be empty, and $b=i+1$ is a
-frontier cell in row $v-1$.  The upper neighbours of $b$ are the cell at
+frontier cell in row $v-1$.  The upper neighbors of $b$ are the cell at
 position $i$ of row $v$, which is empty, and the cell at position $i+2$.
 Hence a path from the left must pass over $b$ and come back to it from
 the right: it needs an additional cell in the column of $b$ itself
@@ -1248,7 +1265,7 @@ is discussed next.
 \label{sec:height}
 The finished polyomino must touch the sides of the strip, and it must
 extend to row $\Vstar$, the last row for which the height reaches
-the width~$L$.  If no side has been touched yet, the frontier cell
+the width~$W$.  If no side has been touched yet, the frontier cell
 closest to a side needs a path of at least as many cells as there are
 columns between it and the side.  In addition, each row above the
 current row up to row $\Vstar$ must contain at least one cell.
@@ -1276,7 +1293,7 @@ because the path to the side may branch off from any cell of the
 structure, and it helps to reach the top at the same time.
 From a cell in row $h$ and column $j$, a staircase that reaches both a
 side and row $\Vstar$ needs
-$$ \max\bigl(\Vstar-h,\ \min(j,\,L-1-j)\bigr) $$
+$$ \max\bigl(\Vstar-h,\ \min(j,\,W-1-j)\bigr) $$
 cells (Figure~\ref{fig:stair}).  We call the minimum of this quantity
 over all cells of the structure the \emph{score}; the cells of the
 structure are the frontier cells and the cells of the connecting paths
@@ -1308,12 +1325,12 @@ side and the top separately, at a cost of (distance to the side) $+$
   \node[below] at (0,-1.2) {(b) the truth: 5 cells};
 \end{scope}
 \end{tikzpicture}
-\caption{The centre is in a cell, $L=9$, $\Vstar=4$.  Rows 0 and 1 are
+\caption{The center is in a cell, $W=9$, $\Vstar=4$.  Rows 0 and 1 are
   complete, and in row 2 the first two cells have been decided empty.
   (a)~The staircase bound for the cell $b$ in row $h=1$ and column
   $j=3$ is $\max(4-1,3)=3$, but the first cell of the staircase is
   already known to be empty.  (b)~Every completion must use the right
-  upper neighbour of $b$, and 5 cells are necessary.  The lookahead
+  upper neighbor of $b$, and 5 cells are necessary.  The lookahead
   at the kink finds this: it tries both possibilities for the next
   cell.}
 \label{fig:stair}
@@ -1325,10 +1342,10 @@ parameter lists short.
 static int CUR_V, VSTAR, V0; /* current row $v$, target row $\Vstar$, first row $v_0$ */
 static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int H0, S0; /* best height and best score reached for free */
-static int NOPT, OPTD[2 * MAXL + 4], OPTP[2 * MAXL + 4], OPTS[2 * MAXL + 4]; /* options */
-static int NCL, CLD[MAXL], CLP[MAXL], CLS[MAXL]; /* the middle cycle: largest gap, its peak and score */
+static int NOPT, OPTD[2 * MAXW + 4], OPTP[2 * MAXW + 4], OPTS[2 * MAXW + 4]; /* options */
+static int NCL, CLD[MAXW], CLP[MAXW], CLS[MAXW]; /* the middle cycle: largest gap, its peak and score */
 static int DEDGE; /* distance to the nearest side, if untouched */
-static int CUR_TCH; /* touched bit of the current state */
+static int CUR_TOUCHES; /* touched bit of the current state */
 
 @ The row of the frontier cell at position |j|: row |CUR_V| or the row
 below, depending on the parity.
@@ -1356,7 +1373,7 @@ column |j|.
 @<Sub...@>=
 static inline int both_cost(int h, int j)
 {
-    int e = j < L - 1 - j ? j : L - 1 - j;
+    int e = j < W - 1 - j ? j : W - 1 - j;
     int r = VSTAR - h;
     return e > r ? e : r;
 }
@@ -1430,7 +1447,7 @@ structure reaches height |h| and score |s|.
 static inline int finish(int h, int s)
 {
     int top = VSTAR - h > 0 ? VSTAR - h : 0;
-    if (CUR_TCH)
+    if (CUR_TOUCHES)
         return HEIGHT ? top : 0;
     if (!HEIGHT)
         return DEDGE;
@@ -1456,10 +1473,10 @@ static int height_extra(int h, int s)
 The parameter |kink| is the position of the frontier cell right of the
 kink, if the cell before it has been decided empty, and $-1$ otherwise.
 @<Sub...@>=
-static int cactus_bound(const uint8_t *key, int tch, int kink)
+static int cactus_bound(const uint8_t *key, int touches, int kink)
 {
     @<Find the runs of the frontier@>@;
-    @<Initialise the height computation with the frontier cells@>@;
+    @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
     @<Pay for the outer paths, the rings and the middle@>@;
@@ -1470,9 +1487,9 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
 @ Run |j| extends from position |rs[j]| to |re[j]| and belongs to class
 |rl[j]|.
 @<Find the runs...@>=
-    int rs[MAXL], re[MAXL], rl[MAXL], R = 0;
-    int lastrun[MAXL + 2];
-    for (int i = 0; i < L; i++)
+    int rs[MAXW], re[MAXW], rl[MAXW], R = 0;
+    int lastrun[MAXW + 2];
+    for (int i = 0; i < W; i++)
         if (key[i]) {
             if (i == 0 || !key[i - 1]) {
                 rs[R] = i;
@@ -1485,13 +1502,13 @@ static int cactus_bound(const uint8_t *key, int tch, int kink)
     if (!R)
         return 0;
 
-@ @<Initialise the height...@>=
+@ @<Initialize the height...@>=
     H0 = -1000;
     S0 = 1 << 20;
     NOPT = 0;
     NCL = 0;
-    CUR_TCH = tch;
-    for (int i = 0; i < L; i++)
+    CUR_TOUCHES = touches;
+    for (int i = 0; i < W; i++)
         if (key[i]) {
             reach(frow(i));
             sreach(both_cost(frow(i), i));
@@ -1506,9 +1523,9 @@ class |toplab[t]|.  When a run of the class on top of the stack is
 found, the pocket is closed and paid for.
 @<Scan the runs...@>=
     /* open pockets: class and start of its gaps in the gap buffer */
-    int sl[MAXL], sb[MAXL], sp = 0;
-    int gb[MAXL], pb[MAXL], qb[MAXL], nb = 0;
-    int toplab[MAXL], topgap[MAXL], toppk[MAXL], topsc[MAXL], nt = 0;
+    int sl[MAXW], sb[MAXW], sp = 0;
+    int gb[MAXW], pb[MAXW], qb[MAXW], nb = 0;
+    int toplab[MAXW], topgap[MAXW], toppk[MAXW], topsc[MAXW], nt = 0;
     for (int j = 0; j < R; j++) {
         int X = rl[j];
         if (j > 0) {
@@ -1516,7 +1533,7 @@ found, the pocket is closed and paid for.
             int g = b - a - 1 + (b == kink);
             /* at the kink the path ends one column beyond b: g + 2 cells */
             int pk = (g - 1 + (b == kink) + frow(a) + frow(b) + 2) / 2;
-            int sc = tch ? 1 << 20 : gap_score(a, frow(a), b == kink ? b + 1 : b - 1, frow(b) + 1);
+            int sc = touches ? 1 << 20 : gap_score(a, frow(a), b == kink ? b + 1 : b - 1, frow(b) + 1);
             if (sp) {
                 gb[nb] = g;
                 qb[nb] = sc;
@@ -1545,9 +1562,9 @@ consists of the gaps between |cr[i]| and |cr[i+1]| and their
 counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 @<Pay for the outer paths...@>=
     /* top level */
-    int cr[MAXL], m = 0;
+    int cr[MAXW], m = 0;
     for (int t = 0; t < nt; t++)
-        if (key[L + toplab[t] - 1] != PGHOST)
+        if (key[W + toplab[t] - 1] != PGHOST)
             cr[m++] = t;
     if (m) {
         for (int t = 0; t < cr[0]; t++) {
@@ -1563,7 +1580,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
         int k = m / 2;
         NCL = 0;
         for (int i = 0; i < k; i++) {
-            int g[2 * MAXL], pk[2 * MAXL], scs[2 * MAXL], n = 0, m1, p1, s1;
+            int g[2 * MAXW], pk[2 * MAXW], scs[2 * MAXW], n = 0, m1, p1, s1;
             int a = cr[i], b = (i < k - 1) ? cr[i + 1] : cr[m - 1 - i];
             for (int t = a; t < b; t++) {
                 g[n] = topgap[t];
@@ -1598,8 +1615,8 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 
 @ @<Add the self term...@>=
     DEDGE = 0;
-    if (!tch) {
-        int d1 = rs[0], d2 = L - 1 - re[R - 1];
+    if (!touches) {
+        int d1 = rs[0], d2 = W - 1 - re[R - 1];
         DEDGE = d1 < d2 ? d1 : d2;
     }
     /* without a self class the middle cycle must be closed completely:
@@ -1620,25 +1637,25 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the self term, and the height.
 @<Sub...@>=
-static int exact_bound(const uint8_t *key, int tch)
+static int exact_bound(const uint8_t *key, int touches)
 {
-    int sup[MAXL + 1];
-    int occ[MAXL], no = 0;
+    int sup[MAXW + 1];
+    int occ[MAXW], no = 0;
     for (int j = 1; j <= MAXC; j++) {
-        int q = key[L + j - 1];
+        int q = key[W + j - 1];
         if (!q)
             break;
         sup[j] = (q != PSELF && q != PGHOST && q < j) ? q : j;
     }
-    for (int i = 0; i < L; i++)
+    for (int i = 0; i < W; i++)
         if (key[i])
             occ[no++] = i;
     if (!no)
         return 0;
     /* Kruskal over gaps between consecutive occupied positions */
-    int par[MAXL + 1];
+    int par[MAXW + 1];
     int ncls = 0;
-    int seen[MAXL + 1];
+    int seen[MAXW + 1];
     memset(seen, 0, sizeof(seen));
     for (int a = 0; a < no; a++) {
         int s = sup[key[occ[a]]];
@@ -1652,13 +1669,13 @@ static int exact_bound(const uint8_t *key, int tch)
     if (ncls > 1) {
         /* counting sort of gaps by weight */
         int ne = no - 1;
-        int wgt[MAXL], ord[MAXL], bucket[MAXL + 1];
+        int wgt[MAXW], ord[MAXW], bucket[MAXW + 1];
         memset(bucket, 0, sizeof(bucket));
         for (int a = 0; a < ne; a++) {
             wgt[a] = occ[a + 1] - occ[a] - 1;
             bucket[wgt[a]]++;
         }
-        for (int g = 1; g <= L; g++)
+        for (int g = 1; g <= W; g++)
             bucket[g] += bucket[g - 1];
         for (int a = ne - 1; a >= 0; a--)
             ord[--bucket[wgt[a]]] = a;
@@ -1676,8 +1693,8 @@ static int exact_bound(const uint8_t *key, int tch)
             }
         }
     }
-    if (!tch) {
-        int d1 = occ[0], d2 = L - 1 - occ[no - 1];
+    if (!touches) {
+        int d1 = occ[0], d2 = W - 1 - occ[no - 1];
         cost += d1 < d2 ? d1 : d2;
     }
     return cost;
@@ -1686,57 +1703,65 @@ static int exact_bound(const uint8_t *key, int tch)
 @ The function |bound| returns a lower bound on the \emph{weight} that
 must still be added to a nonempty state, or $-1$ if the state can never
 be completed.  Here |k| is the number of the current row, counted from
-the first row of $H$, and |kmin| is the smallest number of rows for
-which the height reaches $L$.
+the first row of $P^+$, and |kmin| is the smallest number of rows for
+which the height reaches $W$.
 The cactus bound is not valid in the middle of the twin row, because
 there the adjacencies to the image row are not yet all known.
 @<Sub...@>=
-static int bound(const uint8_t *key, int nt, int k, int kmin, int i, int last, int first_twin)
+static int bound(const uint8_t *key, int touches, int k, int kmin, int i, int last, int first_twin)
 {
-    int lb = kmin > k ? 2 * (kmin - k) : 0;
-    if (!nt) {
-        int dist = L;
-        for (int j = 0; j < L; j++)
+    int lowerbound = kmin > k ? 2 * (kmin - k) : 0;
+    if (!touches) {
+        int dist = W;
+        for (int j = 0; j < W; j++)
             if (key[j]) {
-                int dd = j < L - 1 - j ? j : L - 1 - j;
+                int dd = j < W - 1 - j ? j : W - 1 - j;
                 if (dd < dist)
                     dist = dd;
             }
-        if (2 * dist > lb)
-            lb = 2 * dist;
+        if (2 * dist > lowerbound)
+            lowerbound = 2 * dist;
     }
     if (!first_twin || last) {
         if (!completion_possible(key))
             return -1;
-        int kink = (!last && !key[i] && i + 1 < L && key[i + 1]) ? i + 1 : -1;
+        int kink = (!last && !key[i] && i + 1 < W && key[i + 1]) ? i + 1 : -1;
         CUR_V = V0 + k - 1;
         VSTAR = V0 + kmin - 1;
-        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
-        if (eb > lb)
-            lb = eb;
+        int eb = 2 * (OLDBOUND ? exact_bound(key, touches) : cactus_bound(key, touches, kink));
+        if (eb > lowerbound)
+            lowerbound = eb;
     }
-    return lb;
+    return lowerbound;
 }
 
 @* The main loop.
 \label{sec:main}
 The results of a case are collected in two vectors, indexed by~$n$:
-|LT| for $\hbox{uspan}<\hbox{vspan}$ and |EQ| for
+|PORTRAIT| for the polyominoes that are higher than wide
+($\hbox{uspan}<\hbox{vspan}$) and |SQUARE| for
 $\hbox{uspan}=\hbox{vspan}$.
 @<Glob...@>=
-static cnt_t *LT, *EQ; /* results of one case */
+static cnt_t *PORTRAIT, *SQUARE; /* results of one case */
 static cnt_t *RECT; /* results for the current height */
 static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW; /* statistics */
+
+@ These vectors are allocated at the beginning of the program, as soon
+as $N$ is known.
+@<Allocate the result vectors@>=
+    PORTRAIT = calloc(NMAX_plus_1, sizeof(cnt_t));
+    SQUARE = calloc(NMAX_plus_1, sizeof(cnt_t));
+    RECT = calloc(NMAX_plus_1, sizeof(cnt_t));
 
 @ When a polyomino is complete after |ktop| rows, it is counted if it
 touches the sides and is at least as high as wide.
 @<Sub...@>=
-static void record(int ktop, const table_t *src, size_t si, int tch)
+static void record(int ktop, const table_t *src, size_t si, int touches)
 {
     int h = vspan(ktop);
-    if (!tch || h < L)
+    if (!touches || h < W)
         return;
-    cnt_t *tgt = h == L ? EQ : LT;
+    cnt_t *tgt = h == W ? SQUARE : PORTRAIT;
     for (uint32_t r = src->head[si]; r; r = src->rec[r - 1].next) {
         int wt = src->rec[r - 1].wt;
         tgt[wt] = addm(tgt[wt], src->rec[r - 1].c);
@@ -1746,12 +1771,12 @@ static void record(int ktop, const table_t *src, size_t si, int tch)
 
 @ {\bf Bounding rectangles.}
 The polyominoes of one case with a given number of rows have the same
-bounding rectangle in diagonal coordinates: $L$ columns wide and
+bounding rectangle in diagonal coordinates: $W$ columns wide and
 |vspan(ktop)| rows high.  All polyominoes with |ktop| rows are completed
 while row $|ktop|+1$ is processed.  At the end of that row, the function
 |rect_line| writes one line to the log with the number of polyominoes
 in this rectangle for every $n$, and clears the vector |RECT|.
-The line names the type of centre, the width with the range of $u$, the
+The line names the type of center, the width with the range of $u$, the
 height with the range of $v$, and then the nonzero counts in the form
 \texttt{n=}$n$\texttt{:}count.  (The counts are modulo $M$, like
 everything else, and they are complete only for $n\le N$.)
@@ -1760,34 +1785,34 @@ the caller tests this.  (A line without any counts would mean that no
 polyomino with at most $N$ cells has this bounding rectangle, although
 some state survived the pruning up to this row.)  The
 numbers for a rectangle that is wider than high are those of the
-transposed rectangle, with the same type of centre, except that the
+transposed rectangle, with the same type of center, except that the
 vertical edge becomes a horizontal edge; and the case $(M_x,M_y)=(1,0)$
 of a vertical edge that we compute stands also for the case $(0,1)$ of a
 horizontal edge with the same numbers.
-The type of centre is not determined by the size of the rectangle alone:
-if both sides are even, the centre is the midpoint of an edge, but if
-both sides are odd, the centre can be the centre of a cell or a vertex
+The type of center is not determined by the size of the rectangle alone:
+if both sides are even, the center is the midpoint of an edge, but if
+both sides are odd, the center can be the center of a cell or a vertex
 of the grid.
 
 @<Sub...@>=
 static void rect_line(int ktop)
 {
     static const char *tyname[3] = {
-        "R180C centre in a cell",
-        "R180M centre on the midpoint of a vertical edge",
-        "R180V centre at a vertex"};
+        "R180C center in a cell",
+        "R180M center on the midpoint of a vertical edge",
+        "R180V center at a vertex"};
     int h = vspan(ktop);
     int vtop = E ? (M_v + 1) / 2 + ktop - 1 : M_v / 2 + ktop;
     if (VERB >= 1) {
         fprintf(stderr, "#rect %s (Mx=%d My=%d): width %d (u=%d..%d) x height %d (v=%d..%d):",
-                tyname[M_x + M_y], M_x, M_y, L, umin, umin + L - 1, h, M_v - vtop, vtop);
+                tyname[M_x + M_y], M_x, M_y, W, umin, umin + W - 1, h, M_v - vtop, vtop);
         for (int n = 0; n <= NMAX; n++)
             if (RECT[n])
                 fprintf(stderr, " n=%d:%s", n, cs(RECT[n]));
         fprintf(stderr, "\n");
         fflush(stderr);
     }
-    memset(RECT, 0, NW * sizeof(cnt_t));
+    memset(RECT, 0, NMAX_plus_1 * sizeof(cnt_t));
 }
 
 @ Progress is reported on the standard error stream, after every row
@@ -1815,10 +1840,10 @@ static void stat_line(const char *tag, int k, int v, int ci, int nu,
     T_LAST = now;
     cnt_t done = 0;
     for (int n = 0; n <= NMAX; n++)
-        done = addm(done, addm(LT[n], EQ[n]));
-    fprintf(stderr, "%s Mx=%d My=%d umax=%d L=%d row k=%d v=%d cell %d/%d: "
+        done = addm(done, addm(PORTRAIT[n], SQUARE[n]));
+    fprintf(stderr, "%s Mx=%d My=%d umax=%d W=%d row k=%d v=%d cell %d/%d: "
             "%zu states, %zu records, %.1f MB, done %s, %.1fs wall, %.1fs cpu\n",
-            tag, M_x, M_y, umax, L, k, v, ci, nu, cur->n, cur->nrec,
+            tag, M_x, M_y, umax, W, k, v, ci, nu, cur->n, cur->nrec,
             (tab_bytes(cur) + tab_bytes(nxt)) / 1e6, cs(done),
             now - T_START, (double)clock() / CLOCKS_PER_SEC);
     fflush(stderr);
@@ -1831,7 +1856,7 @@ static void count_case(void)
     @<Set up the geometry of the case@>@;
     @<Local variables of |count_case|@>@;
     @<Create the initial states@>@;
-    int cells_v[MAXL];
+    int cells_v[MAXW];
     for (int k = 1; cur->n; k++) {
         @<Determine the cells of row |k|@>@;
         for (int ci = 0; ci < nu; ci++) {
@@ -1840,7 +1865,7 @@ static void count_case(void)
         @<Merge every state with its mirror image@>@;
         if (VERB >= 1)
             stat_line("#row ", k, v, nu, nu, cur, nxt);
-        if (vspan(k - 1) >= L) /* lower rectangles are not counted in this case */
+        if (vspan(k - 1) >= W) /* lower rectangles are not counted in this case */
             rect_line(k - 1);
     }
     tab_free(&A);
@@ -1852,29 +1877,29 @@ static void count_case(void)
     M_v = M_x + M_y;
     M_u = M_x - M_y;
     umin = M_u - umax;
-    L = umax - umin + 1;
+    W = umax - umin + 1;
     E = M_v & 1;
-    memset(LT, 0, NW * sizeof(cnt_t));
-    memset(EQ, 0, NW * sizeof(cnt_t));
-    if (L == 1) {
+    memset(PORTRAIT, 0, NMAX_plus_1 * sizeof(cnt_t));
+    memset(SQUARE, 0, NMAX_plus_1 * sizeof(cnt_t));
+    if (W == 1) {
         if (M_x == 0 && M_y == 0) {
-            EQ[1] = addm(EQ[1], 1);
+            SQUARE[1] = addm(SQUARE[1], 1);
             RECT[1] = 1;
             rect_line(0);
         }
         return;
     }
-    if (L > MAXL) {
+    if (W > MAXW) {
         fprintf(stderr, "strip too wide\n");
         exit(1);
     }
-    MAXC = (L + 1) / 2 + 1;
-    KL = L + MAXC + 1;
-    KW = (3 * L + MAXC + 1 + 63) / 64;
-    NW = NMAX + 1;
+    MAXC = (W + 1) / 2 + 1;
+    KL = W + MAXC + 1;
+    KW = (3 * W + MAXC + 1 + 63) / 64;
+    NMAX_plus_1 = NMAX + 1;
 
     int kmin = 0;
-    while (vspan(kmin) < L)
+    while (vspan(kmin) < W)
         kmin++;
 
 @ Two tables are used alternately: |cur| for the states before the
@@ -1883,47 +1908,47 @@ current cell and |nxt| for the states after it.
     table_t A, B, *cur = &A, *nxt = &B;
     tab_init(&A, 1024);
     tab_init(&B, 1024);
-    uint8_t key[MAXL * 2 + 4];
+    uint8_t key[MAXW * 2 + 4];
     int v0;
 
 @ {\bf Initial states.}
 If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
 enumerate all nonempty subsets of it that are symmetric under
-$i\leftrightarrow L-1-i$.  Every cell is a class of its own; the partner
-of a cell is its mirror cell, and the centre cell, if present, is a
+$i\leftrightarrow W-1-i$.  Every cell is a class of its own; the partner
+of a cell is its mirror cell, and the center cell, if present, is a
 self class.  The weight is the number of cells.
 If $M_v$ is odd, we start with the empty state before the twin row.
 @<Create the initial states@>=
     if (E == 0) {
         int vm = M_v / 2;
-        int half[MAXL], nh = 0;
-        for (int i = 0; i < L; i++)
+        int half[MAXW], nh = 0;
+        for (int i = 0; i < W; i++)
             if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
                 half[nh++] = i;
         /* all nonempty subsets of half with at most NMAX cells in the row */
         for (uint64_t mask = 1; mask < (1ull << nh); mask++) {
-            int cells[MAXL], nc = 0, isc[MAXL];
-            memset(isc, 0, sizeof(int) * L);
+            int cells[MAXW], nc = 0, isc[MAXW];
+            memset(isc, 0, sizeof(int) * W);
             for (int b = 0; b < nh; b++)
                 if (mask >> b & 1) {
                     isc[half[b]] = 1;
-                    isc[L - 1 - half[b]] = 1;
+                    isc[W - 1 - half[b]] = 1;
                 }
-            for (int i = 0; i < L; i++)
+            for (int i = 0; i < W; i++)
                 if (isc[i])
                     cells[nc++] = i;
             if (nc > NMAX)
                 continue;
-            uint8_t f[MAXL], par[MAXLAB];
-            memset(f, 0, L);
+            uint8_t f[MAXW], par[MAXLAB];
+            memset(f, 0, W);
             for (int a = 0; a < nc; a++)
                 f[cells[a]] = a + 1;
             for (int a = 0; a < nc; a++) {
-                int i = cells[a], j = L - 1 - i;
+                int i = cells[a], j = W - 1 - i;
                 par[a + 1] = j == i ? PSELF : f[j];
             }
-            int tch = isc[0] || isc[L - 1];
-            canon(f, par, tch, key);
+            int touches = isc[0] || isc[W - 1];
+            canon(f, par, touches, key);
             tab_add(cur, tab_get(cur, key), nc, 1);
         }
         v0 = vm + 1;
@@ -1939,7 +1964,7 @@ If $M_v$ is odd, we start with the empty state before the twin row.
 is even.
 @<Determine the cells of row |k|@>=
         int v = v0 + k - 1, nu = 0;
-        for (int i = 0; i < L; i++)
+        for (int i = 0; i < W; i++)
             if (((umin + i - v) % 2 + 2) % 2 == 0)
                 cells_v[nu++] = i;
         int first_twin = (E == 1 && k == 1);
@@ -1956,11 +1981,11 @@ for (size_t si = 0; si < cur->n; si++) {
 @ The empty state exists only in the twin row.  A polyomino that
 is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |si|...@>=
-                uint8_t sk[MAXL * 2 + 4];
+                uint8_t sk[MAXW * 2 + 4];
                 unpack(cur->keys + si * KW, sk);
-                int tch = sk[KL - 1];
+                int touches = sk[KL - 1];
                 int empty = 1;
-                for (int j = 0; j < L; j++)
+                for (int j = 0; j < W; j++)
                     if (sk[j]) {
                         empty = 0;
                         break;
@@ -1968,12 +1993,12 @@ is completed while row $k$ is processed has its top in row $k-1$.
                 for (int occ = 0; occ <= 1; occ++) {
                     if (occ && k > 1 && empty)
                         continue;
-                    int nt, m;
-                    int status = step(sk, tch, i, occ, last, first_twin, key, &nt, &m);
+                    int result_touches, m;
+                    int status = step(sk, touches, i, occ, last, first_twin, key, &result_touches, &m);
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
-                        record(k - 1, cur, si, tch);
+                        record(k - 1, cur, si, touches);
                         continue;
                     }
                     int add = occ ? 2 : 0;
@@ -1982,11 +2007,11 @@ is completed while row $k$ is processed has its top in row $k-1$.
                             insert_pruned(nxt, key, cur, si, add, 0);
                         continue;
                     }
-                    int lb = bound(key, nt, k, kmin, i, last, first_twin);
-                    if (lb < 0)
+                    int lowerbound = bound(key, result_touches, k, kmin, i, last, first_twin);
+                    if (lowerbound < 0)
                         continue;
-@<Sharpen |lb| by looking one cell ahead@>@;
-                    insert_pruned(nxt, key, cur, si, add, lb);
+@<Sharpen |lowerbound| by looking one cell ahead@>@;
+                    insert_pruned(nxt, key, cur, si, add, lowerbound);
                 }
 
 @ {\bf Lookahead.}
@@ -1999,34 +2024,34 @@ of the two bounds, including the weight of the cell.  A completion in
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
-@<Sharpen |lb|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < L && key[i + 1]))) {
+@<Sharpen |lowerbound|...@>=
+                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < W && key[i + 1]))) {
                         /* one step ahead: the next cell is present or not */
                         int i2 = cells_v[ci + 1], last2 = ci + 1 == nu - 1;
                         int la = 1 << 20;
-                        uint8_t k2[MAXL * 2 + 4];
+                        uint8_t k2[MAXW * 2 + 4];
                         for (int o2 = 0; o2 <= 1 && la; o2++) {
-                            int nt2, m2;
-                            int st2 = step(key, nt, i2, o2, last2, 0, k2, &nt2, &m2);
+                            int result_touches2, m2;
+                            int st2 = step(key, result_touches, i2, o2, last2, 0, k2, &result_touches2, &m2);
                             if (st2 == DEAD)
                                 continue;
                             /* a completion only counts if it is a valid polyomino */
-                            if (st2 == COMPLETE && !(nt && vspan(k - 1) >= L))
+                            if (st2 == COMPLETE && !(result_touches && vspan(k - 1) >= W))
                                 continue;
                             int val = 2 * o2;
                             if (st2 == OK) {
                                 if (m2 == 0)
                                     continue;
-                                int lb2 = bound(k2, nt2, k, kmin, i2, last2, 0);
-                                if (lb2 < 0)
+                                int lowerbound2 = bound(k2, result_touches2, k, kmin, i2, last2, 0);
+                                if (lowerbound2 < 0)
                                     continue;
-                                val += lb2;
+                                val += lowerbound2;
                             }
                             if (val < la)
                                 la = val;
                         }
-                        if (la > lb)
-                            lb = la;
+                        if (la > lowerbound)
+                            lowerbound = la;
                     }
 
 @ @<Swap the tables...@>=
@@ -2053,14 +2078,14 @@ renumbers the classes.
         if (REFLECT && M_u == 0 && cur->n) {
             /* merge each state with its mirror image $u\to-u$ */
             tab_clear(nxt);
-            uint8_t rkey[MAXL * 2 + 4];
+            uint8_t rkey[MAXW * 2 + 4];
             for (size_t si = 0; si < cur->n; si++) {
-                uint8_t sk[MAXL * 2 + 4];
+                uint8_t sk[MAXW * 2 + 4];
                 unpack(cur->keys + si * KW, sk);
-                uint8_t f[MAXL];
-                for (int a = 0; a < L; a++)
-                    f[a] = sk[L - 1 - a];
-                canon(f, sk + L - 1, sk[KL - 1], rkey);
+                uint8_t f[MAXW];
+                for (int a = 0; a < W; a++)
+                    f[a] = sk[W - 1 - a];
+                canon(f, sk + W - 1, sk[KL - 1], rkey);
                 const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
                 insert_pruned(nxt, use, cur, si, 0, 0);
             }
@@ -2099,7 +2124,7 @@ int main(int argc, char **argv)
     if (argc - a == 4) {
         @<Count a single case and print the result@>@;
     } else {
-        @<Count all cases and add them up by type of centre@>@;
+        @<Count all cases and add them up by type of center@>@;
         @<Append the results to the results file@>@;
         @<Print the table of results@>@;
     }
@@ -2142,10 +2167,36 @@ int main(int argc, char **argv)
         return 1;
     }
     NMAX = atoi(argv[a]);
-    NW = NMAX + 1;
-    LT = calloc(NW, sizeof(cnt_t));
-    EQ = calloc(NW, sizeof(cnt_t));
-    RECT = calloc(NW, sizeof(cnt_t));
+    if (NMAX < 1 || NMAX > MAXW) {
+        fprintf(stderr, "%s: N must be between 1 and %d\n", argv[0], MAXW);
+        return 1;
+    }
+    NMAX_plus_1 = NMAX + 1;
+    @<Allocate the result vectors@>@;
+
+@ {\bf Limits.}
+The program has several built-in limits.  All of them are far beyond
+the range where the program can be useful.
+\begin{itemize}
+\item The strip has at most |MAXW|${}=160$ columns.  Since strips of all
+  widths up to $N$ are needed, this means $N\le160$, which is checked above.
+\item Class labels are stored in bytes, and the two largest values are
+  reserved for |PSELF| and |PGHOST|.  Hence a label cannot go beyond 253.
+  A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ classes.
+\item The weight in a count record is a byte, which would allow $N\le255$.
+\item A packed key has at most 12 words of 64 bits; $3W+|MAXC|+1\le 563$ bits
+  are needed.
+\item States and count records are numbered with 32-bit integers, so a
+  table can hold fewer than $2^{32}\approx 4.3\cdot10^9$ records.  (There
+  are always at least as many records as states.)  This is the limit
+  that would be reached first, and the program stops when it happens.
+  The run for $N=71$ had $5.1\cdot10^7$ records at the peak.  With a growth
+  by a factor of 1.25 per unit of $N$, the limit corresponds to $N\approx 90$.
+  Such a run would need about 70 times as much memory and time as the
+  run for $N=71$, that is, some 200 GB and 40 days.
+\item The initial states are all symmetric subsets of the middle row,
+  which has about $W/2$ cells; about $2^{W/4}$ subsets are tried.
+\end{itemize}
 
 @ Both output streams start with the parameters of the run, beginning
 with the complete command line (including the name |argv[0]| of the
@@ -2185,14 +2236,14 @@ cases over the nodes of a cluster.
         else
             printf("# modulus 2**" CNT_BITS "; n #(uspan<vspan) #(uspan=vspan)\n");
         for (int n = 1; n <= NMAX; n++)
-            printf("%d %s %s\n", n, cs(LT[n]), cs(EQ[n]));
+            printf("%d %s %s\n", n, cs(PORTRAIT[n]), cs(SQUARE[n]));
 
 @ The cases are $(M_x,M_y)\in\{(0,0),(1,0),(1,1)\}$ and all $u_{\max}$ for
-which $L\le N$.  The edge-centred case $(1,0)$ is counted twice, since
+which $W\le N$.  The edge-centerd case $(1,0)$ is counted twice, since
 it stands also for its mirror image $(0,1)$.
 @<Count all cases...@>=
-        /* centre types: 0 cell, 1 edge midpoint, 2 vertex */
-        cnt_t *out = calloc(3 * NW, sizeof(cnt_t));
+        /* center types: 0 cell, 1 edge midpoint, 2 vertex */
+        cnt_t *out = calloc(3 * NMAX_plus_1, sizeof(cnt_t));
         for (M_x = 0; M_x <= 1; M_x++)
             for (M_y = 0; M_y <= M_x; M_y++) {
                 /* the case (0, 1) is the mirror image of (1, 0): same
@@ -2201,12 +2252,12 @@ it stands also for its mirror image $(0,1)$.
                 for (umax = t; 2 * umax - t + 1 <= NMAX; umax++) {
                     count_case();
                     for (int n = 1; n <= NMAX; n++) {
-                        cnt_t *o = &out[ty * NW + n];
-                        *o = addm(*o, addm(LT[n], LT[n]));
-                        *o = addm(*o, EQ[n]);
+                        cnt_t *o = &out[ty * NMAX_plus_1 + n];
+                        *o = addm(*o, addm(PORTRAIT[n], PORTRAIT[n]));
+                        *o = addm(*o, SQUARE[n]);
                         if (twice) {
-                            *o = addm(*o, addm(LT[n], LT[n]));
-                            *o = addm(*o, EQ[n]);
+                            *o = addm(*o, addm(PORTRAIT[n], PORTRAIT[n]));
+                            *o = addm(*o, SQUARE[n]);
                         }
                     }
                 }
@@ -2238,18 +2289,18 @@ lemma) can be done in Python with integers of unlimited size.
         for (int n = 1; n <= NMAX; n++)
             for (int ty = 0; ty < 3; ty++)
                 fprintf(rf, "Results[%d, %s, '%s'] = %s\n", n, mstr, tyname[ty],
-                        cs(out[ty * NW + n]));
+                        cs(out[ty * NMAX_plus_1 + n]));
         fclose(rf);
         printf("# modulus %s; results appended to %s\n", mstr, RESFILE);
 
 @ The table of results has a line for each $n$ with the total
-$\fix_{\rhoo}(n)$ and its three parts for the three types of centres.
+$\fix_{\rhoo}(n)$ and its three parts for the three types of centers.
 @<Print the table of results@>=
-        printf("# n fix(r180) R180C(centre in a cell) R180M(edge midpoint) R180V(vertex)\n");
+        printf("# n fix(r180) R180C(center in a cell) R180M(edge midpoint) R180V(vertex)\n");
         for (int n = 1; n <= NMAX; n++) {
-            cnt_t tot = addm(addm(out[n], out[NW + n]), out[2 * NW + n]);
-            printf("%d %s %s %s %s\n", n, cs(tot), cs(out[n]), cs(out[NW + n]),
-                   cs(out[2 * NW + n]));
+            cnt_t tot = addm(addm(out[n], out[NMAX_plus_1 + n]), out[2 * NMAX_plus_1 + n]);
+            printf("%d %s %s %s %s\n", n, cs(tot), cs(out[n]), cs(out[NMAX_plus_1 + n]),
+                   cs(out[2 * NMAX_plus_1 + n]));
         }
 
 @ @<Print the final statistics@>=
@@ -2267,7 +2318,7 @@ prototype of the same method for $n\le 36$.  Runs with different moduli
 are consistent.  For $n\le 59$, the totals of our run with $N=60$ agree
 with the values in the OEIS (sequences \oeis{A390653}--\oeis{A390655}), which were
 computed by Shirakawa~\cite{Shirakawa} with a completely different
-method; for $n\le 32$ we have also compared the three types of centres
+method; for $n\le 32$ we have also compared the three types of centers
 separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
 \texttt{-N}, \texttt{-A}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
@@ -2326,9 +2377,9 @@ terms for $n\le 59$ were reproduced.
 \textbf{Odd and even $n$.}  The last column of Table~\ref{tab:values}
 does not grow uniformly: the values come in pairs, with
 $\fix_{\rhoo}(2k+1)$ close to $\fix_{\rhoo}(2k)$.
-For even $n$, all three types of centres contribute, and type~M
+For even $n$, all three types of centers contribute, and type~M
 alone accounts for about 80\,\% of the total; for odd $n$ there is only
-type~C with an occupied centre cell.
+type~C with an occupied center cell.
 The quotient $\fix_{\rhoo}(2k+1)/\fix_{\rhoo}(2k)$ is 1.019 for $2k=10$
 and decreases steadily: it is 1.001 for $2k=28$, 0.9995 for $2k=30$, and
 0.983 for $2k=70$.  Thus, for all even $n=2k$ with $30\le n\le 70$, the
@@ -2344,7 +2395,7 @@ square-root heuristic of the introduction
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{rrrrr}
 \toprule
-$n$ & centre in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\\
+$n$ & center in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\\
 \midrule
 1 & $1$ & $0$ & $0$ & $1$\\
 2 & $0$ & $2$ & $0$ & $2$\\
@@ -2420,7 +2471,7 @@ $n$ & centre in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 \bottomrule
 \end{tabular}
 \caption{The number of fixed polyominoes with $n$ cells that are
-  invariant under a rotation by $180^\circ$, by the type of centre.
+  invariant under a rotation by $180^\circ$, by the type of center.
   The entries for $n\ge60$ are new.}
 \label{tab:values}
 \end{table}
@@ -2429,7 +2480,7 @@ $n$ & centre in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 \label{sec:space}
 For $N=71$, the memory requirement of 3 GB was no obstacle, and we have
 not tried to reduce it.  At the peak, a state needs about 66 bytes:
-16 bytes for the packed key (two 64-bit words for $L=29$), 8 bytes for
+16 bytes for the packed key (two 64-bit words for $W=29$), 8 bytes for
 the hash table entry and the list head, and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the
 weight, 3 wasted by alignment), of which there are 2.6 per state.
@@ -2455,10 +2506,10 @@ We list them roughly in the order of increasing effort.
   contiguously instead of as a linked list, which removes the link.
 \item \emph{Shorter keys.}  As explained in Section~\ref{sec:packed},
   only every other position can hold a frontier cell.  Storing 3 bits
-  only for the $\lceil L/2\rceil+1$ positions where a frontier cell is
+  only for the $\lceil W/2\rceil+1$ positions where a frontier cell is
   possible (the positions of the right parity on both sides of the kink,
   and the kink) halves this part of the key.  For
-  $L=29$ the key would then fit into one word instead of two.
+  $W=29$ the key would then fit into one word instead of two.
   Ranking the states, as in~\cite{twisted}, would give the shortest
   possible keys, with $\log_2 5\approx2.32$ bits per frontier cell, but
   ranking and unranking are slow.
@@ -2481,6 +2532,23 @@ We list them roughly in the order of increasing effort.
   on disk, and the main memory holds just the buffers.
   A simpler variant keeps the hash table for the new row in memory but
   reads the old row, which is only scanned once, from a file.
+\item \emph{Splitting the table by the untouched part of the frontier.}
+  While the cells in the left part of a row are decided, the frontier
+  cells far to the right of the kink are not touched: their class labels
+  may change, but the pattern of occupied and empty positions stays the
+  same, whatever is decided on the left.  Two states with different
+  patterns in the right part can therefore never lead to the same
+  state during this time.  Hence, the states can be distributed into
+  groups according to this pattern, and the groups can be processed one
+  after the other, or in parallel, with one small table per group.  Not the whole table is
+  needed in memory at once.  When the kink has passed the middle of the row, the roles are exchanged:
+  now the left part of the new row is fixed, and the states are
+  regrouped according to its pattern.
+  This is the basis of Jensen's parallel algorithm~\cite{Jensen03}, and
+  it is also used by Barequet and Ben-Shachar~\cite{BB}, who cut the row
+  into more than two parts.
+  The pruning is compatible with this, since the bound is computed for
+  each state separately.
 \item \emph{Splitting a case.}  A case can be divided into independent
   subproblems according to the set of occupied cells in the middle row
   (or in the twin row), and the results are added.  Each subproblem has

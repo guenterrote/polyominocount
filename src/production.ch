@@ -39,25 +39,25 @@ static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them o
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the self term, and the height.
 @<Sub...@>=
-static int exact_bound(const uint8_t *key, int tch)
+static int exact_bound(const uint8_t *key, int touches)
 {
-    int sup[MAXL + 1];
-    int occ[MAXL], no = 0;
+    int sup[MAXW + 1];
+    int occ[MAXW], no = 0;
     for (int j = 1; j <= MAXC; j++) {
-        int q = key[L + j - 1];
+        int q = key[W + j - 1];
         if (!q)
             break;
         sup[j] = (q != PSELF && q != PGHOST && q < j) ? q : j;
     }
-    for (int i = 0; i < L; i++)
+    for (int i = 0; i < W; i++)
         if (key[i])
             occ[no++] = i;
     if (!no)
         return 0;
     /* Kruskal over gaps between consecutive occupied positions */
-    int par[MAXL + 1];
+    int par[MAXW + 1];
     int ncls = 0;
-    int seen[MAXL + 1];
+    int seen[MAXW + 1];
     memset(seen, 0, sizeof(seen));
     for (int a = 0; a < no; a++) {
         int s = sup[key[occ[a]]];
@@ -71,13 +71,13 @@ static int exact_bound(const uint8_t *key, int tch)
     if (ncls > 1) {
         /* counting sort of gaps by weight */
         int ne = no - 1;
-        int wgt[MAXL], ord[MAXL], bucket[MAXL + 1];
+        int wgt[MAXW], ord[MAXW], bucket[MAXW + 1];
         memset(bucket, 0, sizeof(bucket));
         for (int a = 0; a < ne; a++) {
             wgt[a] = occ[a + 1] - occ[a] - 1;
             bucket[wgt[a]]++;
         }
-        for (int g = 1; g <= L; g++)
+        for (int g = 1; g <= W; g++)
             bucket[g] += bucket[g - 1];
         for (int a = ne - 1; a >= 0; a--)
             ord[--bucket[wgt[a]]] = a;
@@ -95,8 +95,8 @@ static int exact_bound(const uint8_t *key, int tch)
             }
         }
     }
-    if (!tch) {
-        int d1 = occ[0], d2 = L - 1 - occ[no - 1];
+    if (!touches) {
+        int d1 = occ[0], d2 = W - 1 - occ[no - 1];
         cost += d1 < d2 ? d1 : d2;
     }
     return cost;
@@ -106,21 +106,21 @@ static int exact_bound(const uint8_t *key, int tch)
 @z
 
 @x
-        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
+        int eb = 2 * (OLDBOUND ? exact_bound(key, touches) : cactus_bound(key, touches, kink));
 @y
-        int eb = 2 * cactus_bound(key, nt, kink);
+        int eb = 2 * cactus_bound(key, touches, kink);
 @z
 
 @x
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
-@<Sharpen |lb|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < L && key[i + 1]))) {
+@<Sharpen |lowerbound|...@>=
+                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < W && key[i + 1]))) {
 @y
 the lookahead counts only if it would be a valid polyomino.
-@<Sharpen |lb|...@>=
-                    if (!last && !first_twin && !key[i] && i + 1 < L && key[i + 1]) {
+@<Sharpen |lowerbound|...@>=
+                    if (!last && !first_twin && !key[i] && i + 1 < W && key[i + 1]) {
 @z
 
 @x
