@@ -173,7 +173,6 @@ The options are described in Section~\ref{sec:cmdline}.
 @s cnt_t int
 @s rec_t int
 @s table_t int
-@s work_t int
 @s clock_t int
 @s __int128 int
 @s inline static
@@ -183,7 +182,6 @@ The options are described in Section~\ref{sec:cmdline}.
 @s M_v TeX
 @s umin TeX
 @s umax TeX
-@s rho TeX
 
 @*1 Symmetry classes and cases.
 \label{sec:cases}
@@ -482,127 +480,114 @@ static int MAXC; /* maximum number of classes in a state */
 static int KL; /* length of a byte key */
 
 @*1 The working state.
-For performing a transition, a byte key is expanded into a structure
-with a union-find forest over the classes.  In addition to the nodes
-$1\dts|MAXC|+1$ for the classes, there is a node |GH(j)| for the ghost
-partner of each class $j$, because ghosts can be merged, too.
+A transition changes only little: a new cell joins at most two classes,
+and at most two cells leave the frontier.  We therefore work directly
+on a copy of the byte key, with two arrays: |f[i]| is the label of the
+frontier cell at position~|i| (or 0), and |par[j]| is the partner of the
+class with label~|j|, in the same form as in the byte key.
+During a transition the labels need not be numbered consecutively, and
+there may be one label more than in a canonical key.
+All operations are simple sweeps over the positions.
 
-@d MAXN 2 * (MAXL + 4) /* bound on the number of union-find nodes */
-@d GH(i) (GOFF + (i)) /* the ghost of class |i| */
-@d ISGHOST(a) ((a) > GOFF)
-@<Type...@>=
-typedef struct {
-    int f[MAXL];
-    int partner[MAXL];            /* for classes: -1 self, -2 ghost, else class */
-    int parent[MAXN];
-    int next;                     /* next free class label */
-} work_t;
-
-@ @<Glob...@>=
-static int GOFF; /* offset of the ghost nodes, |MAXC+1| */
-
-@ The usual |find| operation with path halving.
+@d MAXLAB (MAXL + 2) /* bound on the labels in the working arrays */
 @<Sub...@>=
-static inline int find(work_t *w, int a)
+static inline int is_class(int p) { return p != PSELF && p != PGHOST; }
+
+static inline void relabel(uint8_t *f, int from, int to)
 {
-    while (w->parent[a] != a) {
-        w->parent[a] = w->parent[w->parent[a]];
-        a = w->parent[a];
-    }
-    return a;
+    for (int j = 0; j < L; j++)
+        if (f[j] == from)
+            f[j] = to;
 }
 
-@ The function |rho| returns the (root of the) image of the class or
-ghost~|a|.
+@ {\bf Joining two classes.}
+When two classes $A$ and $B$ become connected, their images $\rhoo(A)$
+and $\rhoo(B)$ become connected as well.  The cells of $B$ get the label
+of~$A$, and the partner of the union depends on the partners of $A$ and~$B$:
+\begin{itemize}
+\item If $B=\rhoo(A)$, the union is its own image: a self class.
+\item If one of the two is a self class, the union is a self class, and
+  it swallows the partner of the other class if that is on the frontier.
+\item If both partners are classes on the frontier, these two classes are
+  joined, too, and the result is the partner.
+\item If only one partner is on the frontier, it is the partner of the
+  union.  (It has absorbed the ghost.)
+\item If both partners are ghosts, so is the partner of the union.
+\end{itemize}
 @<Sub...@>=
-static inline int rho(work_t *w, int a)
+static void join(uint8_t *f, uint8_t *par, int a, int b)
 {
-    a = find(w, a);
-    if (ISGHOST(a))
-        return find(w, a - GOFF);
-    int p = w->partner[a];
-    if (p == -1)
-        return a;
-    if (p == -2)
-        return find(w, GH(a));
-    return find(w, p);
-}
-
-@ When two sets are linked, a class node is preferred as the root over a
-ghost node.  Thus the root of a set is a ghost only if the set consists
-entirely of ghosts.
-@<Sub...@>=
-static inline void link_(work_t *w, int a, int b)
-{
-    a = find(w, a);
-    b = find(w, b);
     if (a == b)
         return;
-    if (ISGHOST(a)) {
-        int x = a;
-        a = b;
-        b = x;
+    int pa = par[a], pb = par[b];
+    relabel(f, b, a);
+    if (pa == b)
+        par[a] = PSELF;
+    else if (pa == PSELF || pb == PSELF) {
+        if (is_class(pa))
+            relabel(f, pa, a);
+        if (is_class(pb))
+            relabel(f, pb, a);
+        par[a] = PSELF;
+    } else if (is_class(pa)) {
+        if (is_class(pb))
+            relabel(f, pb, pa);
+    } else if (is_class(pb)) {
+        par[a] = pb;
+        par[pb] = a;
     }
-    w->parent[b] = a;
 }
 
-@ Joining two classes means joining their images as well.  If |b| is
-(in the same set as) the image of |a|, the two unions are the same, and
-the result is a self class: its image, found through the |partner| link
-or the ghost node, is in the same set.
+@ In the twin row, we need a variation: the class $A$ becomes connected
+to the \emph{image} of the class~$B$, and hence $\rhoo(A)$ becomes
+connected to~$B$.  If $\rhoo(B)$ is on the frontier (as $B$ itself or as another
+class), this is an ordinary |join|.  Otherwise the image of $B$ is a
+ghost, which is now attached to~$A$.  If $A=B$, this makes $A$ a self class.
+If $A$ is a self class, it swallows~$B$.
+If $A$ has a partner on the frontier, that partner swallows~$B$.
+In the remaining case, both images were ghosts, and now $A$ and $B$ are
+partners of each other.
 @<Sub...@>=
-static inline void unite(work_t *w, int a, int b)
+static void join_image(uint8_t *f, uint8_t *par, int a, int b)
 {
-    int ra = rho(w, a), rb = rho(w, b);
-    link_(w, a, b);
-    link_(w, ra, rb);
+    int pa = par[a], pb = par[b];
+    if (pb == PSELF)
+        join(f, par, a, b);
+    else if (is_class(pb))
+        join(f, par, a, pb);
+    else if (a == b)
+        par[a] = PSELF;
+    else if (pa == PSELF)
+        relabel(f, b, a);
+    else if (is_class(pa))
+        relabel(f, b, pa);
+    else {
+        par[a] = b;
+        par[b] = a;
+    }
 }
 
-@ Expanding a byte key into the working state.
+@ The canonical byte key is obtained by renumbering the classes from
+left to right.  The function returns the number of classes.
 @<Sub...@>=
-static void decode(work_t *w, const uint8_t *key)
+static int canon(const uint8_t *f, const uint8_t *par, int tch, uint8_t *key)
 {
-    int m = 0;
-    for (int i = 0; i < L; i++) {
-        w->f[i] = key[i];
-        if (key[i] > m)
-            m = key[i];
-    }
-    for (int a = 0; a < MAXN; a++)
-        w->parent[a] = a;
-    for (int j = 1; j <= MAXC; j++) {
-        int q = key[L + j - 1];
-        w->partner[j] = q == PSELF ? -1 : q == PGHOST ? -2 : q;
-        if (q && j > m)
-            m = j;
-    }
-    w->next = m + 1;
-}
-
-@ The converse operation produces the canonical byte key: it renumbers
-the classes from left to right and determines their partners.  The
-function returns the number of classes.
-@<Sub...@>=
-static int encode(work_t *w, uint8_t *key, int tch)
-{
-    int map[MAXN];
-    int rep[MAXL];
+    uint8_t map[MAXLAB], old[MAXLAB];
     int m = 0;
     memset(map, 0, sizeof(map));
     memset(key, 0, KL);
     for (int i = 0; i < L; i++) {
-        if (!w->f[i])
+        if (!f[i])
             continue;
-        int r = find(w, w->f[i]);
-        if (!map[r]) {
-            map[r] = ++m;
-            rep[m] = r;
+        if (!map[f[i]]) {
+            map[f[i]] = ++m;
+            old[m] = f[i];
         }
-        key[i] = map[r];
+        key[i] = map[f[i]];
     }
     for (int j = 1; j <= m; j++) {
-        int q = rho(w, rep[j]);
-        key[L + j - 1] = q == rep[j] ? PSELF : map[q] ? map[q] : PGHOST;
+        int q = par[old[j]];
+        key[L + j - 1] = is_class(q) ? map[q] : q;
     }
     key[KL - 1] = tch;
     return m;
@@ -627,26 +612,25 @@ the frontier, and there are several cases:
 enum { OK, DEAD, COMPLETE };
 
 @ @<Sub...@>=
-static int retire(work_t *w, int i)
+static int retire(uint8_t *f, uint8_t *par, int i)
 {
-    int lab = w->f[i];
+    int lab = f[i];
     if (!lab)
         return OK;
-    w->f[i] = 0;
-    int r = find(w, lab);
+    f[i] = 0;
     int any = 0;
     for (int j = 0; j < L; j++)
-        if (w->f[j]) {
+        if (f[j]) {
             any = 1;
-            if (find(w, w->f[j]) == r)
+            if (f[j] == lab)
                 return OK;
         }
-    int p = rho(w, r);
-    if (p == r)
+    int p = par[lab];
+    if (p == PSELF)
         return any ? DEAD : COMPLETE;
-    if (ISGHOST(p))
+    if (p == PGHOST)
         return DEAD;
-    w->partner[find(w, p)] = -2;
+    par[p] = PGHOST;
     return OK;
 }
 
@@ -659,43 +643,45 @@ true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
 touched bit in |*ntp| and its number of classes in |*mp|.
 
 A new cell gets a new class label whose partner is a ghost (its image),
-and it is united with the frontier cells at positions $i-1$ and $i+1$.
+and it is joined with the frontier cells at positions $i-1$ and $i+1$.
 These are its two lower neighbours: at this moment, both positions hold
 cells of the previous row, see Figure~\ref{fig:frontier}.
+(The class that is given as the first argument of |join| keeps its label.)
 
 After the decision, the cell at position $i-1$ has no undecided
 neighbours any more and is retired; at the end of a row, the same holds
 for position $i+1$.  (Retiring an empty position does no harm.)
 @<Sub...@>=
-static int step(work_t *w, const uint8_t *sk, int tch, int i, int occ, int last,
+static int step(const uint8_t *sk, int tch, int i, int occ, int last,
                 int first_twin, uint8_t *key, int *ntp, int *mp)
 {
-    decode(w, sk);
+    uint8_t f[MAXL], par[MAXLAB];
+    memcpy(f, sk, L);
+    memcpy(par + 1, sk + L, MAXC);
     if (occ) {
-        int nw = w->next++;
-        w->partner[nw] = -2;
-        w->f[i] = nw;
+        int nw = 1;
+        while (nw <= MAXC && par[nw]) /* the first unused label */
+            nw++;
+        par[nw] = PGHOST;
+        f[i] = nw;
         for (int nb = i - 1; nb <= i + 1; nb += 2)
-            if (nb >= 0 && nb < L && w->f[nb])
-                unite(w, nw, w->f[nb]);
+            if (nb >= 0 && nb < L && f[nb])
+                join(f, par, nw, f[nb]);
         if (first_twin) {
-            for (int jj = L - 2 - i; jj <= L - i; jj += 2) {
-                if (jj == i)
-                    unite(w, nw, rho(w, nw));
-                else if (jj >= 0 && jj < L && jj < i && w->f[jj])
-                    unite(w, nw, rho(w, w->f[jj]));
-            }
+            for (int jj = L - 2 - i; jj <= L - i; jj += 2)
+                if (jj >= 0 && jj <= i && f[jj])
+                    join_image(f, par, nw, f[jj]);
         }
     }
     int status = OK;
     if (i - 1 >= 0)
-        status = retire(w, i - 1);
+        status = retire(f, par, i - 1);
     if (status == OK && last && i + 1 < L)
-        status = retire(w, i + 1);
+        status = retire(f, par, i + 1);
     if (status != OK)
         return status;
     *ntp = tch || (occ && (i == 0 || i == L - 1));
-    *mp = encode(w, key, *ntp);
+    *mp = canon(f, par, *ntp, key);
     return OK;
 }
 
@@ -706,7 +692,8 @@ They are the images of the cells of the twin row itself at the
 positions $L-1-(i\pm1)$, that is, $L-2-i$ and $L-i$.
 If such a position equals $i$, the new cell is adjacent to its own
 image and becomes a self class.  If it is smaller than $i$ and occupied,
-the new cell is united with the \emph{image} of that cell.  If it
+the new cell is joined with the \emph{image} of that cell.  (Both
+situations are handled by |join_image|.)  If it
 is larger than $i$, the adjacency will be found later, when that cell is
 decided.  The parameter |first_twin| is true while the twin row is
 processed.
@@ -1884,7 +1871,6 @@ static void count_case(void)
         exit(1);
     }
     MAXC = (L + 1) / 2 + 1;
-    GOFF = MAXC + 1;
     KL = L + MAXC + 1;
     KW = (3 * L + MAXC + 1 + 63) / 64;
     NW = NMAX + 1;
@@ -1901,7 +1887,6 @@ current cell and |nxt| for the states after it.
     tab_init(&B, 1024);
     uint8_t key[MAXL * 2 + 4];
     cnt_t one[MAXL * 2 + 4];
-    work_t w;
     int v0;
 
 @ {\bf Initial states.}
@@ -1932,21 +1917,16 @@ If $M_v$ is odd, we start with the empty state before the twin row.
                     cells[nc++] = i;
             if (nc > NMAX)
                 continue;
-            int lab[MAXL];
-            for (int a = 0; a < MAXN; a++)
-                w.parent[a] = a;
-            for (int i = 0; i < L; i++)
-                w.f[i] = 0;
-            for (int a = 0; a < nc; a++) {
-                lab[cells[a]] = a + 1;
-                w.f[cells[a]] = a + 1;
-            }
+            uint8_t f[MAXL], par[MAXLAB];
+            memset(f, 0, L);
+            for (int a = 0; a < nc; a++)
+                f[cells[a]] = a + 1;
             for (int a = 0; a < nc; a++) {
                 int i = cells[a], j = L - 1 - i;
-                w.partner[a + 1] = j == i ? -1 : lab[j];
+                par[a + 1] = j == i ? PSELF : f[j];
             }
             int tch = isc[0] || isc[L - 1];
-            encode(&w, key, tch);
+            canon(f, par, tch, key);
             memset(one, 0, sizeof(cnt_t) * NW);
             one[nc] = 1;
             insert_pruned(cur, key, one, 0, 0);
@@ -1998,7 +1978,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
                     if (occ && k > 1 && empty)
                         continue;
                     int nt, m;
-                    int status = step(&w, sk, tch, i, occ, last, first_twin, key, &nt, &m);
+                    int status = step(sk, tch, i, occ, last, first_twin, key, &nt, &m);
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
@@ -2037,7 +2017,7 @@ is switched off.
                         uint8_t k2[MAXL * 2 + 4];
                         for (int o2 = 0; o2 <= 1 && la; o2++) {
                             int nt2, m2;
-                            int st2 = step(&w, key, nt, i2, o2, last2, 0, k2, &nt2, &m2);
+                            int st2 = step(key, nt, i2, o2, last2, 0, k2, &nt2, &m2);
                             if (st2 == DEAD)
                                 continue;
                             /* a completion only counts if it is a valid polyomino */
@@ -2077,23 +2057,20 @@ the mirror image of a state is again a valid state with the same
 number of completions.  We merge each state with its mirror image by
 keeping the lexicographically smaller byte key.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
-Positions are reversed in the working state, and |encode| then
+The positions are reversed, and |canon| then
 renumbers the classes.
 @<Merge every state with its mirror image@>=
         if (REFLECT && M_u == 0 && cur->n) {
-            /* merge each state with its mirror image u -$>$ -v */
+            /* merge each state with its mirror image $u\to-u$ */
             tab_clear(nxt);
             uint8_t rkey[MAXL * 2 + 4];
             for (size_t si = 0; si < cur->n; si++) {
                 uint8_t sk[MAXL * 2 + 4];
                 unpack(cur->keys + si * KW, sk);
-                decode(&w, sk);
-                for (int a = 0, b = L - 1; a < b; a++, b--) {
-                    int x = w.f[a];
-                    w.f[a] = w.f[b];
-                    w.f[b] = x;
-                }
-                encode(&w, rkey, sk[KL - 1]);
+                uint8_t f[MAXL];
+                for (int a = 0; a < L; a++)
+                    f[a] = sk[L - 1 - a];
+                canon(f, sk + L - 1, sk[KL - 1], rkey);
                 const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
                 tab_load(cur, si, GF);
                 insert_pruned(nxt, use, GF, 0, 0);
