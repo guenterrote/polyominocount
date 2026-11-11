@@ -48,3 +48,18 @@ for n <= 12 and the brute-force reference for n <= 11.
   + 6*A144553 + 7*A142886 + A001168)/8.
 - So for 60 <= n <= 70 the fixed counts exist and only the symmetric classes
   are missing.
+
+## diag180: polyominoes with 180-degree symmetry (CWEB)
+
+`src/diag180.w` counts the fixed polyominoes that are invariant under a
+rotation by 180 degrees, with a transfer matrix along diagonal rows. It is
+written in CWEB with the LaTeX class cweb-hy (files in `cweb/`), like
+[NumPSLA](https://github.com/guenterrote/NumPSLA). The typeset program with
+explanations, figures and results is `doc/diag180.pdf`.
+
+- `make build/diag180` compiles `src/diag180.c`, which is the output of
+  ctangle and is kept in the repository. `make CNT128=1 build/diag180` uses
+  128-bit counters.
+- `make tangle` regenerates `src/diag180.c` from `src/diag180.w`.
+- `make doc` regenerates `doc/diag180.pdf` (cweave and pdflatex).
+- `tools/crt180.py` combines the result files of runs with different moduli.
