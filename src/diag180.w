@@ -1144,7 +1144,7 @@ static void tab_init(table_t *t, size_t cap)
     t->hmask = h - 1;
     t->keys = xrealloc(0, cap * KW * 8);
     t->head = xrealloc(0, cap * 4);
-    t->hash = calloc(h, sizeof(uint32_t));
+    t->hash = 0; /* allocated by |tab_clear| */
     t->rcap = 2 * cap;
     t->nrec = 0;
     t->rec = xrealloc(0, t->rcap * sizeof(rec_t));
@@ -1160,7 +1160,8 @@ static void tab_free(table_t *t)
 
 static size_t tab_bytes(const table_t *t)
 {
-    return t->n * (KW * 8 + 4) + t->nrec * sizeof(rec_t) + (t->hmask + 1) * 4;
+    return t->n * (KW * 8 + 4) + t->nrec * sizeof(rec_t)
+        + (t->hash ? (t->hmask + 1) * 4 : 0);
 }
 
 @ The hash function mixes all words of the key.
@@ -1213,11 +1214,30 @@ static void tab_grow(table_t *t)
     }
 }
 
+
+@ The array |hash| is needed only while a table is being built.  When
+the table is complete, its states are just scanned sequentially.
+Therefore |tab_clear|, which prepares an empty table, allocates the hash
+array, and |tab_release_hash| gives it back as soon as the table is
+complete.  In this way, only one of the two tables has a hash array
+at any time.
+@<Sub...@>=
 static void tab_clear(table_t *t)
 {
     t->n = 0;
     t->nrec = 0;
-    memset(t->hash, 0, (t->hmask + 1) * sizeof(uint32_t));
+    free(t->hash);
+    t->hash = calloc(t->hmask + 1, sizeof(uint32_t));
+    if (!t->hash) {
+        fprintf(stderr, "out of memory\n");
+        exit(1);
+    }
+}
+
+static void tab_release_hash(table_t *t)
+{
+    free(t->hash);
+    t->hash = 0;
 }
 
 @ The function |tab_get| returns the number of the state with a given
@@ -2296,6 +2316,7 @@ current cell and |nxt| for the states after it.
     table_t A, B, *cur = &A, *nxt = &B;
     tab_init(&A, 1024);
     tab_init(&B, 1024);
+    tab_clear(cur);
     uint8_t key[MAXW * 2 + 4];
     int v0;
 
@@ -2347,6 +2368,7 @@ If $M_v$ is odd, we start with the empty state before the twin row.
         v0 = (M_v + 1) / 2;
         V0 = v0;
     }
+    tab_release_hash(cur);
 
 @ The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
@@ -2448,6 +2470,7 @@ is switched off.
             size_t by = tab_bytes(cur) + tab_bytes(nxt);
             if (by > MAXBYTES)
                 MAXBYTES = by, MAXRECS = cur->nrec, MAXKW = KW;
+            tab_release_hash(cur); /* the new table is complete */
             if (!last && (VERB >= 2 || (VERB == 1 && wall() - T_LAST >= PSEC)))
                 stat_line("#cell", k, v, ci + 1, nu, cur, nxt);
 
@@ -2477,6 +2500,7 @@ renumbers the classes.
             table_t *x = cur;
             cur = nxt;
             nxt = x;
+            tab_release_hash(cur);
         }
 
 @* The main program.
@@ -2878,7 +2902,9 @@ largest memory usage, the larger table had $5.14\cdot10^7$ count records
 for $1.97\cdot10^7$ states.)
 (The actual memory at the peak was 150 bytes per state of the larger
 table, because the old and the new table exist at the same time, and
-because the arrays grow by doubling and are not full.)
+because the arrays grow by doubling and are not full.
+At that time, the program also kept the hash array of the old table,
+which is now released, see Section~\ref{sec:tables}.)
 The number of states grows by a factor of about 1.25 per unit of $N$,
 that is, by a factor of~10 when $N$ increases by~10.
 If space becomes scarce in larger runs, there are several options.
@@ -2897,13 +2923,6 @@ We list them roughly in the order of increasing effort.
   spirit, the arrays could grow by a smaller factor than~2, or they
   could be allocated right away with a size estimated from the previous
   row, so that less of the allocated space remains unused.
-\item \emph{Releasing the hash array of the old table.}  While the
-  states of the old table are extended, they are only scanned
-  sequentially; the array |hash| of the old table is not used.
-  The program nevertheless keeps it (it is only cleared when the table
-  is reused), so that 8 to 16 bytes per state of the old table are
-  idle.  It would suffice to have a single hash array, which always
-  belongs to the table that is being built.
 \item \emph{Smaller counters.}  With 32-bit counters and arithmetic
   modulo a prime below $2^{32}$, a count record can be packed into
   8~bytes (32 bits for the counter, 24 for the link, 8 for the weight)
