@@ -328,20 +328,19 @@ $i$ is position $W-1-i$.
 @ {\bf Wide and tall polyominoes.}  The reflection $y\to -y$
 exchanges $v$ and $u$.  It maps polyominoes with a $180^\circ$ symmetry
 to polyominoes with a $180^\circ$ symmetry, and it exchanges the extent in
-the $v$-direction (the number of rows, \emph{vspan}) with the extent in
-the $u$-direction (\emph{uspan}${}=W$).  Following
+the $v$-direction (the number of rows, |vspan|) with the extent in
+the $u$-direction ($|uspan|=W$).  Following
 Jensen~\cite{Jensen01} and his followers, we therefore
-generate only the polyominoes with $\hbox{uspan}\le\hbox{vspan}$, and we
-count those with $\hbox{uspan}<\hbox{vspan}$ twice:
+generate only the polyominoes with $|uspan|\le|vspan|$, and we
+count those with $|uspan|<|vspan|$ twice:
 $$ \fix_{\rhoo}(n) = \sum_{\hbox{\scriptsize cases}}
-  \bigl(2\cdot\#\{\hbox{uspan}<|vspan|\} + \#\{\hbox{uspan}=\hbox{vspan}\}\bigr).$$
+  \bigl(2\cdot\#\{|uspan|<|vspan|\} + \#\{|uspan|=|vspan|\}\bigr).$$
 This has two advantages.
-[CLAUDE: fix rendering to |uspan| etc.]
 
 First, the strips are narrow.  Going from a cell to a neighbor changes
 both $u$ and $v$ by~1, and hence
-$\hbox{uspan}+\hbox{vspan}\le 2n$ for a polyomino with $n$ cells.
-With $\hbox{uspan}\le\hbox{vspan}$ this gives $W\le n$, so that we have
+$|uspan|+|vspan|\le 2n$ for a polyomino with $n$ cells.
+With $|uspan|\le|vspan|$ this gives $W\le n$, so that we have
 to treat the strips with $W\le N$ columns.  However, the wide strips
 among them are cheap: a polyomino that is $W$ columns wide and at least
 $W$ rows high needs many cells just for reaching the two sides, the
@@ -511,9 +510,11 @@ types of classes.
   \foreach \v/\u in {-8/-4,-8/4,-7/-3,-7/3,-6/-2,-6/2,-5/-1,-5/1,-4/0,
     -3/-1,-2/0,-1/-1} {\dc[cei]{\v}{\u}}
   \foreach \v/\u in {4/-18,5/-19,5/-17,6/-20,6/-16,7/-21,7/-15,7/23,8/-22,
+    6/24,5/25,4/24,3/25,2/24,1/25,0/24,-1/25,-2/24,-3/25,
     8/-18,8/-14,8/0,8/10} {\dc[gho]{\v}{\u}}
   \foreach \v/\u in {-8/-10,-8/0,-8/14,-8/18,-8/22,-7/-23,-7/15,-7/21,-6/16,
-    -6/20,-5/17,-5/19,-4/18} {\dc[ghi]{\v}{\u}}
+    -6/20,-5/17,-5/19,-4/18,
+    -6/-24,-5/-25,-4/-24,-3/-25,-2/-24,-1/-25,0/-24,1/-25,2/-24,3/-25} {\dc[ghi]{\v}{\u}}
   \fill[red] (0,0) circle (1.2pt);
   \draw[thick,red!80!black] (-27,8)--(-26,9)--(-25,8)--(-24,9)--(-23,8)--(-22,9)
     --(-21,8)--(-20,9)--(-19,8)--(-18,9)--(-17,8)--(-16,9)
@@ -561,12 +562,13 @@ types of classes.
   pocket between the two runs of the floating class~2, which in turn lies
   in the pocket of the paired class~1.  Class~6 lies in the pocket of
   the central class.  The classes 8 and~10 are at the top level.
+  The component of class~10 extends far into the lower half, but it
+  does not reach the lower frontier.
   The crossing classes form the nested chain $1,4,5,7,9$.
   Below the picture: the labels and the codes of the packed key
   (Section~\ref{sec:packed}) at the occupied positions; all other
   positions have label 0 and code~\texttt{E}.}
 \label{fig:types}
-[CLAUDE: Make the component of 10 bigger to show that it can also reach in the other half.]
 \end{figure}
 
 @ In addition, the state contains one bit that tells whether a side of
@@ -1101,8 +1103,9 @@ centers of types M and~V, where every weight is even.  For type~C, the
 parity of the weight tells whether the center cell is occupied, and about a third of
 the lists contain weights of both parities.
 (In a run with $N=40$, the lists had 2.5 records on average and at most
-28, and only 20 out of 9.9 million lists had a gap of more than~2 between
-successive weights.)
+28, and only 20 out of 9.5 million lists had a gap of more than~2 between
+successive weights.  Each table was examined when it was complete,
+after every cell.  At the end of a row, no list had such a gap.)
 @<Type...@>=
 typedef struct {
     cnt_t c;
@@ -2124,8 +2127,8 @@ static int bound(const uint8_t *key, int touches, int k, int kmin, int i, int la
 \label{sec:main}
 The results of a case are collected in two vectors, indexed by~$n$:
 |PORTRAIT| for the polyominoes that are higher than wide
-($\hbox{uspan}<\hbox{vspan}$) and |SQUARE| for
-$\hbox{uspan}=\hbox{vspan}$.
+($|uspan|<|vspan|$) and |SQUARE| for
+$|uspan|=|vspan|$.
 @<Glob...@>=
 static cnt_t *PORTRAIT, *SQUARE; /* results of one case */
 static cnt_t *RECT; /* results for the current height */
@@ -2870,7 +2873,9 @@ the list head, at least 8 bytes for its share of the hash array
 (two slots of 4 bytes), and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the
 weight, 3 wasted by alignment), of which there are 2.6 per state.
-[CLAUDE: Add a sentence where this 2.6 comes from. (empirically? at the peak load?)]
+(This number is taken from the run for $N=71$: at the moment of the
+largest memory usage, the larger table had $5.14\cdot10^7$ count records
+for $1.97\cdot10^7$ states.)
 (The actual memory at the peak was 150 bytes per state of the larger
 table, because the old and the new table exist at the same time, and
 because the arrays grow by doubling and are not full.)
@@ -2892,6 +2897,13 @@ We list them roughly in the order of increasing effort.
   spirit, the arrays could grow by a smaller factor than~2, or they
   could be allocated right away with a size estimated from the previous
   row, so that less of the allocated space remains unused.
+\item \emph{Releasing the hash array of the old table.}  While the
+  states of the old table are extended, they are only scanned
+  sequentially; the array |hash| of the old table is not used.
+  The program nevertheless keeps it (it is only cleared when the table
+  is reused), so that 8 to 16 bytes per state of the old table are
+  idle.  It would suffice to have a single hash array, which always
+  belongs to the table that is being built.
 \item \emph{Smaller counters.}  With 32-bit counters and arithmetic
   modulo a prime below $2^{32}$, a count record can be packed into
   8~bytes (32 bits for the counter, 24 for the link, 8 for the weight)
@@ -2952,8 +2964,6 @@ We list them roughly in the order of increasing effort.
   that are reached in several subproblems are processed several
   times.  We have not tried how much this would save.
 \end{enumerate}
-
-[CLAUDE: Is the hashtable of the old table released when a new cell is considered?]
 
 
 @* References.
