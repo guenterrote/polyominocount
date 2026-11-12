@@ -35,6 +35,9 @@
   mid/.style={draw=black!60,fill=blue!80!black},
   emp/.style={draw=black!25,fill=black!8},
   new/.style={draw=black!60,fill=orange!75},
+  cha/.style={draw=black!60,fill=orange!30},
+  gho/.style={draw=black!60,fill=green!45!black},
+  ghi/.style={draw=black!40,fill=green!20},
   ass/.style={draw=red!80!black,densely dashed,thick,fill=none},
   dia/.style={x=4mm,y=4mm,font=\footnotesize},
 }
@@ -250,9 +253,9 @@ $i$ is position $W-1-i$.
   \foreach \v in {-4,...,4} \foreach \u in {-4,...,4} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
-  \foreach \v/\u in {1/-1,2/0,1/1,2/-2,3/-3,4/-4} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {0/-2,0/2} \dc[mid]{\v}{\u}
-  \foreach \v/\u in {-1/1,-2/0,-1/-1,-2/2,-3/3,-4/4} \dc[img]{\v}{\u}
+  \foreach \v/\u in {1/-1,2/0,1/1,2/-2,3/-3,4/-4} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-2,0/2} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-1/1,-2/0,-1/-1,-2/2,-3/3,-4/4} {\dc[img]{\v}{\u}}
   \fill[red] (0,0) circle (1.5pt);
   \draw[dashed] (-5,-5.3)--(-5,5.3) (5,-5.3)--(5,5.3);
   \foreach \v in {-4,-2,0,2,4} \node[left] at (-5.6,\v) {$v=\v$};
@@ -264,8 +267,8 @@ $i$ is position $W-1-i$.
   \foreach \v in {-4,...,4} \foreach \u in {-1,...,2} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
-  \foreach \v/\u in {1/1,2/0,3/-1} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {0/0,-1/1,-2/2} \dc[img]{\v}{\u}
+  \foreach \v/\u in {1/1,2/0,3/-1} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/0,-1/1,-2/2} {\dc[img]{\v}{\u}}
   \fill[red] (0.5,0.5) circle (1.5pt);
   \draw[dashed] (-2,-5.3)--(-2,5.3) (3,-5.3)--(3,5.3);
   \foreach \v in {-4,-2,0,2,4} \node[left] at (-2.4,\v) {$\v$};
@@ -277,9 +280,9 @@ $i$ is position $W-1-i$.
   \foreach \v in {-4,...,4} \foreach \u in {-2,...,2} {
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
-  \foreach \v/\u in {2/0,3/-1,4/-2} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {1/-1,1/1} \dc[mid]{\v}{\u}
-  \foreach \v/\u in {0/0,-1/1,-2/2} \dc[img]{\v}{\u}
+  \foreach \v/\u in {2/0,3/-1,4/-2} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {1/-1,1/1} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {0/0,-1/1,-2/2} {\dc[img]{\v}{\u}}
   \fill[red] (0,1) circle (1.5pt);
   \draw[dashed] (-3,-5.3)--(-3,5.3) (3,-5.3)--(3,5.3);
   \foreach \v in {-4,-2,0,2,4} \node[left] at (-3.4,\v) {$\v$};
@@ -395,7 +398,7 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
     \ifnum\pgfmathresult=0
       \ifnum\v<6 \dc[emp]{\v}{\u} \else \dc[und]{\v}{\u}\fi
     \fi }
-  \foreach \u in {4} \dc[emp]{6}{\u}
+  \foreach \u in {4} {\dc[emp]{6}{\u}}
   \foreach \v/\u in {6/0,5/1,6/2,4/2,3/1,6/6,5/5,5/7,4/6,5/11,4/10,3/9,4/12}
     \dc[occ]{\v}{\u}
   \draw[very thick,red!80!black] (-1,6)--(0,7)--(1,6)--(2,7)--(3,6)--(4,7)
@@ -492,10 +495,10 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
       \ifnum\pgfmathresult=1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
     \fi }
   \foreach \v/\u in {1/-7,1/-5,2/-8,2/-6,3/-7,3/-5,1/-1,1/1,
-    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {0/-6,0/0,0/6} \dc[mid]{\v}{\u}
+    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-6,0/0,0/6} {\dc[mid]{\v}{\u}}
   \foreach \v/\u in {-1/7,-1/5,-2/8,-2/6,-3/7,-3/5,-1/1,-1/-1,
-    -2/2,-2/-2,-3/3,-3/1,-3/-1,-1/-7,-2/-8,-2/-4} \dc[img]{\v}{\u}
+    -2/2,-2/-2,-3/3,-3/1,-3/-1,-1/-7,-2/-8,-2/-4} {\dc[img]{\v}{\u}}
   \fill[red] (0,0) circle (1.5pt);
   \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
     --(-3,4)--(-2,3)--(-1,4)--(0,3)--(1,4)--(2,3)--(3,2)--(4,3)--(5,2)
@@ -1249,7 +1252,7 @@ be used for a connection to the right of~$b$).
     \ifnum\pgfmathresult=0
       \ifnum\v<6 \dc[emp]{\v}{\u} \else \dc[und]{\v}{\u}\fi
     \fi }
-  \foreach \u in {2,4} \dc[emp]{6}{\u}
+  \foreach \u in {2,4} {\dc[emp]{6}{\u}}
   \dc[occ]{6}{2} \dc[occ]{5}{7}
   \dc[new]{7}{3} \dc[new]{8}{4} \dc[new]{7}{5} \dc[new]{6}{6}
   \node at (2,6) {$a$}; \node at (7,5) {$b$};
@@ -1260,7 +1263,7 @@ be used for a connection to the right of~$b$).
     \ifnum\pgfmathresult=0
       \ifnum\v<6 \dc[emp]{\v}{\u} \else \dc[und]{\v}{\u}\fi
     \fi }
-  \foreach \u in {2,4,6} \dc[emp]{6}{\u}
+  \foreach \u in {2,4,6} {\dc[emp]{6}{\u}}
   \dc[occ]{6}{2} \dc[occ]{5}{7}
   \dc[new]{7}{3} \dc[new]{8}{4} \dc[new]{7}{5} \dc[new]{8}{6}
   \dc[new]{7}{7} \dc[new,fill=orange!30]{6}{8}
@@ -1367,9 +1370,9 @@ side and the top separately, at a cost of (distance to the side) $+$
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
   \foreach \v/\u in {0/-4,0/-2,0/2,0/4,
-    1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
+    1/-3,1/1,1/3,2/-4,2/-2} {\dc[emp]{\v}{\u}}
   \dc[mid]{0}{0} \dc[occ]{1}{-1}
-  \foreach \v/\u in {2/-2,3/-3,4/-4} \dc[ass]{\v}{\u}
+  \foreach \v/\u in {2/-2,3/-3,4/-4} {\dc[ass]{\v}{\u}}
   \node at (-1,1) {\color{white}$b$};
   \draw[dashed] (-5,-1)--(-5,5.3) (5,-1)--(5,5.3);
   \node[below] at (0,-1.2) {(a) the bound: 3 cells};
@@ -1378,9 +1381,9 @@ side and the top separately, at a cost of (distance to the side) $+$
     \pgfmathparse{int(mod(\v+\u+16,2))}
     \ifnum\pgfmathresult=0 \dc[und]{\v}{\u} \fi }
   \foreach \v/\u in {0/-4,0/-2,0/2,0/4,
-    1/-3,1/1,1/3,2/-4,2/-2} \dc[emp]{\v}{\u}
+    1/-3,1/1,1/3,2/-4,2/-2} {\dc[emp]{\v}{\u}}
   \dc[mid]{0}{0} \dc[occ]{1}{-1}
-  \foreach \v/\u in {2/0,3/-1,4/-2,3/-3,4/-4} \dc[new]{\v}{\u}
+  \foreach \v/\u in {2/0,3/-1,4/-2,3/-3,4/-4} {\dc[new]{\v}{\u}}
   \node at (-1,1) {\color{white}$b$};
   \draw[dashed] (-5,-1)--(-5,5.3) (5,-1)--(5,5.3);
   \node[below] at (0,-1.2) {(b) the truth: 5 cells};
@@ -1530,7 +1533,7 @@ static int height_extra(int h, int s)
     return ex;
 }
 
-@ {\bf Two examples.}
+@ {\bf Examples.}
 Figure~\ref{fig:boundex} shows how the parts of the bound work together.
 
 (a)~This is the state of Figure~\ref{fig:example}.  The runs of
@@ -1573,9 +1576,10 @@ is a polyomino with $6+10=16$ cells.
       \ifnum\pgfmathresult=1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
     \fi }
   \foreach \v/\u in {1/-7,1/-5,2/-8,2/-6,3/-7,3/-5,1/-1,1/1,
-    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {0/-6,0/0,0/6} \dc[mid]{\v}{\u}
-  \foreach \v/\u in {4/-4,3/3,5/-5,6/-6,7/-7,8/-8} \dc[new]{\v}{\u}
+    2/-2,2/2,3/-3,3/-1,3/1,1/7,2/8,2/4} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-6,0/0,0/6} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {4/-4,3/3} {\dc[new]{\v}{\u}}
+  \foreach \v/\u in {5/-5,6/-6,7/-7,8/-8} {\dc[cha]{\v}{\u}}
   \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
     --(-3,4)--(-2,3)--(-1,4)--(0,3)--(1,4)--(2,3)--(3,2)--(4,3)--(5,2)
     --(6,3)--(7,2)--(8,3)--(9,2);
@@ -1590,9 +1594,10 @@ is a polyomino with $6+10=16$ cells.
     \ifnum\pgfmathresult=0
       \ifnum\v>1 \dc[und]{\v}{\u} \else \dc[emp]{\v}{\u} \fi
     \fi }
-  \foreach \v/\u in {1/-1,1/3} \dc[occ]{\v}{\u}
-  \foreach \v/\u in {0/-2,0/2} \dc[mid]{\v}{\u}
-  \foreach \v/\u in {2/0,3/1,2/2,3/3,4/4} \dc[new]{\v}{\u}
+  \foreach \v/\u in {1/-1,1/3} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-2,0/2} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {2/0,3/1,2/2} {\dc[new]{\v}{\u}}
+  \foreach \v/\u in {3/3,4/4} {\dc[cha]{\v}{\u}}
   \fill[red] (0,0) circle (1.5pt);
   \draw[very thick,red!80!black] (-4,1)--(-3,2)--(-2,1)--(-1,2)--(0,1)
     --(1,2)--(2,1)--(3,2)--(4,1);
@@ -1603,8 +1608,8 @@ is a polyomino with $6+10=16$ cells.
   \node[below] at (0,-1.4) {(b) 5 cells: self term and staircase};
 \end{scope}
 \end{tikzpicture}
-\caption{Two states and cheapest completions (orange).  Only the upper
-  half is shown; the image of every orange cell is added as well.
+\caption{Two states and cheapest completions.  The cells that bridge gaps are orange, and the chain that leads to the top (and to the side) is light orange.  Only the upper
+  half is shown; the image of every new cell is added as well.
   (a)~The state of Figure~\ref{fig:example}: the gaps $A$--$B$ and
   $B$--$C$ are bridged, the largest gap $C$--$D$ of the middle cycle is
   omitted, and a staircase leads to row~8.
@@ -1612,6 +1617,124 @@ is a polyomino with $6+10=16$ cells.
   class: the gap between them must be bridged, and a staircase from the
   tent reaches the right side and row~4 simultaneously.}
 \label{fig:boundex}
+\end{figure}
+
+Figure~\ref{fig:boundex2} shows three more examples.  In each of them,
+a self class~$S$ reaches the frontier in two places, with a ghost
+class~$G$ in the pocket between them, and no side has been touched.
+The center is in a cell, and row~2 is being processed.
+
+(a)~$W=17$, $\Vstar=8$; the frontier cells are at the positions 2, 6,
+and 13.  The pocket has gaps of 3 and 6 columns.  The larger gap is
+omitted, and the hook over the smaller gap costs 3 cells.  The middle
+cell of the hook is at position $j=4$ in row $h=4$.  Its score is
+$\max(8-4,\min(4,12))=4$: a straight chain of 4 cells leads into the
+corner, to column~0 in row~8.  The bound is $3+4=7$ cells.  (Reaching the
+side and the top separately would cost $3+2+4=9$.)
+
+(b)~The same, but the ghost is at position~4.  One cell bridges the
+gap of one column.  This cell is at position $j=3$ in row $h=3$, and its score is
+$\max(8-3,\min(3,13))=5$.  Now the missing rows dominate: the chain reaches the side
+after 3 cells, in row~6, bounces off, and needs 2 more cells for the
+rows 7 and~8.  The bound is $1+5=6$ cells.
+
+(c)~$W=19$, $\Vstar=9$; the frontier cells are at the positions 7, 11,
+and 16.  The gaps have 3 and 4 columns.  Bridging the smaller gap costs
+3 cells, but its cells are far from both sides: the best score is~8,
+for a total of~11.  This is a case where an \emph{option} wins: bridging the larger gap
+costs one cell more, and its highest cell, at position $j=13$ in row
+$h=4$, has score $\max(9-4,\min(13,5))=5$, with a straight chain into the
+right corner.  The bound is $4+5=9$ cells.  (Reaching the side and the
+top separately would cost $3+2+5=10$.)
+
+In all three cases, the picture shows a completion with this number of
+cells, so the bound is tight.  The values have been confirmed by
+calling the function |bound| of the program for these states.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia,x=3.5mm,y=3.5mm]
+  \foreach \v in {-2,...,8} \foreach \u in {-8,...,8} {
+    \ifodd\numexpr\v+\u+16\relax \else
+      \def\sty{emp}
+      \ifnum\v>2 \def\sty{und}\fi
+      \ifnum\v=2 \ifnum\u>4 \def\sty{und}\fi\fi
+      \ifnum\v=-2 \ifnum\u<-4 \def\sty{und}\fi\fi
+      \dc[\sty]{\v}{\u}
+    \fi }
+  \foreach \v/\u in {1/1,1/3,1/-5,2/-6,1/5} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-4,0/-2,0/0,0/2,0/4} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-1/-1,-1/-3,-1/5,-2/6,-1/-5} {\dc[img]{\v}{\u}}
+  \dc[gho]{2}{-2} \dc[ghi]{-2}{2}
+  \foreach \v/\u in {3/-5,4/-4,3/-3} {\dc[new]{\v}{\u}}
+  \foreach \v/\u in {5/-5,6/-6,7/-7,8/-8} {\dc[cha]{\v}{\u}}
+  \fill[red] (0,0) circle (1.5pt);
+  \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)--(-2,3)
+    --(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,3)--(5,2)--(6,1)--(7,2)--(8,1);
+  \foreach \v/\u/\l in {2/-6/S,2/-2/G,1/5/S} \node at (\u,\v) {\color{white}$\l$};
+  \draw[dashed] (-9,-3)--(-9,8.3+1) (9,-3)--(9,8.3+1);
+  \foreach \v in {-2,0,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
+  \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
+  \node[below] at (0,-4.6) {(a) $3+4=7$ cells};
+\begin{scope}[xshift=7.6cm]
+  \foreach \v in {-2,...,8} \foreach \u in {-8,...,8} {
+    \ifodd\numexpr\v+\u+16\relax \else
+      \def\sty{emp}
+      \ifnum\v>2 \def\sty{und}\fi
+      \ifnum\v=2 \ifnum\u>4 \def\sty{und}\fi\fi
+      \ifnum\v=-2 \ifnum\u<-4 \def\sty{und}\fi\fi
+      \dc[\sty]{\v}{\u}
+    \fi }
+  \foreach \v/\u in {1/1,1/3,1/5,1/-7,2/-6} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-6,0/-4,0/-2,0/0,0/2,0/4,0/6} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-1/-1,-1/-3,-1/-5,-1/7,-2/6} {\dc[img]{\v}{\u}}
+  \dc[gho]{2}{-4} \dc[ghi]{-2}{4}
+  \foreach \v/\u in {3/-5} {\dc[new]{\v}{\u}}
+  \foreach \v/\u in {4/-6,5/-7,6/-8,7/-7,8/-8} {\dc[cha]{\v}{\u}}
+  \fill[red] (0,0) circle (1.5pt);
+  \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)--(-2,3)
+    --(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,3)--(5,2)--(6,1)--(7,2)--(8,1);
+  \foreach \v/\u/\l in {2/-6/S,2/-4/G,1/5/S} \node at (\u,\v) {\color{white}$\l$};
+  \draw[dashed] (-9,-3)--(-9,8.3+1) (9,-3)--(9,8.3+1);
+  \foreach \v in {-2,0,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
+  \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
+  \node[below] at (0,-4.6) {(b) $1+5=6$ cells};
+\end{scope}
+\begin{scope}[xshift=3.8cm,yshift=-6.4cm]
+  \foreach \v in {-2,...,9} \foreach \u in {-9,...,9} {
+    \ifodd\numexpr\v+\u+16\relax \else
+      \def\sty{emp}
+      \ifnum\v>2 \def\sty{und}\fi
+      \ifnum\v=2 \ifnum\u>2 \def\sty{und}\fi\fi
+      \ifnum\v=-2 \ifnum\u<-2 \def\sty{und}\fi\fi
+      \dc[\sty]{\v}{\u}
+    \fi }
+  \foreach \v/\u in {1/-3,1/-1,1/-5,2/-2,1/7} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {0/-6,0/-4,0/-2,0/0,0/2,0/4,0/6} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-1/3,-1/1,-1/5,-2/2,-1/-7} {\dc[img]{\v}{\u}}
+  \dc[gho]{2}{2} \dc[ghi]{-2}{-2}
+  \foreach \v/\u in {3/3,4/4,3/5,2/6} {\dc[new]{\v}{\u}}
+  \foreach \v/\u in {5/5,6/6,7/7,8/8,9/9} {\dc[cha]{\v}{\u}}
+  \fill[red] (0,0) circle (1.5pt);
+  \draw[very thick,red!80!black] (-10,1)--(-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)
+    --(-2,3)--(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,1)--(5,2)--(6,1)
+    --(7,2)--(8,1)--(9,2)--(10,1);
+  \foreach \v/\u/\l in {2/-2/S,2/2/G,1/7/S} \node at (\u,\v) {\color{white}$\l$};
+  \draw[dashed] (-10,-3)--(-10,9.3+1) (10,-3)--(10,9.3+1);
+  \foreach \v in {-2,0,...,9} \node[left] at (-10.5,\v) {\scriptsize$\v$};
+  \foreach \i in {0,2,...,18} \node at (\i-9,-3.9) {\scriptsize\i};
+  \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
+\end{scope}
+\end{tikzpicture}
+\caption{Three states with a self class $S$ and a ghost class $G$
+  (green), and cheapest completions: hooks that bridge a gap (orange)
+  and the chain to the side and to the top (light orange).  The images
+  in the lower half are drawn only for the cells of the state.
+  (a)~The chain leads straight into the corner.
+  (b)~The chain bounces off the side and continues to the top.
+  (c)~It is cheaper to bridge the larger gap, because the chain from
+  there is shorter.}
+\label{fig:boundex2}
 \end{figure}
 
 @*1 Putting the bound together.
