@@ -38,6 +38,7 @@
   cha/.style={draw=black!60,fill=orange!30},
   gho/.style={draw=black!60,fill=green!45!black},
   ghi/.style={draw=black!40,fill=green!20},
+  cei/.style={draw=black!40,fill=blue!35},
   ass/.style={draw=red!80!black,densely dashed,thick,fill=none},
   dia/.style={x=4mm,y=4mm,font=\footnotesize},
 }
@@ -423,7 +424,7 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
 \label{fig:frontier}
 \end{figure}
 
-@ {\bf Classes and partners.}
+@ {\bf Classes: central, paired, and floating.}
 Consider the part of $P$ that is known so far: the decided cells of $P^+$
 and their images.  Its connected components that contain a frontier cell
 are the \emph{classes}.  A \emph{run} is a maximal block of
@@ -441,23 +442,110 @@ occur.
 The image $\rhoo(X)$ of a class $X$ is again a component of the known
 part.  There are three possibilities:
 \begin{itemize}
-\item $\rhoo(X)=X$.  We call $X$ a \emph{self} class.  Such a component
-  already connects $P^+$ to its image.
-\item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are
-  \emph{partners}.
-\item $\rhoo(X)$ has no cell on the frontier.
-This means that  $\rhoo(X)$ touches the lower frontier.
-  We say that the partner
-  of $X$ is a \emph{ghost}.
+\item $\rhoo(X)=X$.  We call $X$ the \emph{central} class.  It is the
+  point-symmetric component around the center, and it
+  already connects $P^+$ to its image.  There is at most one such class.
+\item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are \emph{paired}
+  classes, and each is the \emph{partner} of the other.  A paired
+  class reaches through the known part to the opposite (lower) frontier.
+\item $\rhoo(X)$ has no cell on the frontier.  Then $X$ is a
+  \emph{floating} class: it lives on the upper side only and does not
+  reach the lower frontier, and its image touches only the lower frontier.
 \end{itemize}
 When two classes $X$ and $Y$ are joined by a new cell, their images are
-joined as well, by the image of that cell.  This is why the partner
-relation must be part of the state: if $X$ and $Y$ happen to be
-partners, the result is a self class; otherwise the new class
-$X\cup Y$ has the partner $\rhoo(X)\cup\rhoo(Y)$.
+joined as well, by the image of that cell.  This is why the type of
+each class and the partner relation must be part of the state: if $X$
+and $Y$ happen to be partners, the result is the central class;
+otherwise the new class $X\cup Y$ has the image $\rhoo(X)\cup\rhoo(Y)$.
 
 The polyomino $P$ is connected if and only if, at the end, there is a
-single class and it is a self class.
+single class and it is the central class.
+Figure~\ref{fig:types} shows an (artificial) example with all three
+types of classes.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia,x=2.6mm,y=2.6mm]
+  \foreach \v in {-9,...,9} \foreach \u in {-26,...,26} {
+    \ifodd\numexpr\v+\u+36\relax \else
+      \def\sty{emp}
+      \ifnum\v>8 \def\sty{und}\fi
+      \ifnum\v<-8 \def\sty{und}\fi
+      \ifnum\v=8 \ifnum\u>12 \def\sty{und}\fi\fi
+      \ifnum\v=-8 \ifnum\u<-12 \def\sty{und}\fi\fi
+      \dc[\sty]{\v}{\u}
+    \fi }
+  \foreach \v/\u in {0/-18,0/-6,0/6,0/18,1/-19,1/-17,1/-7,1/7,1/19,
+    2/-20,2/-16,2/-6,2/6,2/18,3/-21,3/-15,3/-7,3/7,
+    3/19,4/-22,4/-14,4/-6,4/6,4/18,5/-23,5/-13,5/-7,
+    5/7,5/19,6/-24,6/-12,6/-6,6/6,6/18,7/-25,7/-11,
+    7/-7,7/7,7/19,8/-26,8/-10,8/-6,8/6} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {-8/-6,-8/6,-8/10,-8/26,-7/-19,-7/-7,-7/7,-7/11,-7/25,
+    -6/-18,-6/-6,-6/6,-6/12,-6/24,-5/-19,-5/-7,-5/7,-5/13,
+    -5/23,-4/-18,-4/-6,-4/6,-4/14,-4/22,-3/-19,-3/-7,-3/7,
+    -3/15,-3/21,-2/-18,-2/-6,-2/6,-2/16,-2/20,-1/-19,-1/-7,
+    -1/7,-1/17,-1/19} {\dc[img]{\v}{\u}}
+  \foreach \v/\u in {0/0,1/1,2/0,3/1,4/0,5/-1,5/1,6/-2,6/2,
+    7/-3,7/3,8/-4,8/4} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-8/-4,-8/4,-7/-3,-7/3,-6/-2,-6/2,-5/-1,-5/1,-4/0,
+    -3/-1,-2/0,-1/-1} {\dc[cei]{\v}{\u}}
+  \foreach \v/\u in {4/-18,5/-19,5/-17,6/-20,6/-16,7/-21,7/-15,7/23,8/-22,
+    8/-18,8/-14,8/0,8/10} {\dc[gho]{\v}{\u}}
+  \foreach \v/\u in {-8/-10,-8/0,-8/14,-8/18,-8/22,-7/-23,-7/15,-7/21,-6/16,
+    -6/20,-5/17,-5/19,-4/18} {\dc[ghi]{\v}{\u}}
+  \fill[red] (0,0) circle (1.2pt);
+  \draw[thick,red!80!black] (-27,8)--(-26,9)--(-25,8)--(-24,9)--(-23,8)--(-22,9)
+    --(-21,8)--(-20,9)--(-19,8)--(-18,9)--(-17,8)--(-16,9)
+    --(-15,8)--(-14,9)--(-13,8)--(-12,9)--(-11,8)--(-10,9)
+    --(-9,8)--(-8,9)--(-7,8)--(-6,9)--(-5,8)--(-4,9)
+    --(-3,8)--(-2,9)--(-1,8)--(0,9)--(1,8)--(2,9)
+    --(3,8)--(4,9)--(5,8)--(6,9)--(7,8)--(8,9)
+    --(9,8)--(10,9)--(11,8)--(12,9)--(13,8)--(14,7)
+    --(15,8)--(16,7)--(17,8)--(18,7)--(19,8)--(20,7)
+    --(21,8)--(22,7)--(23,8)--(24,7)--(25,8)--(26,7);
+  \draw[thick,red!80!black,densely dotted] (27,-8)--(26,-9)--(25,-8)--(24,-9)--(23,-8)--(22,-9)
+    --(21,-8)--(20,-9)--(19,-8)--(18,-9)--(17,-8)--(16,-9)
+    --(15,-8)--(14,-9)--(13,-8)--(12,-9)--(11,-8)--(10,-9)
+    --(9,-8)--(8,-9)--(7,-8)--(6,-9)--(5,-8)--(4,-9)
+    --(3,-8)--(2,-9)--(1,-8)--(0,-9)--(-1,-8)--(-2,-9)
+    --(-3,-8)--(-4,-9)--(-5,-8)--(-6,-9)--(-7,-8)--(-8,-9)
+    --(-9,-8)--(-10,-9)--(-11,-8)--(-12,-9)--(-13,-8)--(-14,-7)
+    --(-15,-8)--(-16,-7)--(-17,-8)--(-18,-7)--(-19,-8)--(-20,-7)
+    --(-21,-8)--(-22,-7)--(-23,-8)--(-24,-7)--(-25,-8)--(-26,-7);
+  \foreach \v/\u/\l in {8/-26/1,8/-22/2,8/-18/3,8/-14/2,8/-10/1,8/-6/4,8/-4/5,8/0/6,
+    8/4/5,8/6/7,8/10/8,7/19/9,7/23/10}
+    \node at (\u,\v) {\tiny\color{white}\l};
+  \foreach \v in {-8,-4,0,4,8} \node[left] at (-27.5,\v) {\scriptsize$v=\v$};
+  \foreach \i in {0,4,...,52} \node at (\i-26,-10.6) {\tiny\i};
+  \foreach \i/\l in {0/1,4/2,8/3,12/2,16/1,20/4,22/5,26/6,30/5,32/7,
+    36/8,45/9,49/10}
+    \node at (\i-26,-12) {\tiny\l};
+  \foreach \i/\l in {0/F,4/F,8/S,12/L,16/L,20/S,22/F,26/S,30/L,32/S,
+    36/S,45/S,49/S}
+    \node at (\i-26,-13.4) {\tiny\texttt{\l}};
+  \node[left] at (-27.5,-10.6) {\scriptsize position};
+  \node[left] at (-27.5,-12) {\scriptsize label};
+  \node[left] at (-27.5,-13.4) {\scriptsize code};
+\end{tikzpicture}
+
+\caption{A larger example with all types of classes: $W=53$, center type~C,
+  row~8 has been decided up to position~38.  The red line is the
+  frontier, and the dotted line is its image, the lower frontier.
+  The numbers are the class labels.
+  The classes 1 and 9 are \emph{paired}, and so are 4 and~7 (blue): each
+  of them reaches from the upper to the lower frontier, and its image
+  is its partner.  Class~5 is the \emph{central} class (dark blue).
+  The classes 2, 3, 6, 8, and 10 are \emph{floating} (green): their
+  images (light green) touch only the lower frontier.  Class~3 lies in the
+  pocket between the two runs of the floating class~2, which in turn lies
+  in the pocket of the paired class~1.  Class~6 lies in the pocket of
+  the central class.  The classes 8 and~10 are at the top level.
+  The crossing classes form the nested chain $1,4,5,7,9$.
+  Below the picture: the labels and the codes of the packed key
+  (Section~\ref{sec:packed}) at the occupied positions; all other
+  positions have label 0 and code~\texttt{E}.}
+\label{fig:types}
+\end{figure}
 
 @ In addition, the state contains one bit that tells whether a side of
 the strip has already been \emph{touched}, i.e., whether the leftmost or
@@ -473,16 +561,16 @@ In its unpacked form, a state is a \emph{byte key} of |KL=W+MAXC+1| bytes:
   position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots$
   in the order of their first appearance from left to right, which makes
   the key canonical.
-\item |key[W+j-1]|, for each class $j$: its partner, which is another
-  class label, or |PSELF|, or |PGHOST|.
+\item |key[W+j-1]|, for each class $j$: the label of its partner if it
+  is a paired class, or one of the special values |CENTRAL| or |FLOATING|.
 \item |key[KL-1]|: the \emph{touched} bit.
 \end{itemize}
 A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAXC| classes.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
-positions are given below the picture.  The partners of the classes
-$1,2,3,4$ are $4$, |PSELF|, |PGHOST|, $1$, and the touched bit
+positions are given below the picture.  The entries for the classes
+$1,2,3,4$ are $4$, |CENTRAL|, |FLOATING|, $1$, and the touched bit
 is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
 \begin{figure}[htb]
@@ -519,9 +607,9 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   the weight is $3+2\cdot16=35$.  The images are light blue.
   There are four classes.  Class $A$ (label~1) reaches down through the
   middle row to the image of the right arm; its image is the class $D$
-  (label~4), so $A$ and $D$ are partners.  Class $B$ (label~2) contains
-  the center: it is a self class.  Class $C$ (label~3) is a new cell
-  in row~2; its image is not on the frontier: a ghost.
+  (label~4), so $A$ and $D$ are paired.  Class $B$ (label~2) contains
+  the center: it is the central class.  Class $C$ (label~3) is a new cell
+  in row~2; its image is not on the frontier: it is floating.
   Below the picture: the first part of the byte key, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
   initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
@@ -530,8 +618,8 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
 \end{figure}
 
 
-@d PSELF 0xFF /* the class is its own image */
-@d PGHOST 0xFE /* the image of the class has left the frontier */
+@d CENTRAL 0xFF /* the class is its own image */
+@d FLOATING 0xFE /* the image of the class is not on the frontier */
 @<Glob...@>=
 static int MAXC; /* maximum number of classes in a state */
 static int KL; /* length of a byte key */
@@ -540,7 +628,7 @@ static int KL; /* length of a byte key */
 A transition changes only little: a new cell joins at most two classes,
 and at most two cells leave the frontier.  We therefore work directly
 on a copy of the byte key, with two arrays: |f[i]| is the label of the
-frontier cell at position~|i| (or 0), and |par[j]| is the partner of the
+frontier cell at position~|i| (or 0), and |par[j]| is the partner or the type of the
 class with label~|j|, in the same form as in the byte key.
 During a transition the labels need not be numbered consecutively, and
 there may be one label more than in a canonical key.
@@ -548,7 +636,7 @@ All operations are simple sweeps over the positions.
 
 @d MAXLAB (MAXW + 2) /* bound on the labels in the working arrays */
 @<Sub...@>=
-static inline int is_class(int p) { return p != PSELF && p != PGHOST; }
+static inline int is_paired(int p) { return p != CENTRAL && p != FLOATING; }
 
 static inline void relabel(uint8_t *f, int from, int to)
 {
@@ -560,16 +648,16 @@ static inline void relabel(uint8_t *f, int from, int to)
 @ {\bf Joining two classes.}
 When two classes $A$ and $B$ become connected, their images $\rhoo(A)$
 and $\rhoo(B)$ become connected as well.  The cells of $B$ get the label
-of~$A$, and the partner of the union depends on the partners of $A$ and~$B$:
+of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 \begin{itemize}
-\item If $B=\rhoo(A)$, the union is its own image: a self class.
-\item If one of the two is a self class, the union is a self class, and
-  it swallows the partner of the other class if that is on the frontier.
-\item If both partners are classes on the frontier, these two classes are
-  joined, too, and the result is the partner.
-\item If only one partner is on the frontier, it is the partner of the
-  union.  (It has absorbed the ghost.)
-\item If both partners are ghosts, so is the partner of the union.
+\item If $A$ and $B$ are partners, the union is its own image: it is the central class.
+\item If one of the two is the central class, the union is the central class, and
+  it swallows the partner of the other class if that class is paired.
+\item If both are paired (with different partners), their partners are
+  joined, too, and the result is the partner of the union.
+\item If one is paired and the other is floating, the union is paired,
+  with the same partner.  (The partner has absorbed the image of the floating class.)
+\item If both are floating, so is the union.
 \end{itemize}
 @<Sub...@>=
 static void join(uint8_t *f, uint8_t *par, int a, int b)
@@ -579,17 +667,17 @@ static void join(uint8_t *f, uint8_t *par, int a, int b)
     int pa = par[a], pb = par[b];
     relabel(f, b, a);
     if (pa == b)
-        par[a] = PSELF;
-    else if (pa == PSELF || pb == PSELF) {
-        if (is_class(pa))
+        par[a] = CENTRAL;
+    else if (pa == CENTRAL || pb == CENTRAL) {
+        if (is_paired(pa))
             relabel(f, pa, a);
-        if (is_class(pb))
+        if (is_paired(pb))
             relabel(f, pb, a);
-        par[a] = PSELF;
-    } else if (is_class(pa)) {
-        if (is_class(pb))
+        par[a] = CENTRAL;
+    } else if (is_paired(pa)) {
+        if (is_paired(pb))
             relabel(f, pb, pa);
-    } else if (is_class(pb)) {
+    } else if (is_paired(pb)) {
         par[a] = pb;
         par[pb] = a;
     }
@@ -597,26 +685,26 @@ static void join(uint8_t *f, uint8_t *par, int a, int b)
 
 @ In the twin row, we need a variation: the class $A$ becomes connected
 to the \emph{image} of the class~$B$, and hence $\rhoo(A)$ becomes
-connected to~$B$.  If $\rhoo(B)$ is on the frontier (as $B$ itself or as another
-class), this is an ordinary |join|.  Otherwise the image of $B$ is a
-ghost, which is now attached to~$A$.  If $A=B$, this makes $A$ a self class.
-If $A$ is a self class, it swallows~$B$.
-If $A$ has a partner on the frontier, that partner swallows~$B$.
-In the remaining case, both images were ghosts, and now $A$ and $B$ are
-partners of each other.
+connected to~$B$.  If $B$ is central or paired, $\rhoo(B)$ is on the frontier (as $B$ itself or as another
+class), and this is an ordinary |join|.  Otherwise $B$ is floating, and its image
+is now attached to~$A$.  If $A=B$, this makes $A$ the central class.
+If $A$ is the central class, it swallows~$B$.
+If $A$ is paired, its partner swallows~$B$.
+In the remaining case, both classes were floating, and now $A$ and $B$ are
+paired with each other.
 @<Sub...@>=
 static void join_image(uint8_t *f, uint8_t *par, int a, int b)
 {
     int pa = par[a], pb = par[b];
-    if (pb == PSELF)
+    if (pb == CENTRAL)
         join(f, par, a, b);
-    else if (is_class(pb))
+    else if (is_paired(pb))
         join(f, par, a, pb);
     else if (a == b)
-        par[a] = PSELF;
-    else if (pa == PSELF)
+        par[a] = CENTRAL;
+    else if (pa == CENTRAL)
         relabel(f, b, a);
-    else if (is_class(pa))
+    else if (is_paired(pa))
         relabel(f, b, pa);
     else {
         par[a] = b;
@@ -644,7 +732,7 @@ static int canon(const uint8_t *f, const uint8_t *par, int touches, uint8_t *key
     }
     for (int j = 1; j <= m; j++) {
         int q = par[old[j]];
-        key[W + j - 1] = is_class(q) ? map[q] : q;
+        key[W + j - 1] = is_paired(q) ? map[q] : q;
     }
     key[KL - 1] = touches;
     return m;
@@ -656,14 +744,14 @@ neighbors, it is \emph{retired}.  If other frontier cells of the same
 class remain, nothing happens.  Otherwise the class $X$ disappears from
 the frontier, and there are several cases:
 \begin{itemize}
-\item $X$ is a self class.  Then $X$ is a complete symmetric polyomino,
+\item $X$ is the central class.  Then $X$ is a complete symmetric polyomino,
   and nothing can be added to it.  If the frontier is now empty, we have
   found a polyomino (|COMPLETE|); otherwise the other classes can
   never be connected to $X$, and the state is |DEAD|.
-\item The partner of $X$ is a ghost.  Then $X$ and $\rhoo(X)$ are two
+\item $X$ is floating.  Then $X$ and $\rhoo(X)$ are two
   different components to which nothing can be added: |DEAD|.
-\item The partner of $X$ is a class $Y$ on the frontier.  From now on,
-  the partner of $Y$ is a ghost.
+\item $X$ is paired with a class $Y$.  From now on,
+  $Y$ is floating.
 \end{itemize}
 @<Type...@>=
 enum { OK, DEAD, COMPLETE };
@@ -683,11 +771,11 @@ static int retire(uint8_t *f, uint8_t *par, int i)
                 return OK;
         }
     int p = par[lab];
-    if (p == PSELF)
+    if (p == CENTRAL)
         return any ? DEAD : COMPLETE;
-    if (p == PGHOST)
+    if (p == FLOATING)
         return DEAD;
-    par[p] = PGHOST;
+    par[p] = FLOATING;
     return OK;
 }
 
@@ -699,7 +787,7 @@ true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
 |OK|; in the last case the new canonical key is stored in |key|, its
 touched bit in |*result_touches| and its number of classes in |*mp|.
 
-A new cell gets a new class label whose partner is a ghost (its image),
+A new cell gets a new class label and is floating at first,
 and it is joined with the frontier cells at positions $i-1$ and $i+1$.
 These are its two lower neighbors: at this moment, both positions hold
 cells of the previous row, see Figure~\ref{fig:frontier}.
@@ -719,7 +807,7 @@ static int step(const uint8_t *sk, int touches, int i, int occ, int last,
         int nw = 1;
         while (nw <= MAXC && par[nw]) /* the first unused label */
             nw++;
-        par[nw] = PGHOST;
+        par[nw] = FLOATING;
         f[i] = nw;
         for (int nb = i - 1; nb <= i + 1; nb += 2)
             if (nb >= 0 && nb < W && f[nb])
@@ -748,7 +836,7 @@ neighbors of the cell $(u,v_0)$ at position~$i$ are the cells $(u\pm1,v_0-1)$.
 They are the images of the cells of the twin row itself at the
 positions $W-1-(i\pm1)$, that is, $W-2-i$ and $W-i$.
 If such a position equals $i$, the new cell is adjacent to its own
-image and becomes a self class.  If it is smaller than $i$ and occupied,
+image and becomes the central class.  If it is smaller than $i$ and occupied,
 the new cell is joined with the \emph{image} of that cell.  (Both
 situations are handled by |join_image|.)  If it
 is larger than $i$, the adjacency will be found later, when that cell is
@@ -770,7 +858,7 @@ stored as a bit string in |KW| 64-bit words:
   |C_LAST| for the last run.
   Since classes do not cross, a stack is sufficient to recover the
   labels, like for a sequence of parentheses.
-\item 1 bit per class: 0 if the partner is a ghost, 1 otherwise.
+\item 1 bit per class: 0 if the class is floating, 1 otherwise.
 \item 1 bit: touched.
 \end{itemize}
 For the state of Figure~\ref{fig:example}, the codes are shown below the
@@ -780,7 +868,7 @@ picture.  Class~1 has two runs, at the positions 1 and~3
 (\texttt{L}, \texttt{C}), which are adjacent because the kink is between
 them.  The classes 3 and~4 are single cells (\texttt{S}).  The 17 codes
 are followed by the bits $1,1,0,1$ for the four classes (only class~3
-has a ghost as its partner) and by the touched bit~1.
+is floating) and by the touched bit~1.
 These are $3\cdot17+4+1=56$ bits, which fit into one word.
 {\bf How long must a key be?}
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
@@ -809,18 +897,18 @@ static int KW; /* length of a packed key in 64-bit words */
 enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST };
 
 @ {\bf Why one bit per class is enough.}
-Call a class \emph{crossing} if it is a self class or has a partner on
-the frontier.  The union of the frontier and its image under $\rhoo$ is a
+Call a class \emph{crossing} if it is central or paired, that is, if
+it is not floating.  The union of the frontier and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
 crossing class together with its partner connects the frontier with the
 image of the frontier across this disk.  Two such connections cannot
 cross each other, and $\rhoo$ reverses the order along the frontier.
 Consequently, the crossing classes, read from left to right, form one
 nested chain
-$$ A_1,\ A_2,\ \ldots,\ A_k,\ (S),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
-where a self class $S$ is present in the middle if and only if the
+$$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
+where the central class $Z$ is present in the middle if and only if the
 number of crossing classes is odd.  In particular, there is at most one
-self class.  Thus the $j$-th crossing class from the left is the partner
+central class.  Thus the $j$-th crossing class from the left is the partner
 of the $j$-th crossing class from the right, and it suffices to know
 \emph{which} classes are crossing.
 With the option \texttt{-C}, the program checks for every state that
@@ -879,7 +967,7 @@ static void pack(const uint8_t *key, uint64_t *w)
         putbits(w, &pos, code, 3);
     }
     for (int j = 1; j <= m; j++)
-        putbits(w, &pos, key[W + j - 1] != PGHOST, 1);
+        putbits(w, &pos, key[W + j - 1] != FLOATING, 1);
     putbits(w, &pos, key[KL - 1], 1);
 }
 
@@ -906,10 +994,10 @@ static void unpack(const uint64_t *w, uint8_t *key)
         if (getbits(w, &pos, 1))
             stack[sp++] = j;
         else
-            key[W + j - 1] = PGHOST;
+            key[W + j - 1] = FLOATING;
     for (int a = 0, b = sp - 1; a <= b; a++, b--) {
-        key[W + stack[a] - 1] = a == b ? PSELF : stack[b];
-        key[W + stack[b] - 1] = a == b ? PSELF : stack[a];
+        key[W + stack[a] - 1] = a == b ? CENTRAL : stack[b];
+        key[W + stack[b] - 1] = a == b ? CENTRAL : stack[a];
     }
     key[KL - 1] = getbits(w, &pos, 1);
 }
@@ -1203,7 +1291,7 @@ whose weight plus this bound exceeds $N$ is discarded.
 All bounds in this chapter count cells of $P^+$; each such cell has
 weight~2.
 
-@ First, a state in which every class has a ghost partner can never be
+@ First, a state in which every class is floating can never be
 completed: whatever is attached to a class $X$ is attached in mirror
 image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
 never meet.  (The empty state, which occurs only in the twin row, is
@@ -1217,7 +1305,7 @@ static int completion_possible(const uint8_t *key)
         if (!q)
             break;
         m++;
-        if (q != PGHOST)
+        if (q != FLOATING)
             return 1;
     }
     return m == 0;
@@ -1291,7 +1379,7 @@ cycles are edge-disjoint, and it can be decomposed as follows.
 \begin{itemize}
 \item \emph{Pockets.}  Between two consecutive runs of the same class
   $X$ there may be classes $C_1,\ldots,C_r$ (at the outermost level
-  inside these two runs).  They can only be ghost-partnered, and they
+  inside these two runs).  They can only be floating, and they
   appear nowhere else.  The gaps $X$--$C_1$--$\cdots$--$C_r$--$X$
   form a cycle.  To connect everything, all gaps of the cycle except one
   must be bridged, and the cheapest way is to omit the largest gap.  The
@@ -1303,19 +1391,19 @@ cycles are edge-disjoint, and it can be decomposed as follows.
   together with the gaps from $\rhoo A_{j+1}$ to $\rhoo A_j$ on the
   right form a cycle, since $A_j$ and $\rhoo A_j$ are the same node.
   Again the largest gap can be omitted.
-\item \emph{The middle.}  The gaps from $A_k$ over $S$ (if present) to
+\item \emph{The middle.}  The gaps from $A_k$ over $Z$ (if present) to
   $\rhoo A_k$ form the innermost cycle.
 \end{itemize}
 The sum of all gaps minus the largest gap of each cycle is the cost for
 connecting the cactus.
 
-@ {\bf The self term.}
+@ {\bf The central term.}
 Connecting the quotient is not enough: in the end, there must be a
-\emph{self} class.  If there is none yet, some class $X$ must be joined
+central class.  If there is none yet, some class $X$ must be joined
 to its own image.  Closing a ring completely does not achieve this,
 because the right half of a ring is just the image of its left half.
-Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a self
-class.  Therefore, if there is no self class, the middle cycle must be
+Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a central
+class.  Therefore, if there is no central class, the middle cycle must be
 closed completely, and its largest gap is paid as well.
 
 @ The function |cycle| handles one cycle with |n| gaps of sizes |g|.
@@ -1463,7 +1551,7 @@ the maximum, it registers the peaks and scores of all gaps that are
 certainly bridged.  If the largest gap |m1| is unique, bridging it
 instead of the second largest gap |m2| is recorded as an option with
 extra cost |m1-m2|.  If the pointers are nonnull, the largest gap and
-its peak and score are returned (this is used for the self term).
+its peak and score are returned (this is used for the central term).
 @<Sub...@>=
 static int cycle(const int *g, const int *pk, const int *sc, int n, int *m1p, int *p1p, int *s1p)
 {
@@ -1539,12 +1627,12 @@ Figure~\ref{fig:boundex} shows how the parts of the bound work together.
 (a)~This is the state of Figure~\ref{fig:example}.  The runs of
 class~$B$ enclose two pockets without other classes; they cost nothing.
 At the top level, the crossing classes are $A$, $B$, $D$, where $B$ is
-the self class and $D=\rhoo A$.  The middle cycle leads from $A$ over
-$B$ and the ghost class $C$ to $D$, and its gaps have 1, 1, and 3
+the central class and $D=\rhoo A$.  The middle cycle leads from $A$ over
+$B$ and the floating class $C$ to $D$, and its gaps have 1, 1, and 3
 columns.  The largest gap is omitted, and the other two are bridged
 with one cell each.  There is no need to bridge the gap between $C$
 and~$D$: when $A$ is connected to~$B$, the image of this connection
-connects $D=\rhoo A$ to $\rhoo B=B$.  A self class exists and the sides
+connects $D=\rhoo A$ to $\rhoo B=B$.  A central class exists and the sides
 are touched, so no further connections are needed.  For the height,
 the polyomino must reach row $\Vstar=8$.  The frontier is in row~3, and
 the bridge between $A$ and $B$ is a tent of one cell, whose peak is in
@@ -1557,7 +1645,7 @@ the picture shows a completion with 6 cells.
 middle row contains the cells $u=\pm2$, but not the center.  The two
 frontier cells form the classes $A$ and $\rhoo A$.  In the cactus, they
 are the same node, and connecting the cactus costs nothing.  But there
-is no self class, and therefore the single gap of the middle cycle, with
+is no central class, and therefore the single gap of the middle cycle, with
 3 columns, must be bridged.  The tent over this gap can reach row~3.
 No side has been touched.  The best cell of the structure for reaching
 both the right side and the top is the cell of the tent in
@@ -1605,7 +1693,7 @@ is a polyomino with $6+10=16$ cells.
   \node at (3,1) {\color{white}$B$};
   \draw[dashed] (-5,-1)--(-5,5.3) (5,-1)--(5,5.3);
   \foreach \v in {0,2,4} \node[left] at (-5.6,\v) {$\v$};
-  \node[below] at (0,-1.4) {(b) 5 cells: self term and staircase};
+  \node[below] at (0,-1.4) {(b) 5 cells: central term and staircase};
 \end{scope}
 \end{tikzpicture}
 \caption{Two states and cheapest completions.  The cells that bridge gaps are orange, and the chain that leads to the top (and to the side) is light orange.  Only the upper
@@ -1613,15 +1701,15 @@ is a polyomino with $6+10=16$ cells.
   (a)~The state of Figure~\ref{fig:example}: the gaps $A$--$B$ and
   $B$--$C$ are bridged, the largest gap $C$--$D$ of the middle cycle is
   omitted, and a staircase leads to row~8.
-  (b)~The classes $A$ and $B=\rhoo A$ are partners, and there is no self
+  (b)~The classes $A$ and $B=\rhoo A$ are paired, and there is no central
   class: the gap between them must be bridged, and a staircase from the
   tent reaches the right side and row~4 simultaneously.}
 \label{fig:boundex}
 \end{figure}
 
 Figure~\ref{fig:boundex2} shows three more examples.  In each of them,
-a self class~$S$ reaches the frontier in two places, with a ghost
-class~$G$ in the pocket between them, and no side has been touched.
+the central class~$Z$ reaches the frontier in two places, with a floating
+class~$F$ in the pocket between them, and no side has been touched.
 The center is in a cell, and row~2 is being processed.
 
 (a)~$W=17$, $\Vstar=8$; the frontier cells are at the positions 2, 6,
@@ -1632,7 +1720,7 @@ $\max(8-4,\min(4,12))=4$: a straight chain of 4 cells leads into the
 corner, to column~0 in row~8.  The bound is $3+4=7$ cells.  (Reaching the
 side and the top separately would cost $3+2+4=9$.)
 
-(b)~The same, but the ghost is at position~4.  One cell bridges the
+(b)~The same, but the floating class is at position~4.  One cell bridges the
 gap of one column.  This cell is at position $j=3$ in row $h=3$, and its score is
 $\max(8-3,\min(3,13))=5$.  Now the missing rows dominate: the chain reaches the side
 after 3 cells, in row~6, bounces off, and needs 2 more cells for the
@@ -1648,7 +1736,18 @@ right corner.  The bound is $4+5=9$ cells.  (Reaching the side and the
 top separately would cost $3+2+5=10$.)
 
 In all three cases, the picture shows a completion with this number of
-cells, so the bound is tight.  The values have been confirmed by
+cells, so the bound is tight.
+
+For the large state of Figure~\ref{fig:types}, the bound is 35 cells.
+The pockets of the classes 1, 2, and~5 have two gaps of 3 columns each,
+of which one must be bridged ($3+3+3$ cells).  The ring formed by the
+classes 1 and~4 on the left and 7, 8, and~9 on the right has gaps of 3,
+3, and 8 columns; the largest is omitted (6 cells).  The middle cycle
+through the classes 4, 5, and~7 has two gaps of one column (1 cell).
+The floating class~10 hangs on the outer path behind class~9, with a
+gap of 3 columns (3 cells).  These are 19 cells.  A tent over a gap of
+3 columns in row~8 reaches row~10, and the top row is $\Vstar=26$, so 16
+more cells are needed for the missing rows.  The values have been confirmed by
 calling the function |bound| of the program for these states.
 
 \begin{figure}[htb]
@@ -1671,7 +1770,7 @@ calling the function |bound| of the program for these states.
   \fill[red] (0,0) circle (1.5pt);
   \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)--(-2,3)
     --(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,3)--(5,2)--(6,1)--(7,2)--(8,1);
-  \foreach \v/\u/\l in {2/-6/S,2/-2/G,1/5/S} \node at (\u,\v) {\color{white}$\l$};
+  \foreach \v/\u/\l in {2/-6/Z,2/-2/F,1/5/Z} \node at (\u,\v) {\color{white}$\l$};
   \draw[dashed] (-9,-3)--(-9,8.3+1) (9,-3)--(9,8.3+1);
   \foreach \v in {-2,0,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
@@ -1694,7 +1793,7 @@ calling the function |bound| of the program for these states.
   \fill[red] (0,0) circle (1.5pt);
   \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)--(-2,3)
     --(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,3)--(5,2)--(6,1)--(7,2)--(8,1);
-  \foreach \v/\u/\l in {2/-6/S,2/-4/G,1/5/S} \node at (\u,\v) {\color{white}$\l$};
+  \foreach \v/\u/\l in {2/-6/Z,2/-4/F,1/5/Z} \node at (\u,\v) {\color{white}$\l$};
   \draw[dashed] (-9,-3)--(-9,8.3+1) (9,-3)--(9,8.3+1);
   \foreach \v in {-2,0,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
@@ -1719,14 +1818,14 @@ calling the function |bound| of the program for these states.
   \draw[very thick,red!80!black] (-10,1)--(-9,2)--(-8,3)--(-7,2)--(-6,3)--(-5,2)--(-4,3)--(-3,2)
     --(-2,3)--(-1,2)--(0,3)--(1,2)--(2,3)--(3,2)--(4,1)--(5,2)--(6,1)
     --(7,2)--(8,1)--(9,2)--(10,1);
-  \foreach \v/\u/\l in {2/-2/S,2/2/G,1/7/S} \node at (\u,\v) {\color{white}$\l$};
+  \foreach \v/\u/\l in {2/-2/Z,2/2/F,1/7/Z} \node at (\u,\v) {\color{white}$\l$};
   \draw[dashed] (-10,-3)--(-10,9.3+1) (10,-3)--(10,9.3+1);
   \foreach \v in {-2,0,...,9} \node[left] at (-10.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,18} \node at (\i-9,-3.9) {\scriptsize\i};
   \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
 \end{scope}
 \end{tikzpicture}
-\caption{Three states with a self class $S$ and a ghost class $G$
+\caption{Three states with a central class $Z$ and a floating class $F$
   (green), and cheapest completions: hooks that bridge a gap (orange)
   and the chain to the side and to the top (light orange).  The images
   in the lower half are drawn only for the cells of the state.
@@ -1748,7 +1847,7 @@ static int cactus_bound(const uint8_t *key, int touches, int kink)
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
     @<Pay for the outer paths, the rings and the middle@>@;
-    @<Add the self term and the terms for the side and the top@>@;
+    @<Add the central term and the terms for the side and the top@>@;
     return cost;
 }
 
@@ -1832,7 +1931,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
     /* top level */
     int cr[MAXW], m = 0;
     for (int t = 0; t < nt; t++)
-        if (key[W + toplab[t] - 1] != PGHOST)
+        if (key[W + toplab[t] - 1] != FLOATING)
             cr[m++] = t;
     if (m) {
         for (int t = 0; t < cr[0]; t++) {
@@ -1872,7 +1971,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
             }
         }
         if (m & 1)
-            NCL = 0;                    /* self class present */
+            NCL = 0;                    /* central class present */
     } else {
         for (int t = 0; t < nt - 1; t++) {
             cost += topgap[t];
@@ -1881,13 +1980,13 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
         }
     }
 
-@ @<Add the self term...@>=
+@ @<Add the central term...@>=
     DEDGE = 0;
     if (!touches) {
         int d1 = rs[0], d2 = W - 1 - re[R - 1];
         DEDGE = d1 < d2 ? d1 : d2;
     }
-    /* without a self class the middle cycle must be closed completely:
+    /* without a central class the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
     if (NCL) {
         int ex = 1 << 20;
@@ -1903,7 +2002,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 @ An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
-side.  It ignores the kink, the self term, and the height.
+side.  It ignores the kink, the central term, and the height.
 @<Sub...@>=
 static int exact_bound(const uint8_t *key, int touches)
 {
@@ -1913,7 +2012,7 @@ static int exact_bound(const uint8_t *key, int touches)
         int q = key[W + j - 1];
         if (!q)
             break;
-        sup[j] = (q != PSELF && q != PGHOST && q < j) ? q : j;
+        sup[j] = (q != CENTRAL && q != FLOATING && q < j) ? q : j;
     }
     for (int i = 0; i < W; i++)
         if (key[i])
@@ -2183,8 +2282,8 @@ current cell and |nxt| for the states after it.
 If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
 enumerate all nonempty subsets of it that are symmetric under
 $i\leftrightarrow W-1-i$.  Every cell is a class of its own; the partner
-of a cell is its mirror cell, and the center cell, if present, is a
-self class.  The weight is the number of cells.
+of a cell is its mirror cell, and the center cell, if present, is the
+central class.  The weight is the number of cells.
 If $M_v$ is odd, we start with the empty state before the twin row.
 @<Create the initial states@>=
     if (E == 0) {
@@ -2213,7 +2312,7 @@ If $M_v$ is odd, we start with the empty state before the twin row.
                 f[cells[a]] = a + 1;
             for (int a = 0; a < nc; a++) {
                 int i = cells[a], j = W - 1 - i;
-                par[a + 1] = j == i ? PSELF : f[j];
+                par[a + 1] = j == i ? CENTRAL : f[j];
             }
             int touches = isc[0] || isc[W - 1];
             canon(f, par, touches, key);
@@ -2449,7 +2548,7 @@ the range where the program can be useful.
 \item The strip has at most |MAXW|${}=160$ columns.  Since strips of all
   widths up to $N$ are needed, this means $N\le160$, which is checked above.
 \item Class labels are stored in bytes, and the two largest values are
-  reserved for |PSELF| and |PGHOST|.  Hence a label cannot go beyond 253.
+  reserved for |CENTRAL| and |FLOATING|.  Hence a label cannot go beyond 253.
   A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ classes.
 \item The weight in a count record is a byte, which would allow $N\le255$.
 \item A packed key has at most 12 words of 64 bits; $3W+|MAXC|+1\le 563$ bits

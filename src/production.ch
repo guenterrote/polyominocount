@@ -37,7 +37,7 @@ static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them o
 @ An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
-side.  It ignores the kink, the self term, and the height.
+side.  It ignores the kink, the central term, and the height.
 @<Sub...@>=
 static int exact_bound(const uint8_t *key, int touches)
 {
@@ -47,7 +47,7 @@ static int exact_bound(const uint8_t *key, int touches)
         int q = key[W + j - 1];
         if (!q)
             break;
-        sup[j] = (q != PSELF && q != PGHOST && q < j) ? q : j;
+        sup[j] = (q != CENTRAL && q != FLOATING && q < j) ? q : j;
     }
     for (int i = 0; i < W; i++)
         if (key[i])
