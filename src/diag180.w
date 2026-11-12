@@ -13,6 +13,15 @@
 \let\CwebAssign=\gets
 \def\CwebRankNoEject{1}
 
+{\makeatletter % C notation s->x: make the arrow a bit more spacious
+\global\setbox\cwbb@@pointer=\hbox{%
+            \kern -.04em
+            \lower 1.1ex \hbox{\large$\vec{\kern .5em}$}%
+            \kern .1em
+            }
+}
+%\secpagedepth=-2
+
 \newcommand{\dts}{\mathinner{\ldotp\ldotp}}
 \newcommand{\fix}{\mathrm{fix}}
 \newcommand{\rhoo}{\rho}
@@ -92,7 +101,7 @@ they were enumerated one by one.
 This program computes $\fix_{\rhoo}(n)$ for the rotation $\rhoo$ by
 $180^\circ$ with a transfer-matrix method, in the spirit of Jensen's
 algorithm~\cite{Jensen01,Jensen03} and of Knuth's programs {\sc POLYNUM} and
-{\sc POLYSLAVE}~\cite{polynum,polyslave},
+{\sc POLYSLAVE}~\cite{polynum},
 but with three special features:
 \begin{enumerate}
 \item We do not build the polyomino~$P$ but its ``half'', the quotient
@@ -174,7 +183,7 @@ are evaluated twice, so they must not have side effects.
 @d max(a,b) ((a) > (b) ? (a) : (b))
 @d min(a,b) ((a) < (b) ? (a) : (b))
 
-@ Some format declarations for the typesetting of this document.
+@q Some format declarations for the typesetting of this document. @>
 @s uint8_t int
 @s uint32_t int
 @s uint64_t int
@@ -230,7 +239,11 @@ so that $u$ increases to the right and $v$ increases upward when the
 grid is turned by $45^\circ$; the cells appear as diamonds in the
 pictures.
 A cell $(u,v)$ exists whenever $u+v$ is even, and its four neighbors
-are $(u\pm1,v\pm1)$.  The set of cells with a fixed $v$ is a \emph{row}
+are $(u\pm1,v\pm1)$.
+In our drawings,
+the point with coordinates $(u,v)$ lies at the center of its %respective
+cell.
+The set of cells with a fixed $v$ is a \emph{row}
 (a diagonal of the original grid); the set of cells with fixed~$u$ is a
 \emph{column}.  A neighbor of a cell is always in an adjacent row
 \emph{and} in an adjacent column.
@@ -247,7 +260,7 @@ smallest is $u_{\min}=M_u-u_{\max}$.  A \emph{case} is a triple
 $(M_x,M_y,u_{\max})$: we count the symmetric polyominoes that live in the
 strip $u_{\min}\le u\le u_{\max}$ of
 $$ W=u_{\max}-u_{\min}+1=2u_{\max}-M_u+1 $$
-columns and touch its two sides.  (Touching one side implies touching
+columns and touch its two sides.  (By symmetry, touching one side implies touching
 the other.)  Inside the program the columns are numbered by their
 \emph{position} $i=u-u_{\min}$, $0\le i<W$, and the image of position
 $i$ is position $W-1-i$.
@@ -321,8 +334,9 @@ Jensen~\cite{Jensen01} and his followers, we therefore
 generate only the polyominoes with $\hbox{uspan}\le\hbox{vspan}$, and we
 count those with $\hbox{uspan}<\hbox{vspan}$ twice:
 $$ \fix_{\rhoo}(n) = \sum_{\hbox{\scriptsize cases}}
-  \bigl(2\cdot\#\{\hbox{uspan}<\hbox{vspan}\} + \#\{\hbox{uspan}=\hbox{vspan}\}\bigr).$$
+  \bigl(2\cdot\#\{\hbox{uspan}<|vspan|\} + \#\{\hbox{uspan}=\hbox{vspan}\}\bigr).$$
 This has two advantages.
+[CLAUDE: fix rendering to |uspan| etc.]
 
 First, the strips are narrow.  Going from a cell to a neighbor changes
 both $u$ and $v$ by~1, and hence
@@ -419,9 +433,9 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
 \end{tikzpicture}
 \caption{The situation after position $i=6$ of row $v$ has
   been decided.  Blue cells belong to $P^+$, gray cells are decided and
-  empty, white cells are undecided.  The thick red line separates the
+  empty, white cells are undecided.  The thick red curve separates the
   decided cells from the unprocessed cells, and the frontier consists of
-  all cells that touch an edge of the red line from below: the cells
+  all cells that touch an edge of the red curve from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
   classes $A$, $B$, $C$ with four runs.  The frontier steps down at the
@@ -448,8 +462,10 @@ The image $\rhoo(X)$ of a class $X$ is again a component of the known
 part.  There are three possibilities:
 \begin{itemize}
 \item $\rhoo(X)=X$.  We call $X$ the \emph{central} class.  It is the
-  point-symmetric component around the center, and it
-  already connects $P^+$ to its image.  There is at most one such class.
+  point-symmetric component around the center, and its
+  component reaches the lower frontier.
+  %already connects $P^+$ to its image.
+  There is at most one such class.
 \item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are \emph{paired}
   classes, and each is the \emph{partner} of the other.  A paired
   class reaches through the known part to the opposite (lower) frontier.
@@ -550,6 +566,7 @@ types of classes.
   (Section~\ref{sec:packed}) at the occupied positions; all other
   positions have label 0 and code~\texttt{E}.}
 \label{fig:types}
+[CLAUDE: Make the component of 10 bigger to show that it can also reach in the other half.]
 \end{figure}
 
 @ In addition, the state contains one bit that tells whether a side of
@@ -787,7 +804,7 @@ static int retire(uint8_t *f, uint8_t *par, int i)
 @*1 A transition.
 The function |step| takes the byte key |sk| of a state (with touched
 bit |touches|) and decides the cell at position~|i| of the current row:
-|occ| tells whether the cell belongs to~$P^+$.  The parameter |last| is
+The flag |occ| tells whether the cell belongs to~$P^+$.  The flag |last| is
 true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
 |OK|; in the last case the new canonical key is stored in |key|, its
 touched bit in |*result_touches| and its number of classes in |*mp|.
@@ -817,7 +834,7 @@ static int step(const uint8_t *sk, int touches, int i, int occ, int last,
         for (int nb = i - 1; nb <= i + 1; nb += 2)
             if (nb >= 0 && nb < W && f[nb])
                 join(f, par, nw, f[nb]);
-        if (first_twin) {
+        if (first_twin) { /* special treatment of the two starting lines */
             for (int jj = W - 2 - i; jj <= W - i; jj += 2)
                 if (jj >= 0 && jj <= i && f[jj])
                     join_image(f, par, nw, f[jj]);
@@ -1064,7 +1081,10 @@ static const char *cs(cnt_t x)
 
 @* The tables.
 \label{sec:tables}
-The states of one stage of the computation are stored in a hash table
+The states of one stage of the computation are stored
+consecutively in an array, and their indices in this array
+are stored
+in a hash table
 with open addressing (linear probing).  The states are numbered
 $0,1,\ldots,|n|-1$ in the order of their creation; |keys| contains their
 packed keys, and the hash table |hash| contains the state numbers plus~1.
@@ -1536,13 +1556,15 @@ static inline int both_cost(int h, int j)
 
 @ The best such cost over the cells of a connecting path, each at its
 highest possible row.  The path leads from the frontier cell |a| in row
-|ra| to column |e|, where it arrives at row |re_| or lower.
+|ra| to column |b|, where it arrives at row |rb| or lower.
+(This function could be streamlined: Check whether we are in the left half or in the right half;
+The best cell on a sequence of cells of slope $\pm1$ is the one closest to a diagonal line through the upper left or upper right corner; so one could directly determine which cell this is. But the total length of the loops in this function is of the order $W$, so it won't make a big difference.)
 @<Sub...@>=
-static int gap_score(int a, int ra, int e, int re_)
+static int gap_score(int a, int ra, int b, int rb)
 {
     int best = 1 << 20;
-    for (int j = a + 1; j <= e; j++) {
-        int t1 = ra + 1 + (j - a - 1), t2 = re_ + (e - j);
+    for (int j = a + 1; j <= b; j++) {
+        int t1 = ra + 1 + (j - a - 1), t2 = rb + (b - j);
         int c = both_cost(min(t1, t2), j);
         best = min(best, c);
     }
@@ -1898,7 +1920,7 @@ found, the pocket is closed and paid for.
         if (j > 0) {
             int a = re[j - 1], b = rs[j];
             int g = b - a - 1 + (b == kink);
-            /* at the kink the path ends one column beyond b: g + 2 cells */
+            /* at the kink the path ends one column beyond $b$: $g + 2$ cells */
             int pk = (g - 1 + (b == kink) + frow(a) + frow(b) + 2) / 2;
             int sc = touches ? 1 << 20 : gap_score(a, frow(a), b == kink ? b + 1 : b - 1, frow(b) + 1);
             if (sp) {
@@ -2112,7 +2134,7 @@ static size_t MAXSTATES, MAXBYTES, MAXRECS, MAXKW; /* statistics */
 @ These vectors are allocated at the beginning of the program, as soon
 as $N$ is known.
 @<Allocate the result vectors@>=
-    PORTRAIT = calloc(NMAX_plus_1, sizeof(cnt_t));
+    PORTRAIT = calloc(NMAX_plus_1, sizeof(cnt_t)); /* indices $0\dts N$ */
     SQUARE = calloc(NMAX_plus_1, sizeof(cnt_t));
     RECT = calloc(NMAX_plus_1, sizeof(cnt_t));
 
@@ -2721,11 +2743,13 @@ $N$ & max.\ states & records & MB & time (s)\\
 \caption{Maximum number of states in one table, number of count
   records at the peak, memory for both tables, and running time on a
   single core (64-bit counters).}
+  TODO: Run again after the program has settled.
 \label{tab:bench}
 \end{table}
 
 \textbf{Values.}  Table~\ref{tab:values} lists the results for
-$n\le71$.  The values for $n\le59$ (types M and V: $n\le 58$) agree
+$n\le71$.  The values for $n\le59$ %(types M and V: $n\le 58$)
+agree
 with the OEIS; the others are new.  As a further check, we have derived
 the numbers of \emph{free} polyominoes whose symmetry group is exactly
 the group generated by the $180^\circ$ rotation (OEIS \oeis{A006747} and its
@@ -2740,6 +2764,7 @@ $\fix_{\rhoo}(2k+1)$ close to $\fix_{\rhoo}(2k)$.
 For even $n$, all three types of centers contribute, and type~M
 alone accounts for about 80\,\% of the total; for odd $n$ there is only
 type~C with an occupied center cell.
+This is clear because the center cell is the only cell that is fixed by the rotation.
 The quotient $\fix_{\rhoo}(2k+1)/\fix_{\rhoo}(2k)$ is 1.019 for $2k=10$
 and decreases steadily: it is 1.001 for $2k=28$, 0.9995 for $2k=30$, and
 0.983 for $2k=70$.  Thus, for all even $n=2k$ with $30\le n\le 70$, the
@@ -2845,6 +2870,7 @@ the list head, at least 8 bytes for its share of the hash array
 (two slots of 4 bytes), and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the
 weight, 3 wasted by alignment), of which there are 2.6 per state.
+[CLAUDE: Add a sentence where this 2.6 comes from. (empirically? at the peak load?)]
 (The actual memory at the peak was 150 bytes per state of the larger
 table, because the old and the new table exist at the same time, and
 because the arrays grow by doubling and are not full.)
@@ -2884,7 +2910,7 @@ We list them roughly in the order of increasing effort.
   possible keys, with $\log_2 5\approx2.32$ bits per frontier cell, but
   ranking and unranking are slow.
 \item \emph{Separating the structure from the counting.}  Knuth's
-  programs {\sc POLYNUM} and {\sc POLYSLAVE}~\cite{polynum,polyslave} split the work
+  programs {\sc POLYNUM} and {\sc POLYSLAVE}~\cite{polynum} split the work
   into two phases.  The first program runs the transfer-matrix method
   without any counters: it only finds out which states exist and which
   state leads to which, and it writes this as a sequence of elementary
@@ -2926,6 +2952,9 @@ We list them roughly in the order of increasing effort.
   that are reached in several subproblems are processed several
   times.  We have not tried how much this would save.
 \end{enumerate}
+
+[CLAUDE: Is the hashtable of the old table released when a new cell is considered?]
+
 
 @* References.
 \bibliographystyle{plainurl}
