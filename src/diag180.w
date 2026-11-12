@@ -169,6 +169,11 @@ The options are described in Section~\ref{sec:cmdline}.
 #include <stdint.h>
 #include <time.h>
 
+@ The macros |max| and |min| are used in many places.  Their arguments
+are evaluated twice, so they must not have side effects.
+@d max(a,b) ((a) > (b) ? (a) : (b))
+@d min(a,b) ((a) < (b) ? (a) : (b))
+
 @ Some format declarations for the typesetting of this document.
 @s uint8_t int
 @s uint32_t int
@@ -1247,7 +1252,7 @@ static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
             fprintf(stderr, "too many count records for 32-bit links\n");
             exit(1);
         }
-        t->rcap = 2 * t->rcap > 0xFFFFFFFFu ? 0xFFFFFFFFu : 2 * t->rcap;
+        t->rcap = min(2 * t->rcap, 0xFFFFFFFFu);
         t->rec = xrealloc(t->rec, t->rcap * sizeof(rec_t));
     }
     rec_t *q = &t->rec[t->nrec++];
@@ -1510,14 +1515,12 @@ static inline int frow(int j)
 @ @<Sub...@>=
 static inline void reach(int h)
 {
-    if (h > H0)
-        H0 = h;
+    H0 = max(H0, h);
 }
 
 static inline void sreach(int sc)
 {
-    if (sc < S0)
-        S0 = sc;
+    S0 = min(S0, sc);
 }
 
 @ The cost of reaching both the top row and a side from row |h| and
@@ -1525,9 +1528,7 @@ column |j|.
 @<Sub...@>=
 static inline int both_cost(int h, int j)
 {
-    int e = j < W - 1 - j ? j : W - 1 - j;
-    int r = VSTAR - h;
-    return e > r ? e : r;
+    return max(VSTAR - h, min(j, W - 1 - j));
 }
 
 @ The best such cost over the cells of a connecting path, each at its
@@ -1539,9 +1540,8 @@ static int gap_score(int a, int ra, int e, int re_)
     int best = 1 << 20;
     for (int j = a + 1; j <= e; j++) {
         int t1 = ra + 1 + (j - a - 1), t2 = re_ + (e - j);
-        int c = both_cost(t1 < t2 ? t1 : t2, j);
-        if (c < best)
-            best = c;
+        int c = both_cost(min(t1, t2), j);
+        best = min(best, c);
     }
     return best;
 }
@@ -1567,10 +1567,8 @@ static int cycle(const int *g, const int *pk, const int *sc, int n, int *m1p, in
             s1 = sc[t];
         } else if (g[t] == m1) {
             n1++;
-            if (pk[t] > p1)
-                p1 = pk[t];
-            if (sc[t] < s1)
-                s1 = sc[t];
+            p1 = max(p1, pk[t]);
+            s1 = min(s1, sc[t]);
         } else if (g[t] > m2)
             m2 = g[t];
     }
@@ -1598,13 +1596,13 @@ structure reaches height |h| and score |s|.
 @<Sub...@>=
 static inline int finish(int h, int s)
 {
-    int top = VSTAR - h > 0 ? VSTAR - h : 0;
+    int top = max(VSTAR - h, 0);
     if (CUR_TOUCHES)
         return HEIGHT ? top : 0;
     if (!HEIGHT)
         return DEDGE;
     int sep = DEDGE + top;           /* edge and top separately */
-    return s < sep ? s : sep;
+    return min(s, sep);
 }
 
 @ The function |height_extra| takes the minimum over the options.  At
@@ -1614,9 +1612,8 @@ static int height_extra(int h, int s)
 {
     int ex = finish(h, s);
     for (int o = 0; o < NOPT && ex > 0; o++) {
-        int e2 = OPTD[o] + finish(OPTP[o] > h ? OPTP[o] : h, OPTS[o] < s ? OPTS[o] : s);
-        if (e2 < ex)
-            ex = e2;
+        int e2 = OPTD[o] + finish(max(OPTP[o], h), min(OPTS[o], s));
+        ex = min(ex, e2);
     }
     return ex;
 }
@@ -1984,16 +1981,15 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
     DEDGE = 0;
     if (!touches) {
         int d1 = rs[0], d2 = W - 1 - re[R - 1];
-        DEDGE = d1 < d2 ? d1 : d2;
+        DEDGE = min(d1, d2);
     }
     /* without a central class the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
     if (NCL) {
         int ex = 1 << 20;
         for (int c = 0; c < NCL; c++) {
-            int e2 = CLD[c] + height_extra(CLP[c] > H0 ? CLP[c] : H0, CLS[c] < S0 ? CLS[c] : S0);
-            if (e2 < ex)
-                ex = e2;
+            int e2 = CLD[c] + height_extra(max(CLP[c], H0), min(CLS[c], S0));
+            ex = min(ex, e2);
         }
         cost += ex;
     } else
@@ -2062,7 +2058,7 @@ static int exact_bound(const uint8_t *key, int touches)
     }
     if (!touches) {
         int d1 = occ[0], d2 = W - 1 - occ[no - 1];
-        cost += d1 < d2 ? d1 : d2;
+        cost += min(d1, d2);
     }
     return cost;
 }
@@ -2077,17 +2073,15 @@ there the adjacencies to the image row are not yet all known.
 @<Sub...@>=
 static int bound(const uint8_t *key, int touches, int k, int kmin, int i, int last, int first_twin)
 {
-    int lowerbound = kmin > k ? 2 * (kmin - k) : 0;
+    int lowerbound = max(2 * (kmin - k), 0);
     if (!touches) {
         int dist = W;
         for (int j = 0; j < W; j++)
             if (key[j]) {
-                int dd = j < W - 1 - j ? j : W - 1 - j;
-                if (dd < dist)
-                    dist = dd;
+                int dd = min(j, W - 1 - j);
+                dist = min(dist, dd);
             }
-        if (2 * dist > lowerbound)
-            lowerbound = 2 * dist;
+        lowerbound = max(lowerbound, 2 * dist);
     }
     if (!first_twin || last) {
         if (!completion_possible(key))
@@ -2096,8 +2090,7 @@ static int bound(const uint8_t *key, int touches, int k, int kmin, int i, int la
         CUR_V = V0 + k - 1;
         VSTAR = V0 + kmin - 1;
         int eb = 2 * (OLDBOUND ? exact_bound(key, touches) : cactus_bound(key, touches, kink));
-        if (eb > lowerbound)
-            lowerbound = eb;
+        lowerbound = max(lowerbound, eb);
     }
     return lowerbound;
 }
@@ -2414,19 +2407,16 @@ is switched off.
                                     continue;
                                 val += lowerbound2;
                             }
-                            if (val < la)
-                                la = val;
+                            la = min(la, val);
                         }
-                        if (la > lowerbound)
-                            lowerbound = la;
+                        lowerbound = max(lowerbound, la);
                     }
 
 @ @<Swap the tables...@>=
             table_t *x = cur;
             cur = nxt;
             nxt = x;
-            if (cur->n > MAXSTATES)
-                MAXSTATES = cur->n;
+            MAXSTATES = max(MAXSTATES, cur->n);
             size_t by = tab_bytes(cur) + tab_bytes(nxt);
             if (by > MAXBYTES)
                 MAXBYTES = by, MAXRECS = cur->nrec, MAXKW = KW;

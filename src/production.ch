@@ -97,7 +97,7 @@ static int exact_bound(const uint8_t *key, int touches)
     }
     if (!touches) {
         int d1 = occ[0], d2 = W - 1 - occ[no - 1];
-        cost += d1 < d2 ? d1 : d2;
+        cost += min(d1, d2);
     }
     return cost;
 }
