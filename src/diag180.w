@@ -1163,7 +1163,10 @@ static inline uint64_t hkey(const uint64_t *k)
 }
 
 @ When the table is full, the capacity is doubled and all states are
-rehashed.
+rehashed.  ``Full'' refers to the arrays |keys| and |head| of the
+states.  The array |hash| of indices, in which the probing takes place,
+always has at least twice as many slots as there are states: its load
+factor lies between $1/4$ and $1/2$, and linear probing is fast in this range.
 @<Sub...@>=
 static void tab_grow(table_t *t)
 {
@@ -2836,9 +2839,10 @@ $n$ & center in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 @*1 Saving space in larger runs.
 \label{sec:space}
 For $N=71$, the memory requirement of 3 GB was no obstacle, and we have
-not tried to reduce it.  At the peak, a state needs about 66 bytes:
-16 bytes for the packed key (two 64-bit words for $W=29$), 8 bytes for
-the hash table entry and the list head, and 16 bytes for each of its
+not tried to reduce it.  At the peak, a state needs about 70 bytes:
+16 bytes for the packed key (two 64-bit words for $W=29$), 4 bytes for
+the list head, at least 8 bytes for its share of the hash array
+(two slots of 4 bytes), and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the
 weight, 3 wasted by alignment), of which there are 2.6 per state.
 (The actual memory at the peak was 150 bytes per state of the larger
@@ -2853,6 +2857,15 @@ We list them roughly in the order of increasing effort.
   independent, and the program can already run a single case.  This
   saves time when several machines are available, but not space:
   the peak is determined by the one or two worst strips.
+\item \emph{A fuller hash table.}  The array |hash| has between two
+  and four slots of 4 bytes per state, that is, 8 to 16 bytes.
+  Linear probing still works well when the table is, say, $3/4$ full
+  (about 2.5 probes for a successful search and 8.5 for an unsuccessful
+  one, instead of 1.5 and 2.5 at load $1/2$).  Allowing
+  such a load factor would save a few bytes per state.  In the same
+  spirit, the arrays could grow by a smaller factor than~2, or they
+  could be allocated right away with a size estimated from the previous
+  row, so that less of the allocated space remains unused.
 \item \emph{Smaller counters.}  With 32-bit counters and arithmetic
   modulo a prime below $2^{32}$, a count record can be packed into
   8~bytes (32 bits for the counter, 24 for the link, 8 for the weight)
