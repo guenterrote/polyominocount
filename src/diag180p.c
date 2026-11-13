@@ -136,16 +136,16 @@ static int VERB= 1;
 static double PSEC= 60;
 static double T_START,T_LAST;
 
-/*:74*//*93:*/
-#line 2686 "diag180.w"
+/*:74*//*92:*/
+#line 2690 "diag180.w"
 
 static int REFLECT= 1;
-#line 2689 "diag180.w"
+#line 2693 "diag180.w"
 static const char*RESFILE= "results180.py";
-#line 2691 "diag180.w"
+#line 2695 "diag180.w"
 static int CHECK= 0;
 
-/*:93*/
+/*:92*/
 #line 170 "diag180.w"
 
 /*9:*/
@@ -1044,26 +1044,12 @@ fflush(stderr);
 }
 
 /*:75*//*76:*/
-#line 2318 "diag180.w"
-
-static int next_subset(uint8_t*chosen,int num_choices,int from)
-{
-int j= from;
-while(j<num_choices&&chosen[j])
-chosen[j++]= 0;
-if(j==num_choices)
-return 0;
-chosen[j]= 1;
-return 1;
-}
-
-/*:76*//*77:*/
-#line 2331 "diag180.w"
+#line 2317 "diag180.w"
 
 static void count_case(void)
 {
-/*78:*/
-#line 2354 "diag180.w"
+/*77:*/
+#line 2340 "diag180.w"
 
 M_v= M_x+M_y;
 M_u= M_x-M_y;
@@ -1092,11 +1078,11 @@ int kmin= 0;
 while(vspan(kmin)<W)
 kmin++;
 
-/*:78*/
-#line 2334 "diag180.w"
+/*:77*/
+#line 2320 "diag180.w"
 
-/*79:*/
-#line 2384 "diag180.w"
+/*78:*/
+#line 2370 "diag180.w"
 
 table_t A,B,*cur= &A,*nxt= &B;
 tab_init(&A,1024);
@@ -1105,17 +1091,16 @@ tab_clear(cur);
 state_t key;
 int v0;
 
-/*:79*/
-#line 2335 "diag180.w"
+/*:78*/
+#line 2321 "diag180.w"
 
-/*81:*/
-#line 2403 "diag180.w"
+/*79:*/
+#line 2385 "diag180.w"
 
 int choice[MAXW],num_choices= 0,max_chosen;
-uint8_t chosen[MAXW];
 if(E==0){
-/*82:*/
-#line 2437 "diag180.w"
+/*81:*/
+#line 2441 "diag180.w"
 
 int vm= M_v/2;
 for(int i= 0;i<W;i++)
@@ -1125,12 +1110,12 @@ max_chosen= (NMAX-2*kmin+1)/2;
 v0= vm+1;
 V0= v0;
 
-/*:82*/
-#line 2407 "diag180.w"
+/*:81*/
+#line 2388 "diag180.w"
 
 }else{
-/*84:*/
-#line 2472 "diag180.w"
+/*83:*/
+#line 2476 "diag180.w"
 
 v0= (M_v+1)/2;
 V0= v0;
@@ -1139,26 +1124,42 @@ if(((umin+i-v0)%2+2)%2==0)
 choice[num_choices++]= i;
 max_chosen= (NMAX-2*(kmin-1))/2;
 
-/*:84*/
-#line 2409 "diag180.w"
+/*:83*/
+#line 2390 "diag180.w"
 
 }
+uint8_t chosen[MAXW];
+int num_chosen= 0,done= 0;
 memset(chosen,0,num_choices);
-for(int from= 0;next_subset(chosen,num_choices,from);){
-int num_chosen= 0,lowest= -1;
-for(int b= num_choices-1;b>=0;b--)
-if(chosen[b]){
+while(!done){
+/*80:*/
+#line 2418 "diag180.w"
+
+{
+int j= 0;
+if(num_chosen>=max_chosen)
+while(j<num_choices&&!chosen[j])
+j++;
+while(j<num_choices&&chosen[j]){
+chosen[j++]= 0;
+num_chosen--;
+}
+if(j==num_choices)
+done= 1;
+else{
+chosen[j]= 1;
 num_chosen++;
-lowest= b;
 }
-if(num_chosen> max_chosen){
-from= lowest;
-continue;
 }
-from= 0;
+
+/*:80*/
+#line 2396 "diag180.w"
+
+if(done)
+break;
 if(E==0){
-/*83:*/
-#line 2449 "diag180.w"
+/*82:*/
+#line 2453 "diag180.w"
 
 uint8_t f[MAXW],par[MAXLAB];
 int nc= 0;
@@ -1178,12 +1179,12 @@ size_t ti= tab_get(cur,&key);
 cur->head[ti]= new_record(cur,nc,1,0);
 }
 
-/*:83*/
-#line 2425 "diag180.w"
+/*:82*/
+#line 2400 "diag180.w"
 
 }else{
-/*85:*/
-#line 2499 "diag180.w"
+/*84:*/
+#line 2503 "diag180.w"
 
 uint8_t band[MAXW+1];
 int is_twin[MAXW],run_label[MAXW],num_runs= 0,m= 0;
@@ -1217,39 +1218,39 @@ size_t ti= tab_get(cur,&key);
 cur->head[ti]= new_record(cur,2*num_chosen,1,0);
 }
 
-/*:85*/
-#line 2427 "diag180.w"
+/*:84*/
+#line 2402 "diag180.w"
 
 }
 }
 tab_finish(cur);
 
-/*:81*/
-#line 2336 "diag180.w"
+/*:79*/
+#line 2322 "diag180.w"
 
 int cells_v[MAXW];
 for(int k= 1+E;cur->n;k++){
-/*86:*/
-#line 2534 "diag180.w"
+/*85:*/
+#line 2538 "diag180.w"
 
 int v= v0+k-1,nu= 0;
 for(int i= 0;i<W;i++)
 if(((umin+i-v)%2+2)%2==0)
 cells_v[nu++]= i;
 
-/*:86*/
-#line 2339 "diag180.w"
+/*:85*/
+#line 2325 "diag180.w"
 
 for(int ci= 0;ci<nu;ci++){
-/*87:*/
-#line 2540 "diag180.w"
+/*86:*/
+#line 2544 "diag180.w"
 
 int i= cells_v[ci];
 int last= ci==nu-1;
 tab_clear(nxt);
 for(size_t si= 0;si<cur->n;si++){
-/*88:*/
-#line 2551 "diag180.w"
+/*87:*/
+#line 2555 "diag180.w"
 
 state_t sk;
 unpack(cur->keys+si*KW,&sk);
@@ -1262,8 +1263,8 @@ record(k-1,cur,si,sk.touches);
 continue;
 }
 int add= occ?2:0;
-/*89:*/
-#line 2576 "diag180.w"
+/*88:*/
+#line 2580 "diag180.w"
 
 uint64_t w[12];
 pack_key(&key,w);
@@ -1275,11 +1276,11 @@ else{
 lowerbound= bound(&key,k,kmin,i,last);
 if(lowerbound<0)
 continue;
-/*90:*/
+/*89:*/
 #line 122 "production.ch"
 
 if(!last&&!key.label[i]&&i+1<W&&key.label[i+1]){
-#line 2610 "diag180.w"
+#line 2614 "diag180.w"
 
 int i2= cells_v[ci+1],last2= ci+1==nu-1;
 int la= 1<<20;
@@ -1303,8 +1304,8 @@ la= min(la,val);
 lowerbound= max(lowerbound,la);
 }
 
-/*:90*/
-#line 2587 "diag180.w"
+/*:89*/
+#line 2591 "diag180.w"
 
 }
 int limit= NMAX-lowerbound-add;
@@ -1316,17 +1317,17 @@ nxt->lowerbound[ti]= lowerbound;
 }
 add_list(nxt,ti,cur,si,add,limit);
 
-/*:89*/
-#line 2563 "diag180.w"
-
-}
-
 /*:88*/
-#line 2545 "diag180.w"
+#line 2567 "diag180.w"
 
 }
-/*91:*/
-#line 2633 "diag180.w"
+
+/*:87*/
+#line 2549 "diag180.w"
+
+}
+/*90:*/
+#line 2637 "diag180.w"
 
 table_t*x= cur;
 cur= nxt;
@@ -1339,16 +1340,16 @@ tab_finish(cur);
 if(!last&&(VERB>=2||(VERB==1&&wall()-T_LAST>=PSEC)))
 stat_line("#cell",k,v,ci+1,nu,cur,nxt);
 
-/*:91*/
-#line 2547 "diag180.w"
+/*:90*/
+#line 2551 "diag180.w"
 
 
-/*:87*/
-#line 2341 "diag180.w"
+/*:86*/
+#line 2327 "diag180.w"
 
 }
-/*92:*/
-#line 2653 "diag180.w"
+/*91:*/
+#line 2657 "diag180.w"
 
 if(REFLECT&&M_u==0&&cur->n){
 
@@ -1369,8 +1370,8 @@ nxt= x;
 tab_finish(cur);
 }
 
-/*:92*/
-#line 2343 "diag180.w"
+/*:91*/
+#line 2329 "diag180.w"
 
 if(VERB>=1)
 stat_line("#row ",k,v,nu,nu,cur,nxt);
@@ -1381,16 +1382,16 @@ tab_free(&A);
 tab_free(&B);
 }
 
-/*:77*/
+/*:76*/
 #line 171 "diag180.w"
 
-/*94:*/
-#line 2693 "diag180.w"
+/*93:*/
+#line 2697 "diag180.w"
 
 int main(int argc,char**argv)
 {
-/*95:*/
-#line 2711 "diag180.w"
+/*94:*/
+#line 2715 "diag180.w"
 
 int a= 1;
 while(a<argc&&argv[a][0]=='-'){
@@ -1398,7 +1399,7 @@ if(!strcmp(argv[a],"-m")&&a+1<argc)
 MOD= strtoull(argv[++a],0,10),a++;
 else if(!strcmp(argv[a],"-o")&&a+1<argc)
 RESFILE= argv[++a],a++;
-#line 2726 "diag180.w"
+#line 2730 "diag180.w"
 else if(!strcmp(argv[a],"-C"))
 CHECK= 1,a++;
 else if(!strcmp(argv[a],"-v")&&a+1<argc)
@@ -1432,16 +1433,16 @@ SQUARE= calloc(NMAX_plus_1,sizeof(cnt_t));
 RECT= calloc(NMAX_plus_1,sizeof(cnt_t));
 
 /*:71*/
-#line 2751 "diag180.w"
+#line 2755 "diag180.w"
 
 
-/*:95*/
-#line 2696 "diag180.w"
+/*:94*/
+#line 2700 "diag180.w"
 
 clock_t t0= clock();
 T_START= T_LAST= wall();
-/*97:*/
-#line 2780 "diag180.w"
+/*96:*/
+#line 2784 "diag180.w"
 
 for(int str= 0;str<2;str++){
 FILE*f= str?stdout:stderr;
@@ -1458,7 +1459,7 @@ fprintf(f,", modulus 2**"CNT_BITS"\n");
 #line 161 "production.ch"
 fprintf(f,"# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s; pack check %s\n",
 REFLECT?"on":"off (-R)",CHECK?"on (-C)":"off");
-#line 2797 "diag180.w"
+#line 2801 "diag180.w"
 fprintf(f,"# output: results file %s, progress -v %d -p %g s\n",
 RESFILE,VERB,PSEC);
 fprintf(f,"# sizes: counter %zu bytes, count record %zu bytes, key word 64 bits\n",
@@ -1466,12 +1467,12 @@ sizeof(cnt_t),sizeof(rec_t));
 fflush(f);
 }
 
-/*:97*/
-#line 2699 "diag180.w"
+/*:96*/
+#line 2703 "diag180.w"
 
 if(argc-a==4){
-/*98:*/
-#line 2806 "diag180.w"
+/*97:*/
+#line 2810 "diag180.w"
 
 M_x= atoi(argv[a+1]),M_y= atoi(argv[a+2]),umax= atoi(argv[a+3]);
 count_case();
@@ -1482,12 +1483,12 @@ printf("# modulus 2**"CNT_BITS"; n #(uspan<vspan) #(uspan=vspan)\n");
 for(int n= 1;n<=NMAX;n++)
 printf("%d %s %s\n",n,cs(PORTRAIT[n]),cs(SQUARE[n]));
 
-/*:98*/
-#line 2701 "diag180.w"
+/*:97*/
+#line 2705 "diag180.w"
 
 }else{
-/*99:*/
-#line 2819 "diag180.w"
+/*98:*/
+#line 2823 "diag180.w"
 
 
 cnt_t*out= calloc(3*NMAX_plus_1,sizeof(cnt_t));
@@ -1510,11 +1511,11 @@ if(twice){
 }
 }
 
-/*:99*/
-#line 2703 "diag180.w"
+/*:98*/
+#line 2707 "diag180.w"
 
-/*100:*/
-#line 2849 "diag180.w"
+/*99:*/
+#line 2853 "diag180.w"
 
 
 
@@ -1537,11 +1538,11 @@ cs(out[ty*NMAX_plus_1+n]));
 fclose(rf);
 printf("# modulus %s; results appended to %s\n",mstr,RESFILE);
 
-/*:100*/
-#line 2704 "diag180.w"
+/*:99*/
+#line 2708 "diag180.w"
 
-/*101:*/
-#line 2873 "diag180.w"
+/*100:*/
+#line 2877 "diag180.w"
 
 printf("# n fix(r180) R180C(center in a cell) R180M(edge midpoint) R180V(vertex)\n");
 for(int n= 1;n<=NMAX;n++){
@@ -1550,25 +1551,25 @@ printf("%d %s %s %s %s\n",n,cs(tot),cs(out[n]),cs(out[NMAX_plus_1+n]),
 cs(out[2*NMAX_plus_1+n]));
 }
 
-/*:101*/
-#line 2705 "diag180.w"
+/*:100*/
+#line 2709 "diag180.w"
 
 }
-/*102:*/
-#line 2881 "diag180.w"
+/*101:*/
+#line 2885 "diag180.w"
 
 fprintf(stderr,"# peak memory %.1f MB (both tables; %zu count records, key %zu 64-bit words)\n",
 MAXBYTES/1e6,MAXRECS,MAXKW);
 fprintf(stderr,"# max states %zu, %.2fs\n",MAXSTATES,
 (double)(clock()-t0)/CLOCKS_PER_SEC);
 
-/*:102*/
-#line 2707 "diag180.w"
+/*:101*/
+#line 2711 "diag180.w"
 
 return 0;
 }
 
-/*:94*/
+/*:93*/
 #line 172 "diag180.w"
 
 

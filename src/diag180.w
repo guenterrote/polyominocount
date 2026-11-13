@@ -2313,20 +2313,6 @@ static void stat_line(const char *tag, int k, int v, int ci, int nu,
     fflush(stderr);
 }
 
-@ The following function is used for enumerating the subsets of the
-first row, when the initial states are created.  It is explained there.
-@<Sub...@>=
-static int next_subset(uint8_t *chosen, int num_choices, int from)
-{
-    int j = from;
-    while (j < num_choices && chosen[j])
-        chosen[j++] = 0;
-    if (j == num_choices)
-        return 0;
-    chosen[j] = 1;
-    return 1;
-}
-
 @ Here is the function that treats one case.
 @<Sub...@>=
 static void count_case(void)
@@ -2396,31 +2382,20 @@ are the nonempty subsets of a list |choice| of |num_choices| positions.
 Since their number is exponential in |W|, we must not look at all of
 them: a subset with more than |max_chosen| elements is too heavy, whatever
 is added later, because |kmin-k| further rows are necessary in any case, with weight~2 each.
-The subsets are generated in the order of binary numbers, with
-the array |chosen| as the counter.  The function |next_subset| adds 1 at
-the position |from|; adding 1 at the lowest nonzero position skips all
-supersets of the current subset.
-@ @<Create the initial states@>=
+@<Create the initial states@>=
     int choice[MAXW], num_choices = 0, max_chosen;
-    uint8_t chosen[MAXW];
     if (E == 0) {
         @<Prepare the choices for the middle row@>@;
     } else {
         @<Prepare the choices for the twin row@>@;
     }
+    uint8_t chosen[MAXW]; /* the current subset */
+    int num_chosen = 0, done = 0;
     memset(chosen, 0, num_choices);
-    for (int from = 0; next_subset(chosen, num_choices, from);) {
-        int num_chosen = 0, lowest = -1;
-        for (int b = num_choices - 1; b >= 0; b--)
-            if (chosen[b]) {
-                num_chosen++;
-                lowest = b;
-            }
-        if (num_chosen > max_chosen) {
-            from = lowest; /* skip all supersets */
-            continue;
-        }
-        from = 0;
+    while (!done) {
+        @<Generate the next subset for which the size |num_chosen| does not exceed |max_chosen|; set |done| if finished@>@;
+        if (done)
+            break;
         if (E == 0) {
             @<Create the state for a subset of the middle row@>@;
         } else {
@@ -2428,6 +2403,35 @@ supersets of the current subset.
         }
     }
     tab_finish(cur);
+
+@ The subsets are generated in the order of binary numbers, with
+the array |chosen| as the counter, starting from the empty set.
+Normally, the next subset is obtained by adding~1: the lowest
+position that is not chosen becomes chosen, and all positions below it are
+cleared.  This increases the size by at most~1.  However, if the current
+subset has already the maximum size, we add 1 at its lowest
+chosen position~|j| instead.  This skips all subsets that consist of
+the current subset plus some positions below~|j|.  These are
+supersets of the current subset, and they are too large.  The new
+subset is not larger than the current one.  In this way, a subset
+that is too large is never generated.
+@<Generate the next subset...@>=
+        {
+            int j = 0;
+            if (num_chosen >= max_chosen)
+                while (j < num_choices && !chosen[j])
+                    j++; /* the lowest chosen position */
+            while (j < num_choices && chosen[j]) { /* carry */
+                chosen[j++] = 0;
+                num_chosen--;
+            }
+            if (j == num_choices)
+                done = 1;
+            else {
+                chosen[j] = 1;
+                num_chosen++;
+            }
+        }
 
 @ If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
 enumerate all nonempty subsets of it that are symmetric under
