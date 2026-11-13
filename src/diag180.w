@@ -578,23 +578,24 @@ rightmost column contains a cell.
 For each state we store how many different sets of decided cells lead to
 it, separately for each weight (number of cells of $P$ so far).
 
-@*1 Byte keys.
-In its unpacked form, a state is a \emph{byte key} of |KL=W+MAXC+1| bytes:
+@*1 The unpacked state.
+In its unpacked form, a state is a record of type |state_t| with the following components:
 \begin{itemize}
-\item |key[i]|, $0\le i<W$: the class label of the frontier cell at
-  position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots$
+\item |label[i]|, $0\le i<W$: the class label of the frontier cell at
+  position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots,|num_classes|$
   in the order of their first appearance from left to right, which makes
-  the key canonical.
-\item |key[W+j-1]|, for each class $j$: the label of its partner if it
-  is a paired class, or one of the special values |CENTRAL| or |FLOATING|.
-\item |key[KL-1]|: the \emph{touched} bit.
+  the representation canonical.
+\item |partner[j]|, for each class $j\ge1$: the label of its partner if it
+  is a paired class; $j$ itself if $j$ is the central class (it is its own image);
+  and 0 if $j$ is a floating class.
+\item |touches|: the \emph{touched} bit.
 \end{itemize}
 A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAXC| classes.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
 positions are given below the picture.  The entries for the classes
-$1,2,3,4$ are $4$, |CENTRAL|, |FLOATING|, $1$, and the touched bit
+$1,2,3,4$ are $4$, $2$, $0$, $1$, and the touched bit
 is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
 \begin{figure}[htb]
@@ -634,7 +635,7 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   (label~4), so $A$ and $D$ are paired.  Class $B$ (label~2) contains
   the center: it is the central class.  Class $C$ (label~3) is a new cell
   in row~2; its image is not on the frontier: it is floating.
-  Below the picture: the first part of the byte key, and the codes of
+  Below the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
   initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
   \texttt{F}irst, \texttt{M}iddle, \texttt{L}ast.}
@@ -642,25 +643,46 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
 \end{figure}
 
 
-@d CENTRAL 0xFF /* the class is its own image */
-@d FLOATING 0xFE /* the image of the class is not on the frontier */
-@<Glob...@>=
+@<Type...@>=
+typedef struct {
+    uint8_t label[MAXW]; /* the class label at each position, 0 = no cell */
+    uint8_t partner[MAXLAB]; /* for each class label, starting from 1 */
+    uint8_t num_classes;
+    uint8_t touches; /* the touched bit */
+} state_t;
+
+@ @<Glob...@>=
 static int MAXC; /* maximum number of classes in a state */
-static int KL; /* length of a byte key */
+
+@ Two states are compared lexicographically.  (If the labels agree, the
+number of classes is the same.)
+@<Sub...@>=
+static int state_cmp(const state_t *a, const state_t *b)
+{
+    int c = memcmp(a->label, b->label, W);
+    if (c)
+        return c;
+    c = memcmp(a->partner + 1, b->partner + 1, a->num_classes);
+    if (c)
+        return c;
+    return a->touches - b->touches;
+}
 
 @*1 The working state.
 A transition changes only little: a new cell joins at most two classes,
 and at most two cells leave the frontier.  We therefore work directly
-on a copy of the byte key, with two arrays: |f[i]| is the label of the
-frontier cell at position~|i| (or 0), and |par[j]| is the partner or the type of the
-class with label~|j|, in the same form as in the byte key.
+on a copy of the state, with two arrays: |f[i]| is the label of the
+frontier cell at position~|i| (or 0), and |par[j]| is the partner of the
+class with label~|j|, in the same form as in |state_t|.
 During a transition the labels need not be numbered consecutively, and
 there may be one label more than in a canonical key.
 All operations are simple sweeps over the positions.
 
 @d MAXLAB (MAXW + 2) /* bound on the labels in the working arrays */
 @<Sub...@>=
-static inline int is_paired(int p) { return p != CENTRAL && p != FLOATING; }
+static inline int is_central(const uint8_t *par, int a) { return par[a] == a; }
+static inline int is_floating(const uint8_t *par, int a) { return par[a] == 0; }
+static inline int is_paired(const uint8_t *par, int a) { return par[a] != 0 && par[a] != a; }
 
 static inline void relabel(uint8_t *f, int from, int to)
 {
@@ -691,17 +713,17 @@ static void join(uint8_t *f, uint8_t *par, int a, int b)
     int pa = par[a], pb = par[b];
     relabel(f, b, a);
     if (pa == b)
-        par[a] = CENTRAL;
-    else if (pa == CENTRAL || pb == CENTRAL) {
-        if (is_paired(pa))
+        par[a] = a;
+    else if (pa == a || pb == b) { /* one of them is central */
+        if (pa != 0 && pa != a)
             relabel(f, pa, a);
-        if (is_paired(pb))
+        if (pb != 0 && pb != b)
             relabel(f, pb, a);
-        par[a] = CENTRAL;
-    } else if (is_paired(pa)) {
-        if (is_paired(pb))
+        par[a] = a;
+    } else if (pa != 0) {
+        if (pb != 0)
             relabel(f, pb, pa);
-    } else if (is_paired(pb)) {
+    } else if (pb != 0) {
         par[a] = pb;
         par[pb] = a;
     }
@@ -719,47 +741,39 @@ paired with each other.
 @<Sub...@>=
 static void join_image(uint8_t *f, uint8_t *par, int a, int b)
 {
-    int pa = par[a], pb = par[b];
-    if (pb == CENTRAL)
-        join(f, par, a, b);
-    else if (is_paired(pb))
-        join(f, par, a, pb);
+    if (!is_floating(par, b))
+        join(f, par, a, par[b]); /* |par[b]| is $B$ itself if $B$ is central */
     else if (a == b)
-        par[a] = CENTRAL;
-    else if (pa == CENTRAL)
+        par[a] = a;
+    else if (is_central(par, a))
         relabel(f, b, a);
-    else if (is_paired(pa))
-        relabel(f, b, pa);
+    else if (is_paired(par, a))
+        relabel(f, b, par[a]);
     else {
         par[a] = b;
         par[b] = a;
     }
 }
 
-@ The canonical byte key is obtained by renumbering the classes from
-left to right.  The function returns the number of classes.
+@ The canonical state is obtained by renumbering the classes from
+left to right.
 @<Sub...@>=
-static int canon(const uint8_t *f, const uint8_t *par, int touches, uint8_t *key)
+static void canon(const uint8_t *f, const uint8_t *par, int touches, state_t *s)
 {
     uint8_t map[MAXLAB], old[MAXLAB];
     int m = 0;
     memset(map, 0, sizeof(map));
-    memset(key, 0, KL);
     for (int i = 0; i < W; i++) {
-        if (!f[i])
-            continue;
-        if (!map[f[i]]) {
+        if (f[i] && !map[f[i]]) {
             map[f[i]] = ++m;
             old[m] = f[i];
         }
-        key[i] = map[f[i]];
+        s->label[i] = map[f[i]];
     }
-    for (int j = 1; j <= m; j++) {
-        int q = par[old[j]];
-        key[W + j - 1] = is_paired(q) ? map[q] : q;
-    }
-    key[KL - 1] = touches;
-    return m;
+    for (int j = 1; j <= m; j++)
+        s->partner[j] = map[par[old[j]]];
+    s->num_classes = m;
+    s->touches = touches;
 }
 
 @*1 Removing a cell from the frontier.
@@ -794,22 +808,19 @@ static int retire(uint8_t *f, uint8_t *par, int i)
             if (f[j] == lab)
                 return OK;
         }
-    int p = par[lab];
-    if (p == CENTRAL)
+    if (is_central(par, lab))
         return any ? DEAD : COMPLETE;
-    if (p == FLOATING)
+    if (is_floating(par, lab))
         return DEAD;
-    par[p] = FLOATING;
+    par[par[lab]] = 0; /* the partner is now floating */
     return OK;
 }
 
 @*1 A transition.
-The function |step| takes the byte key |sk| of a state (with touched
-bit |touches|) and decides the cell at position~|i| of the current row:
+The function |step| takes a state |s| and decides the cell at position~|i| of the current row:
 The flag |occ| tells whether the cell belongs to~$P^+$.  The flag |last| is
 true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
-|OK|; in the last case the new canonical key is stored in |key|, its
-touched bit in |*result_touches| and its number of classes in |*mp|.
+|OK|; in the last case the new canonical state is stored in |*result|.
 
 A new cell gets a new class label and is floating at first,
 and it is joined with the frontier cells at positions $i-1$ and $i+1$.
@@ -821,17 +832,15 @@ After the decision, the cell at position $i-1$ has no undecided
 neighbors any more and is retired; at the end of a row, the same holds
 for position $i+1$.  (Retiring an empty position does no harm.)
 @<Sub...@>=
-static int step(const uint8_t *sk, int touches, int i, int occ, int last,
-                int first_twin, uint8_t *key, int *result_touches, int *mp)
+static int step(const state_t *s, int i, int occ, int last, int first_twin,
+                state_t *result)
 {
     uint8_t f[MAXW], par[MAXLAB];
-    memcpy(f, sk, W);
-    memcpy(par + 1, sk + W, MAXC);
+    memcpy(f, s->label, W);
+    memcpy(par, s->partner, s->num_classes + 1);
     if (occ) {
-        int nw = 1;
-        while (nw <= MAXC && par[nw]) /* the first unused label */
-            nw++;
-        par[nw] = FLOATING;
+        int nw = s->num_classes + 1; /* the first unused label */
+        par[nw] = 0;
         f[i] = nw;
         for (int nb = i - 1; nb <= i + 1; nb += 2)
             if (nb >= 0 && nb < W && f[nb])
@@ -849,8 +858,7 @@ static int step(const uint8_t *sk, int touches, int i, int occ, int last,
         status = retire(f, par, i + 1);
     if (status != OK)
         return status;
-    *result_touches = touches || (occ && (i == 0 || i == W - 1));
-    *mp = canon(f, par, *result_touches, key);
+    canon(f, par, s->touches || (occ && (i == 0 || i == W - 1)), result);
     return OK;
 }
 
@@ -869,7 +877,7 @@ processed.
 
 @* Packed keys.
 \label{sec:packed}
-The byte keys are convenient but wasteful.  In the tables, a state is
+The unpacked states are convenient but wasteful.  In the tables, a state is
 stored as a bit string in |KW| 64-bit words:
 \begin{itemize}
 \item 3 bits per position, with one of the following six codes 0--5:
@@ -936,7 +944,7 @@ central class.  Thus the $j$-th crossing class from the left is the partner
 of the $j$-th crossing class from the right, and it suffices to know
 \emph{which} classes are crossing.
 With the option \texttt{-C}, the program checks for every state that
-unpacking the packed key gives back the original byte key.  We have run
+unpacking the packed key gives back the original state.  We have run
 this check for $N\le 30$.
 
 @ Bit strings are written and read with two small routines.  No field
@@ -961,17 +969,30 @@ static inline int getbits(const uint64_t *w, int *pos, int nb)
     return val & ((1u << nb) - 1);
 }
 
-@ Packing.  The first loop determines, for every class, the positions
+@ Packing and unpacking are done in two steps.  The intermediate form
+is a \emph{coded state}: the sequence of codes for the |W| positions, as
+a byte array, and one flag per class that tells whether the class is
+crossing.  The first step translates between the labels and the codes;
+the second step is merely the compaction of the coded state into a bit
+string.
+@<Type...@>=
+typedef struct {
+    uint8_t code[MAXW]; /* |C_EMPTY|, \dots, |C_LAST| */
+    uint8_t crossing[MAXLAB]; /* for each class label, starting from 1 */
+    uint8_t num_classes;
+    uint8_t touches;
+} coded_t;
+
+@ Encoding.  The first loop determines, for every class, the positions
 where its first and its last run start.
 @<Sub...@>=
-static void pack(const uint8_t *key, uint64_t *w)
+static void encode(const state_t *s, coded_t *c)
 {
-    int first[MAXW + 2], lastrun[MAXW + 2];
-    int pos = 0, m = 0;
-    memset(w, 0, KW * 8);
+    int first[MAXLAB], lastrun[MAXLAB];
+    int m = 0;
     for (int i = 0; i < W; i++)
-        if (key[i] && (i == 0 || !key[i - 1])) {
-            int l = key[i];
+        if (s->label[i] && (i == 0 || !s->label[i - 1])) {
+            int l = s->label[i];
             if (l > m) {
                 m = l;
                 first[l] = i;
@@ -979,51 +1000,95 @@ static void pack(const uint8_t *key, uint64_t *w)
             lastrun[l] = i;
         }
     for (int i = 0; i < W; i++) {
-        int l = key[i], code;
+        int l = s->label[i];
         if (!l)
-            code = C_EMPTY;
-        else if (i > 0 && key[i - 1])
-            code = C_CONTINUE;
+            c->code[i] = C_EMPTY;
+        else if (i > 0 && s->label[i - 1])
+            c->code[i] = C_CONTINUE;
         else if (first[l] == i)
-            code = lastrun[l] == i ? C_SINGLETON : C_FIRST;
+            c->code[i] = lastrun[l] == i ? C_SINGLETON : C_FIRST;
         else
-            code = lastrun[l] == i ? C_LAST : C_MIDDLE;
-        putbits(w, &pos, code, 3);
+            c->code[i] = lastrun[l] == i ? C_LAST : C_MIDDLE;
     }
     for (int j = 1; j <= m; j++)
-        putbits(w, &pos, key[W + j - 1] != FLOATING, 1);
-    putbits(w, &pos, key[KL - 1], 1);
+        c->crossing[j] = s->partner[j] != 0;
+    c->num_classes = m;
+    c->touches = s->touches;
 }
 
-@ Unpacking.  In the second part, |stack| holds the crossing classes
+@ Decoding.  In the first part, |stack| holds the classes with several
+runs whose last run has not yet been seen.  In the second part, it
+holds the crossing classes
 from left to right, and they are matched from the outside to the inside.
 @<Sub...@>=
-static void unpack(const uint64_t *w, uint8_t *key)
+static void decode(const coded_t *c, state_t *s)
 {
-    int stack[MAXW + 2], sp = 0, m = 0, pos = 0;
-    memset(key, 0, KL);
+    int stack[MAXLAB], sp = 0, m = 0;
     for (int i = 0; i < W; i++) {
-        int code = getbits(w, &pos, 3);
-        switch (code) {
-        case C_EMPTY: key[i] = 0; break;
-        case C_CONTINUE: key[i] = key[i - 1]; break;
-        case C_SINGLETON: key[i] = ++m; break;
-        case C_FIRST: key[i] = ++m; stack[sp++] = m; break;
-        case C_MIDDLE: key[i] = stack[sp - 1]; break;
-        case C_LAST: key[i] = stack[--sp]; break;
+        switch (c->code[i]) {
+        case C_EMPTY: s->label[i] = 0; break;
+        case C_CONTINUE: s->label[i] = s->label[i - 1]; break;
+        case C_SINGLETON: s->label[i] = ++m; break;
+        case C_FIRST: s->label[i] = ++m; stack[sp++] = m; break;
+        case C_MIDDLE: s->label[i] = stack[sp - 1]; break;
+        case C_LAST: s->label[i] = stack[--sp]; break;
         }
     }
     sp = 0;                       /* crossing classes, left to right */
     for (int j = 1; j <= m; j++)
-        if (getbits(w, &pos, 1))
+        if (c->crossing[j])
             stack[sp++] = j;
         else
-            key[W + j - 1] = FLOATING;
+            s->partner[j] = 0;
     for (int a = 0, b = sp - 1; a <= b; a++, b--) {
-        key[W + stack[a] - 1] = a == b ? CENTRAL : stack[b];
-        key[W + stack[b] - 1] = a == b ? CENTRAL : stack[a];
+        s->partner[stack[a]] = stack[b]; /* if |a == b|, this is the central class */
+        s->partner[stack[b]] = stack[a];
     }
-    key[KL - 1] = getbits(w, &pos, 1);
+    s->num_classes = m;
+    s->touches = c->touches;
+}
+
+@ Compaction into a bit string, and the reverse.  The number of classes
+is not stored: it is the number of codes |C_SINGLETON| and |C_FIRST|.
+@<Sub...@>=
+static void compress(const coded_t *c, uint64_t *w)
+{
+    int pos = 0;
+    memset(w, 0, KW * 8);
+    for (int i = 0; i < W; i++)
+        putbits(w, &pos, c->code[i], 3);
+    for (int j = 1; j <= c->num_classes; j++)
+        putbits(w, &pos, c->crossing[j], 1);
+    putbits(w, &pos, c->touches, 1);
+}
+
+static void expand(const uint64_t *w, coded_t *c)
+{
+    int pos = 0, m = 0;
+    for (int i = 0; i < W; i++) {
+        c->code[i] = getbits(w, &pos, 3);
+        if (c->code[i] == C_SINGLETON || c->code[i] == C_FIRST)
+            m++;
+    }
+    for (int j = 1; j <= m; j++)
+        c->crossing[j] = getbits(w, &pos, 1);
+    c->num_classes = m;
+    c->touches = getbits(w, &pos, 1);
+}
+
+@ @<Sub...@>=
+static void pack(const state_t *s, uint64_t *w)
+{
+    coded_t c;
+    encode(s, &c);
+    compress(&c, w);
+}
+
+static void unpack(const uint64_t *w, state_t *s)
+{
+    coded_t c;
+    expand(w, &c);
+    decode(&c, s);
 }
 
 @* Counters.
@@ -1290,16 +1355,16 @@ static size_t tab_create(table_t *t, const uint64_t *w)
     return i;
 }
 
-@ The function |pack_key| packs a byte key.  With the option \texttt{-C},
-it checks that unpacking gives the byte key back.
+@ The function |pack_key| packs a state.  With the option \texttt{-C},
+it checks that unpacking gives the state back.
 @<Sub...@>=
-static void pack_key(const uint8_t *key, uint64_t *w)
+static void pack_key(const state_t *s, uint64_t *w)
 {
-    pack(key, w);
+    pack(s, w);
     if (CHECK) {
-        uint8_t k2[2 * MAXW + 4];
-        unpack(w, k2);
-        if (memcmp(k2, key, KL)) {
+        state_t s2;
+        unpack(w, &s2);
+        if (s2.num_classes != s->num_classes || state_cmp(&s2, s)) {
             fprintf(stderr, "pack/unpack mismatch\n");
             exit(2);
         }
@@ -1307,12 +1372,12 @@ static void pack_key(const uint8_t *key, uint64_t *w)
 }
 
 @ The function |tab_get| returns the number of the state with a given
-byte key.  If the state is not yet in the table, it is created.
+unpacked form.  If the state is not yet in the table, it is created.
 @<Sub...@>=
-static size_t tab_get(table_t *t, const uint8_t *key)
+static size_t tab_get(table_t *t, const state_t *s)
 {
     uint64_t w[12];
-    pack_key(key, w);
+    pack_key(s, w);
     size_t i = tab_find(t, w);
     return i != NO_STATE ? i : tab_create(t, w);
 }
@@ -1390,18 +1455,12 @@ image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
 never meet.  (The empty state, which occurs only in the twin row, is
 fine.)
 @<Sub...@>=
-static int completion_possible(const uint8_t *key)
+static int completion_possible(const state_t *s)
 {
-    int m = 0;
-    for (int j = 0; j < MAXC; j++) {
-        int q = key[W + j];
-        if (!q)
-            break;
-        m++;
-        if (q != FLOATING)
+    for (int j = 1; j <= s->num_classes; j++)
+        if (s->partner[j] != 0)
             return 1;
-    }
-    return m == 0;
+    return s->num_classes == 0;
 }
 
 @*1 Connections on the diagonal lattice.
@@ -1927,8 +1986,10 @@ calling the function |bound| of the program for these states.
 The parameter |kink| is the position of the frontier cell right of the
 kink, if the cell before it has been decided empty, and $-1$ otherwise.
 @<Sub...@>=
-static int cactus_bound(const uint8_t *key, int touches, int kink)
+static int cactus_bound(const state_t *s, int kink)
 {
+    const uint8_t *label = s->label;
+    int touches = s->touches;
     @<Find the runs of the frontier@>@;
     @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
@@ -1944,14 +2005,14 @@ static int cactus_bound(const uint8_t *key, int touches, int kink)
     int rs[MAXW], re[MAXW], rl[MAXW], R = 0;
     int lastrun[MAXW + 2];
     for (int i = 0; i < W; i++)
-        if (key[i]) {
-            if (i == 0 || !key[i - 1]) {
+        if (label[i]) {
+            if (i == 0 || !label[i - 1]) {
                 rs[R] = i;
-                rl[R] = key[i];
+                rl[R] = label[i];
                 R++;
             }
             re[R - 1] = i;
-            lastrun[key[i]] = R - 1;
+            lastrun[label[i]] = R - 1;
         }
     if (!R)
         return 0;
@@ -1963,7 +2024,7 @@ static int cactus_bound(const uint8_t *key, int touches, int kink)
     NCL = 0;
     CUR_TOUCHES = touches;
     for (int i = 0; i < W; i++)
-        if (key[i]) {
+        if (label[i]) {
             reach(frow(i));
             sreach(both_cost(frow(i), i));
         }
@@ -2018,7 +2079,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
     /* top level */
     int cr[MAXW], m = 0;
     for (int t = 0; t < nt; t++)
-        if (key[W + toplab[t] - 1] != FLOATING)
+        if (s->partner[toplab[t]] != 0) /* crossing */
             cr[m++] = t;
     if (m) {
         for (int t = 0; t < cr[0]; t++) {
@@ -2090,18 +2151,18 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 @<Sub...@>=
-static int exact_bound(const uint8_t *key, int touches)
+static int exact_bound(const state_t *s)
 {
+    const uint8_t *label = s->label;
+    int touches = s->touches;
     int sup[MAXW + 1];
     int occ[MAXW], no = 0;
-    for (int j = 1; j <= MAXC; j++) {
-        int q = key[W + j - 1];
-        if (!q)
-            break;
-        sup[j] = (q != CENTRAL && q != FLOATING && q < j) ? q : j;
+    for (int j = 1; j <= s->num_classes; j++) {
+        int q = s->partner[j];
+        sup[j] = (q != 0 && q < j) ? q : j;
     }
     for (int i = 0; i < W; i++)
-        if (key[i])
+        if (label[i])
             occ[no++] = i;
     if (!no)
         return 0;
@@ -2111,7 +2172,7 @@ static int exact_bound(const uint8_t *key, int touches)
     int seen[MAXW + 1];
     memset(seen, 0, sizeof(seen));
     for (int a = 0; a < no; a++) {
-        int s = sup[key[occ[a]]];
+        int s = sup[label[occ[a]]];
         if (!seen[s]) {
             seen[s] = 1;
             ncls++;
@@ -2134,7 +2195,7 @@ static int exact_bound(const uint8_t *key, int touches)
             ord[--bucket[wgt[a]]] = a;
         for (int e = 0; e < ne && ncls > 1; e++) {
             int a = ord[e];
-            int x = sup[key[occ[a]]], y = sup[key[occ[a + 1]]];
+            int x = sup[label[occ[a]]], y = sup[label[occ[a + 1]]];
             while (par[x] != x)
                 x = par[x];
             while (par[y] != y)
@@ -2161,25 +2222,26 @@ which the height reaches $W$.
 The cactus bound is not valid in the middle of the twin row, because
 there the adjacencies to the image row are not yet all known.
 @<Sub...@>=
-static int bound(const uint8_t *key, int touches, int k, int kmin, int i, int last, int first_twin)
+static int bound(const state_t *s, int k, int kmin, int i, int last, int first_twin)
 {
+    const uint8_t *label = s->label;
     int lowerbound = max(2 * (kmin - k), 0);
-    if (!touches) {
+    if (!s->touches) {
         int dist = W;
         for (int j = 0; j < W; j++)
-            if (key[j]) {
+            if (label[j]) {
                 int dd = min(j, W - 1 - j);
                 dist = min(dist, dd);
             }
         lowerbound = max(lowerbound, 2 * dist);
     }
     if (!first_twin || last) {
-        if (!completion_possible(key))
+        if (!completion_possible(s))
             return -1;
-        int kink = (!last && !key[i] && i + 1 < W && key[i + 1]) ? i + 1 : -1;
+        int kink = (!last && !label[i] && i + 1 < W && label[i + 1]) ? i + 1 : -1;
         CUR_V = V0 + k - 1;
         VSTAR = V0 + kmin - 1;
-        int eb = 2 * (OLDBOUND ? exact_bound(key, touches) : cactus_bound(key, touches, kink));
+        int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
         lowerbound = max(lowerbound, eb);
     }
     return lowerbound;
@@ -2344,7 +2406,6 @@ static void count_case(void)
         exit(1);
     }
     MAXC = (W + 1) / 2 + 1;
-    KL = W + MAXC + 1;
     KW = (3 * W + MAXC + 1 + 63) / 64;
     NMAX_plus_1 = NMAX + 1;
 
@@ -2359,7 +2420,7 @@ current cell and |nxt| for the states after it.
     tab_init(&A, 1024);
     tab_init(&B, 1024);
     tab_clear(cur);
-    uint8_t key[MAXW * 2 + 4];
+    state_t key;
     int v0;
 
 @ {\bf Initial states.}
@@ -2397,18 +2458,18 @@ If $M_v$ is odd, we start with the empty state before the twin row.
                 f[cells[a]] = a + 1;
             for (int a = 0; a < nc; a++) {
                 int i = cells[a], j = W - 1 - i;
-                par[a + 1] = j == i ? CENTRAL : f[j];
+                par[a + 1] = f[j]; /* the cell itself if |j == i| */
             }
             int touches = isc[0] || isc[W - 1];
-            canon(f, par, touches, key);
-            t_init = tab_get(cur, key);
+            canon(f, par, touches, &key);
+            t_init = tab_get(cur, &key);
             cur->head[t_init] = new_record(cur, nc, 1, 0);
         }
         v0 = vm + 1;
         V0 = v0;
     } else {
-        memset(key, 0, KL);
-        t_init = tab_get(cur, key);
+        memset(&key, 0, sizeof(key)); /* the empty state */
+        t_init = tab_get(cur, &key);
         cur->head[t_init] = new_record(cur, 0, 1, 0);
         v0 = (M_v + 1) / 2;
         V0 = v0;
@@ -2436,27 +2497,19 @@ for (size_t si = 0; si < cur->n; si++) {
 @ The empty state exists only in the twin row.  A polyomino that
 is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |si|...@>=
-                uint8_t sk[MAXW * 2 + 4];
-                unpack(cur->keys + si * KW, sk);
-                int touches = sk[KL - 1];
-                int empty = 1;
-                for (int j = 0; j < W; j++)
-                    if (sk[j]) {
-                        empty = 0;
-                        break;
-                    }
+                state_t sk;
+                unpack(cur->keys + si * KW, &sk);
                 for (int occ = 0; occ <= 1; occ++) {
-                    if (occ && k > 1 && empty)
+                    if (occ && k > 1 && sk.num_classes == 0)
                         continue;
-                    int result_touches, m;
-                    int status = step(sk, touches, i, occ, last, first_twin, key, &result_touches, &m);
+                    int status = step(&sk, i, occ, last, first_twin, &key);
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
-                        record(k - 1, cur, si, touches);
+                        record(k - 1, cur, si, sk.touches);
                         continue;
                     }
-                    if (m == 0 && !(first_twin && !last))
+                    if (key.num_classes == 0 && !(first_twin && !last))
                         continue;
                     int add = occ ? 2 : 0;
                     @<Add state |si| to the state |key| of the new table, with pruning@>@;
@@ -2475,13 +2528,13 @@ states were created; the remaining 6.7 million keys were discarded, because
 they cannot be completed or because all weights were too large.
 @<Add state |si| to the state |key|...@>=
                     uint64_t w[12];
-                    pack_key(key, w);
+                    pack_key(&key, w);
                     size_t ti = tab_find(nxt, w);
                     int lowerbound = 0;
                     if (ti != NO_STATE)
                         lowerbound = nxt->lowerbound[ti];
-                    else if (m > 0) {
-                        lowerbound = bound(key, result_touches, k, kmin, i, last, first_twin);
+                    else if (key.num_classes > 0) {
+                        lowerbound = bound(&key, k, kmin, i, last, first_twin);
                         if (lowerbound < 0)
                             continue;
 @<Sharpen |lowerbound| by looking one cell ahead@>@;
@@ -2506,24 +2559,23 @@ the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
 @<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < W && key[i + 1]))) {
+                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
                         /* one step ahead: the next cell is present or not */
                         int i2 = cells_v[ci + 1], last2 = ci + 1 == nu - 1;
                         int la = 1 << 20;
-                        uint8_t k2[MAXW * 2 + 4];
+                        state_t k2;
                         for (int o2 = 0; o2 <= 1 && la; o2++) {
-                            int result_touches2, m2;
-                            int st2 = step(key, result_touches, i2, o2, last2, 0, k2, &result_touches2, &m2);
+                            int st2 = step(&key, i2, o2, last2, 0, &k2);
                             if (st2 == DEAD)
                                 continue;
                             /* a completion only counts if it is a valid polyomino */
-                            if (st2 == COMPLETE && !(result_touches && vspan(k - 1) >= W))
+                            if (st2 == COMPLETE && !(key.touches && vspan(k - 1) >= W))
                                 continue;
                             int val = 2 * o2;
                             if (st2 == OK) {
-                                if (m2 == 0)
+                                if (k2.num_classes == 0)
                                     continue;
-                                int lowerbound2 = bound(k2, result_touches2, k, kmin, i2, last2, 0);
+                                int lowerbound2 = bound(&k2, k, kmin, i2, last2, 0);
                                 if (lowerbound2 < 0)
                                     continue;
                                 val += lowerbound2;
@@ -2549,7 +2601,7 @@ is switched off.
 If $M_u=0$, the strip is symmetric under $u\to-u$, and at the end of a row
 the mirror image of a state is again a valid state with the same
 number of completions.  We merge each state with its mirror image by
-keeping the lexicographically smaller byte key.  This almost halves
+keeping the lexicographically smaller one.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
 The positions are reversed, and |canon| then
 renumbers the classes.
@@ -2557,15 +2609,14 @@ renumbers the classes.
         if (REFLECT && M_u == 0 && cur->n) {
             /* merge each state with its mirror image $u\to-u$ */
             tab_clear(nxt);
-            uint8_t rkey[MAXW * 2 + 4];
+            state_t sk, mirror;
             for (size_t si = 0; si < cur->n; si++) {
-                uint8_t sk[MAXW * 2 + 4];
-                unpack(cur->keys + si * KW, sk);
+                unpack(cur->keys + si * KW, &sk);
                 uint8_t f[MAXW];
                 for (int a = 0; a < W; a++)
-                    f[a] = sk[W - 1 - a];
-                canon(f, sk + W - 1, sk[KL - 1], rkey);
-                const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
+                    f[a] = sk.label[W - 1 - a];
+                canon(f, sk.partner, sk.touches, &mirror);
+                const state_t *use = state_cmp(&mirror, &sk) < 0 ? &mirror : &sk;
                 add_list(nxt, tab_get(nxt, use), cur, si, 0, NMAX);
             }
             table_t *x = cur;
@@ -2660,8 +2711,7 @@ the range where the program can be useful.
 \begin{itemize}
 \item The strip has at most |MAXW|${}=160$ columns.  Since strips of all
   widths up to $N$ are needed, this means $N\le160$, which is checked above.
-\item Class labels are stored in bytes, and the two largest values are
-  reserved for |CENTRAL| and |FLOATING|.  Hence a label cannot go beyond 253.
+\item Class labels are stored in bytes.  Hence a label cannot go beyond 255.
   A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ classes.
 \item The weight in a count record is a byte, which would allow $N\le255$.
 \item A packed key has at most 12 words of 64 bits; $3W+|MAXC|+1\le 563$ bits

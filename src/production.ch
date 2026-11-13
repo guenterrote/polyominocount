@@ -39,18 +39,18 @@ static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them o
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 @<Sub...@>=
-static int exact_bound(const uint8_t *key, int touches)
+static int exact_bound(const state_t *s)
 {
+    const uint8_t *label = s->label;
+    int touches = s->touches;
     int sup[MAXW + 1];
     int occ[MAXW], no = 0;
-    for (int j = 1; j <= MAXC; j++) {
-        int q = key[W + j - 1];
-        if (!q)
-            break;
-        sup[j] = (q != CENTRAL && q != FLOATING && q < j) ? q : j;
+    for (int j = 1; j <= s->num_classes; j++) {
+        int q = s->partner[j];
+        sup[j] = (q != 0 && q < j) ? q : j;
     }
     for (int i = 0; i < W; i++)
-        if (key[i])
+        if (label[i])
             occ[no++] = i;
     if (!no)
         return 0;
@@ -60,7 +60,7 @@ static int exact_bound(const uint8_t *key, int touches)
     int seen[MAXW + 1];
     memset(seen, 0, sizeof(seen));
     for (int a = 0; a < no; a++) {
-        int s = sup[key[occ[a]]];
+        int s = sup[label[occ[a]]];
         if (!seen[s]) {
             seen[s] = 1;
             ncls++;
@@ -83,7 +83,7 @@ static int exact_bound(const uint8_t *key, int touches)
             ord[--bucket[wgt[a]]] = a;
         for (int e = 0; e < ne && ncls > 1; e++) {
             int a = ord[e];
-            int x = sup[key[occ[a]]], y = sup[key[occ[a + 1]]];
+            int x = sup[label[occ[a]]], y = sup[label[occ[a + 1]]];
             while (par[x] != x)
                 x = par[x];
             while (par[y] != y)
@@ -106,9 +106,9 @@ static int exact_bound(const uint8_t *key, int touches)
 @z
 
 @x
-        int eb = 2 * (OLDBOUND ? exact_bound(key, touches) : cactus_bound(key, touches, kink));
+        int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
 @y
-        int eb = 2 * cactus_bound(key, touches, kink);
+        int eb = 2 * cactus_bound(s, kink);
 @z
 
 @x
@@ -116,11 +116,11 @@ the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
 @<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < W && key[i + 1]))) {
+                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
 @y
 the lookahead counts only if it would be a valid polyomino.
 @<Sharpen |lowerbound|...@>=
-                    if (!last && !first_twin && !key[i] && i + 1 < W && key[i + 1]) {
+                    if (!last && !first_twin && !key.label[i] && i + 1 < W && key.label[i + 1]) {
 @z
 
 @x
