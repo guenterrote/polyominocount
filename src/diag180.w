@@ -437,51 +437,53 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   all cells that touch an edge of the red curve from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
-  classes $A$, $B$, $C$ with four runs.  The frontier steps down at the
+  components $A$, $B$, $C$ with four runs.  The frontier steps down at the
   kink, right of position~$i$.}
 \label{fig:frontier}
 \end{figure}
 
-@ {\bf Classes: central, paired, and floating.}
+@ {\bf Components: central, paired, and floating.}
 Consider the part of $P$ that is known so far: the decided cells of $P^+$
-and their images.  Its connected components that contain a frontier cell
-are the \emph{classes}.  A \emph{run} is a maximal block of
+and their images.  From now on, the word \emph{component} denotes a connected component of this known part
+that contains a cell of the (upper) frontier.
+In the state, a component is represented by its frontier cells, which
+carry a common label.  A \emph{run} is a maximal block of
 consecutive positions that hold frontier cells.  Since the cells of a
 row occupy only every other position, and the cells in between have
 already left the frontier, most runs consist of a single cell; only at
 the kink, the positions $i$ and $i+1$ can both hold a frontier cell,
-and these two cells are neighbors.  The frontier cells of a class form
-one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of class
-$A$ are two runs, and class $B$ has one run of two cells.)  Since the components are
-separated by the frontier line from the undecided region, two classes
+and these two cells are neighbors.  The frontier cells of a component form
+one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of component
+$A$ are two runs, and component $B$ has one run of two cells.)  Since the components are
+separated by the frontier line from the undecided region, two components
 cannot \emph{cross}: the pattern $A\ldots B\ldots A\ldots B$ does not
 occur.
 
-The image $\rhoo(X)$ of a class $X$ is again a component of the known
-part.  There are three possibilities:
+The image $\rhoo(X)$ of a component $X$ is again a connected component of the known
+part, but it need not touch the upper frontier.  There are three possibilities:
 \begin{itemize}
-\item $\rhoo(X)=X$.  We call $X$ the \emph{central} class.  It is the
-  point-symmetric component around the center, and its
-  component reaches the lower frontier.
+\item $\rhoo(X)=X$.  We call $X$ the \emph{central} component.  It is
+  point-symmetric around the center, and it
+  reaches the lower frontier.
   %already connects $P^+$ to its image.
-  There is at most one such class.
-\item $\rhoo(X)=Y$ is another class.  Then $X$ and $Y$ are \emph{paired}
-  classes, and each is the \emph{partner} of the other.  A paired
-  class reaches through the known part to the opposite (lower) frontier.
+  There is at most one such component.
+\item $\rhoo(X)=Y$ is another component.  Then $X$ and $Y$ are \emph{paired}
+  components, and each is the \emph{partner} of the other.  A paired
+  component reaches through the known part to the opposite (lower) frontier.
 \item $\rhoo(X)$ has no cell on the frontier.  Then $X$ is a
-  \emph{floating} class: it lives on the upper side only and does not
+  \emph{floating} component: it lives on the upper side only and does not
   reach the lower frontier, and its image touches only the lower frontier.
 \end{itemize}
-When two classes $X$ and $Y$ are joined by a new cell, their images are
+When two components $X$ and $Y$ are joined by a new cell, their images are
 joined as well, by the image of that cell.  This is why the type of
-each class and the partner relation must be part of the state: if $X$
-and $Y$ happen to be partners, the result is the central class;
-otherwise the new class $X\cup Y$ has the image $\rhoo(X)\cup\rhoo(Y)$.
+each component and the partner relation must be part of the state: if $X$
+and $Y$ happen to be partners, the result is the central component;
+otherwise the new component $X\cup Y$ has the image $\rhoo(X)\cup\rhoo(Y)$.
 
 The polyomino $P$ is connected if and only if, at the end, there is a
-single class and it is the central class.
+single component and it is the central component.
 Figure~\ref{fig:types} shows an (artificial) example with all three
-types of classes.
+types of components.
 
 \begin{figure}[htb]
 \centering
@@ -550,21 +552,21 @@ types of classes.
   \node[left] at (-27.5,14.6) {\scriptsize code};
 \end{tikzpicture}
 
-\caption{A larger example with all types of classes: $W=53$, center type~C,
+\caption{A larger example with all types of components: $W=53$, center type~C,
   row~8 has been decided up to position~38.  The red line is the
   frontier, and the dotted line is its image, the lower frontier.
-  The numbers are the class labels.
-  The classes 1 and 9 are \emph{paired}, and so are 4 and~7 (blue): each
+  The numbers are the component labels.
+  The components 1 and 9 are \emph{paired}, and so are 4 and~7 (blue): each
   of them reaches from the upper to the lower frontier, and its image
-  is its partner.  Class~5 is the \emph{central} class (dark blue).
-  The classes 2, 3, 6, 8, and 10 are \emph{floating} (green): their
-  images (light green) touch only the lower frontier.  Class~3 lies in the
-  pocket between the two runs of the floating class~2, which in turn lies
-  in the pocket of the paired class~1.  Class~6 lies in the pocket of
-  the central class.  The classes 8 and~10 are at the top level.
-  The component of class~10 extends far into the lower half, but it
+  is its partner.  Component~5 is the \emph{central} component (dark blue).
+  The components 2, 3, 6, 8, and 10 are \emph{floating} (green): their
+  images (light green) touch only the lower frontier.  Component~3 lies in the
+  pocket between the two runs of the floating component~2, which in turn lies
+  in the pocket of the paired component~1.  Component~6 lies in the pocket of
+  the central component.  The components 8 and~10 are at the top level.
+  Component~10 extends far into the lower half, but it
   does not reach the lower frontier.
-  The crossing classes form the nested chain $1,4,5,7,9$.
+  The crossing components form the nested chain $1,4,5,7,9$.
   Above the picture: the labels and the codes of the packed key
   (Section~\ref{sec:packed}) at the occupied positions; all other
   positions have label 0 and code~\texttt{E}.}
@@ -579,22 +581,22 @@ For each state we store how many different sets of decided cells lead to
 it, separately for each weight (number of cells of $P$ so far).
 
 @*1 The unpacked state.
-In its unpacked form, a state is a record of type |state_t| with the following components:
+In its unpacked form, a state is a record of type |state_t| with the following fields:
 \begin{itemize}
-\item |label[i]|, $0\le i<W$: the class label of the frontier cell at
-  position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots,|num_classes|$
+\item |label[i]|, $0\le i<W$: the component label of the frontier cell at
+  position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots,|num_components|$
   in the order of their first appearance from left to right, which makes
   the representation canonical.
-\item |partner[j]|, for each class $j\ge1$: the label of its partner if it
-  is a paired class; $j$ itself if $j$ is the central class (it is its own image);
-  and 0 if $j$ is a floating class.
+\item |partner[j]|, for each component $j\ge1$: the label of its partner if it
+  is a paired component; $j$ itself if $j$ is the central component (it is its own image);
+  and 0 if $j$ is a floating component.
 \item |touches|: the \emph{touched} bit.
 \end{itemize}
 A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
-|MAXC| classes.
+|MAX_COMPONENTS| components.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
-positions are given above the picture.  The entries for the classes
+positions are given above the picture.  The entries for the components
 $1,2,3,4$ are $4$, $2$, $0$, $1$, and the touched bit
 is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
@@ -630,10 +632,10 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   $(u,v)=(1,3)$ at position $i=9$ has been decided.  The upper half
   $P^+$ has 3 cells in the middle row (dark) and 16 other cells (blue), so
   the weight is $3+2\cdot16=35$.  The images are light blue.
-  There are four classes.  Class $A$ (label~1) reaches down through the
-  middle row to the image of the right arm; its image is the class $D$
-  (label~4), so $A$ and $D$ are paired.  Class $B$ (label~2) contains
-  the center: it is the central class.  Class $C$ (label~3) is a new cell
+  There are four components.  Component $A$ (label~1) reaches down through the
+  middle row to the image of the right arm; its image is the component $D$
+  (label~4), so $A$ and $D$ are paired.  Component $B$ (label~2) contains
+  the center: it is the central component.  Component $C$ (label~3) is a new cell
   in row~2; its image is not on the frontier: it is floating.
   Above the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
@@ -645,35 +647,35 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
 @<Type...@>=
 typedef struct {
-    uint8_t label[MAXW]; /* the class label at each position, 0 = no cell */
-    uint8_t partner[MAXLAB]; /* for each class label, starting from 1 */
-    uint8_t num_classes;
+    uint8_t label[MAXW]; /* the component label at each position, 0 = no cell */
+    uint8_t partner[MAXLAB]; /* for each component label, starting from 1 */
+    uint8_t num_components;
     uint8_t touches; /* the touched bit */
 } state_t;
 
 @ @<Glob...@>=
-static int MAXC; /* maximum number of classes in a state */
+static int MAX_COMPONENTS; /* maximum number of components in a state */
 
 @ Two states are compared lexicographically.  (If the labels agree, the
-number of classes is the same.)
+number of components is the same.)
 @<Sub...@>=
 static int state_cmp(const state_t *a, const state_t *b)
 {
     int c = memcmp(a->label, b->label, W);
     if (c)
         return c;
-    c = memcmp(a->partner + 1, b->partner + 1, a->num_classes);
+    c = memcmp(a->partner + 1, b->partner + 1, a->num_components);
     if (c)
         return c;
     return a->touches - b->touches;
 }
 
 @*1 The working state.
-A transition changes only little: a new cell joins at most two classes,
+A transition changes only little: a new cell joins at most two components,
 and at most two cells leave the frontier.  We therefore work directly
 on a copy of the state, with two arrays: |f[i]| is the label of the
 frontier cell at position~|i| (or 0), and |par[j]| is the partner of the
-class with label~|j|, in the same form as in |state_t|.
+component with label~|j|, in the same form as in |state_t|.
 During a transition the labels need not be numbered consecutively, and
 there may be one label more than in a canonical key.
 All operations are simple sweeps over the positions.
@@ -691,18 +693,18 @@ static inline void relabel(uint8_t *f, int from, int to)
             f[j] = to;
 }
 
-@ {\bf Joining two classes.}
-When two classes $A$ and $B$ become connected, their images $\rhoo(A)$
+@ {\bf Joining two components.}
+When two components $A$ and $B$ become connected, their images $\rhoo(A)$
 and $\rhoo(B)$ become connected as well.  The cells of $B$ get the label
 of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 \begin{itemize}
-\item If $A$ and $B$ are partners, the union is its own image: it is the central class.
-\item If one of the two is the central class, the union is the central class, and
-  it swallows the partner of the other class if that class is paired.
+\item If $A$ and $B$ are partners, the union is its own image: it is the central component.
+\item If one of the two is the central component, the union is the central component, and
+  it swallows the partner of the other component if that component is paired.
 \item If both are paired (with different partners), their partners are
   joined, too, and the result is the partner of the union.
 \item If one is paired and the other is floating, the union is paired,
-  with the same partner.  (The partner has absorbed the image of the floating class.)
+  with the same partner.  (The partner has absorbed the image of the floating component.)
 \item If both are floating, so is the union.
 \end{itemize}
 @<Sub...@>=
@@ -729,14 +731,14 @@ static void join(uint8_t *f, uint8_t *par, int a, int b)
     }
 }
 
-@ In the twin row, we need a variation: the class $A$ becomes connected
-to the \emph{image} of the class~$B$, and hence $\rhoo(A)$ becomes
+@ In the twin row, we need a variation: the component $A$ becomes connected
+to the \emph{image} of the component~$B$, and hence $\rhoo(A)$ becomes
 connected to~$B$.  If $B$ is central or paired, $\rhoo(B)$ is on the frontier (as $B$ itself or as another
-class), and this is an ordinary |join|.  Otherwise $B$ is floating, and its image
-is now attached to~$A$.  If $A=B$, this makes $A$ the central class.
-If $A$ is the central class, it swallows~$B$.
+component), and this is an ordinary |join|.  Otherwise $B$ is floating, and its image
+is now attached to~$A$.  If $A=B$, this makes $A$ the central component.
+If $A$ is the central component, it swallows~$B$.
 If $A$ is paired, its partner swallows~$B$.
-In the remaining case, both classes were floating, and now $A$ and $B$ are
+In the remaining case, both components were floating, and now $A$ and $B$ are
 paired with each other.
 @<Sub...@>=
 static void join_image(uint8_t *f, uint8_t *par, int a, int b)
@@ -755,7 +757,7 @@ static void join_image(uint8_t *f, uint8_t *par, int a, int b)
     }
 }
 
-@ The canonical state is obtained by renumbering the classes from
+@ The canonical state is obtained by renumbering the components from
 left to right.
 @<Sub...@>=
 static void canon(const uint8_t *f, const uint8_t *par, int touches, state_t *s)
@@ -772,23 +774,23 @@ static void canon(const uint8_t *f, const uint8_t *par, int touches, state_t *s)
     }
     for (int j = 1; j <= m; j++)
         s->partner[j] = map[par[old[j]]];
-    s->num_classes = m;
+    s->num_components = m;
     s->touches = touches;
 }
 
 @*1 Removing a cell from the frontier.
 When the frontier cell at position~|i| can no longer get new
 neighbors, it is \emph{retired}.  If other frontier cells of the same
-class remain, nothing happens.  Otherwise the class $X$ disappears from
+component remain, nothing happens.  Otherwise the component $X$ disappears from
 the frontier, and there are several cases:
 \begin{itemize}
-\item $X$ is the central class.  Then $X$ is a complete symmetric polyomino,
+\item $X$ is the central component.  Then $X$ is a complete symmetric polyomino,
   and nothing can be added to it.  If the frontier is now empty, we have
-  found a polyomino (|COMPLETE|); otherwise the other classes can
+  found a polyomino (|COMPLETE|); otherwise the other components can
   never be connected to $X$, and the state is |DEAD|.
 \item $X$ is floating.  Then $X$ and $\rhoo(X)$ are two
-  different components to which nothing can be added: |DEAD|.
-\item $X$ is paired with a class $Y$.  From now on,
+  different pieces to which nothing can be added: |DEAD|.
+\item $X$ is paired with a component $Y$.  From now on,
   $Y$ is floating.
 \end{itemize}
 @<Type...@>=
@@ -822,11 +824,11 @@ The flag |occ| tells whether the cell belongs to~$P^+$.  The flag |last| is
 true for the last cell of the row.  The result is |DEAD|, |COMPLETE|, or
 |OK|; in the last case the new canonical state is stored in |*result|.
 
-A new cell gets a new class label and is floating at first,
+A new cell gets a new component label and is floating at first,
 and it is joined with the frontier cells at positions $i-1$ and $i+1$.
 These are its two lower neighbors: at this moment, both positions hold
 cells of the previous row, see Figure~\ref{fig:frontier}.
-(The class that is given as the first argument of |join| keeps its label.)
+(The component that is given as the first argument of |join| keeps its label.)
 
 After the decision, the cell at position $i-1$ has no undecided
 neighbors any more and is retired; at the end of a row, the same holds
@@ -837,9 +839,9 @@ static int step(const state_t *s, int i, int occ, int last, int first_twin,
 {
     uint8_t f[MAXW], par[MAXLAB];
     memcpy(f, s->label, W);
-    memcpy(par, s->partner, s->num_classes + 1);
+    memcpy(par, s->partner, s->num_components + 1);
     if (occ) {
-        int nw = s->num_classes + 1; /* the first unused label */
+        int nw = s->num_components + 1; /* the first unused label */
         par[nw] = 0;
         f[i] = nw;
         for (int nb = i - 1; nb <= i + 1; nb += 2)
@@ -868,7 +870,7 @@ neighbors of the cell $(u,v_0)$ at position~$i$ are the cells $(u\pm1,v_0-1)$.
 They are the images of the cells of the twin row itself at the
 positions $W-1-(i\pm1)$, that is, $W-2-i$ and $W-i$.
 If such a position equals $i$, the new cell is adjacent to its own
-image and becomes the central class.  If it is smaller than $i$ and occupied,
+image and becomes the central component.  If it is smaller than $i$ and occupied,
 the new cell is joined with the \emph{image} of that cell.  (Both
 situations are handled by |join_image|.)  If it
 is larger than $i$, the adjacency will be found later, when that cell is
@@ -884,22 +886,22 @@ stored as a bit string in |KW| 64-bit words:
   |C_EMPTY| for an empty position;
   |C_CONTINUE| if the cell continues the run of its left neighbor;
   and for the first cell of a run:
-  |C_SINGLETON| if the class consists of this single run,
-  |C_FIRST| for the first run of a class with several runs,
+  |C_SINGLETON| if the component consists of this single run,
+  |C_FIRST| for the first run of a component with several runs,
   |C_MIDDLE| for a middle run,
   |C_LAST| for the last run.
-  Since classes do not cross, a stack is sufficient to recover the
+  Since components do not cross, a stack is sufficient to recover the
   labels, like for a sequence of parentheses.
-\item 1 bit per class: 0 if the class is floating, 1 otherwise.
+\item 1 bit per component: 0 if the component is floating, 1 otherwise.
 \item 1 bit: touched.
 \end{itemize}
 For the state of Figure~\ref{fig:example}, the codes are shown above the
-picture.  Class~1 has two runs, at the positions 1 and~3
-(\texttt{F},~\texttt{L}).  Class~2 has three runs: at position~5
+picture.  Component~1 has two runs, at the positions 1 and~3
+(\texttt{F},~\texttt{L}).  Component~2 has three runs: at position~5
 (\texttt{F}), at position~7 (\texttt{M}), and at the positions 9 and~10
 (\texttt{L}, \texttt{C}), which are adjacent because the kink is between
-them.  The classes 3 and~4 are single cells (\texttt{S}).  The 17 codes
-are followed by the bits $1,1,0,1$ for the four classes (only class~3
+them.  The components 3 and~4 are single cells (\texttt{S}).  The 17 codes
+are followed by the bits $1,1,0,1$ for the four components (only component~3
 is floating) and by the touched bit~1.
 These are $3\cdot17+4+1=56$ bits, which fit into one word.
 {\bf How long must a key be?}
@@ -928,21 +930,21 @@ static int KW; /* length of a packed key in 64-bit words */
 @ @<Type...@>=
 enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST };
 
-@ {\bf Why one bit per class is enough.}
-Call a class \emph{crossing} if it is central or paired, that is, if
+@ {\bf Why one bit per component is enough.}
+Call a component \emph{crossing} if it is central or paired, that is, if
 it is not floating.  The union of the frontier and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
-crossing class together with its partner connects the frontier with the
+crossing component together with its partner connects the frontier with the
 image of the frontier across this disk.  Two such connections cannot
 cross each other, and $\rhoo$ reverses the order along the frontier.
-Consequently, the crossing classes, read from left to right, form one
+Consequently, the crossing components, read from left to right, form one
 nested chain
 $$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
-where the central class $Z$ is present in the middle if and only if the
-number of crossing classes is odd.  In particular, there is at most one
-central class.  Thus the $j$-th crossing class from the left is the partner
-of the $j$-th crossing class from the right, and it suffices to know
-\emph{which} classes are crossing.
+where the central component $Z$ is present in the middle if and only if the
+number of crossing components is odd.  In particular, there is at most one
+central component.  Thus the $j$-th crossing component from the left is the partner
+of the $j$-th crossing component from the right, and it suffices to know
+\emph{which} components are crossing.
 With the option \texttt{-C}, the program checks for every state that
 unpacking the packed key gives back the original state.  We have run
 this check for $N\le 30$.
@@ -971,19 +973,19 @@ static inline int getbits(const uint64_t *w, int *pos, int nb)
 
 @ Packing and unpacking are done in two steps.  The intermediate form
 is a \emph{coded state}: the sequence of codes for the |W| positions, as
-a byte array, and one flag per class that tells whether the class is
+a byte array, and one flag per component that tells whether the component is
 crossing.  The first step translates between the labels and the codes;
 the second step is merely the compaction of the coded state into a bit
 string.
 @<Type...@>=
 typedef struct {
     uint8_t code[MAXW]; /* |C_EMPTY|, \dots, |C_LAST| */
-    uint8_t crossing[MAXLAB]; /* for each class label, starting from 1 */
-    uint8_t num_classes;
+    uint8_t crossing[MAXLAB]; /* for each component label, starting from 1 */
+    uint8_t num_components;
     uint8_t touches;
 } coded_t;
 
-@ Encoding.  The first loop determines, for every class, the positions
+@ Encoding.  The first loop determines, for every component, the positions
 where its first and its last run start.
 @<Sub...@>=
 static void encode(const state_t *s, coded_t *c)
@@ -1012,13 +1014,13 @@ static void encode(const state_t *s, coded_t *c)
     }
     for (int j = 1; j <= m; j++)
         c->crossing[j] = s->partner[j] != 0;
-    c->num_classes = m;
+    c->num_components = m;
     c->touches = s->touches;
 }
 
-@ Decoding.  In the first part, |stack| holds the classes with several
+@ Decoding.  In the first part, |stack| holds the components with several
 runs whose last run has not yet been seen.  In the second part, it
-holds the crossing classes
+holds the crossing components
 from left to right, and they are matched from the outside to the inside.
 @<Sub...@>=
 static void decode(const coded_t *c, state_t *s)
@@ -1034,21 +1036,21 @@ static void decode(const coded_t *c, state_t *s)
         case C_LAST: s->label[i] = stack[--sp]; break;
         }
     }
-    sp = 0;                       /* crossing classes, left to right */
+    sp = 0;                       /* crossing components, left to right */
     for (int j = 1; j <= m; j++)
         if (c->crossing[j])
             stack[sp++] = j;
         else
             s->partner[j] = 0;
     for (int a = 0, b = sp - 1; a <= b; a++, b--) {
-        s->partner[stack[a]] = stack[b]; /* if |a == b|, this is the central class */
+        s->partner[stack[a]] = stack[b]; /* if |a == b|, this is the central component */
         s->partner[stack[b]] = stack[a];
     }
-    s->num_classes = m;
+    s->num_components = m;
     s->touches = c->touches;
 }
 
-@ Compaction into a bit string, and the reverse.  The number of classes
+@ Compaction into a bit string, and the reverse.  The number of components
 is not stored: it is the number of codes |C_SINGLETON| and |C_FIRST|.
 @<Sub...@>=
 static void compress(const coded_t *c, uint64_t *w)
@@ -1057,7 +1059,7 @@ static void compress(const coded_t *c, uint64_t *w)
     memset(w, 0, KW * 8);
     for (int i = 0; i < W; i++)
         putbits(w, &pos, c->code[i], 3);
-    for (int j = 1; j <= c->num_classes; j++)
+    for (int j = 1; j <= c->num_components; j++)
         putbits(w, &pos, c->crossing[j], 1);
     putbits(w, &pos, c->touches, 1);
 }
@@ -1072,7 +1074,7 @@ static void expand(const uint64_t *w, coded_t *c)
     }
     for (int j = 1; j <= m; j++)
         c->crossing[j] = getbits(w, &pos, 1);
-    c->num_classes = m;
+    c->num_components = m;
     c->touches = getbits(w, &pos, 1);
 }
 
@@ -1364,7 +1366,7 @@ static void pack_key(const state_t *s, uint64_t *w)
     if (CHECK) {
         state_t s2;
         unpack(w, &s2);
-        if (s2.num_classes != s->num_classes || state_cmp(&s2, s)) {
+        if (s2.num_components != s->num_components || state_cmp(&s2, s)) {
             fprintf(stderr, "pack/unpack mismatch\n");
             exit(2);
         }
@@ -1449,18 +1451,18 @@ whose weight plus this bound exceeds $N$ is discarded.
 All bounds in this chapter count cells of $P^+$; each such cell has
 weight~2.
 
-@ First, a state in which every class is floating can never be
-completed: whatever is attached to a class $X$ is attached in mirror
+@ First, a state in which every component is floating can never be
+completed: whatever is attached to a component $X$ is attached in mirror
 image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
 never meet.  (The empty state, which occurs only in the twin row, is
 fine.)
 @<Sub...@>=
 static int completion_possible(const state_t *s)
 {
-    for (int j = 1; j <= s->num_classes; j++)
+    for (int j = 1; j <= s->num_components; j++)
         if (s->partner[j] != 0)
             return 1;
-    return s->num_classes == 0;
+    return s->num_components == 0;
 }
 
 @*1 Connections on the diagonal lattice.
@@ -1521,22 +1523,22 @@ be used for a connection to the right of~$b$).
 
 @*1 The cactus of gaps.
 Which gaps between consecutive runs have to be bridged?  We must
-eventually connect all classes, where a class and its partner count as
+eventually connect all components, where a component and its partner count as
 the same object (if $X$ is connected to $Y$ then $\rhoo X$ is connected
-to $\rhoo Y$).  Consider the graph whose nodes are the classes, with
+to $\rhoo Y$).  Consider the graph whose nodes are the components, with
 partners identified, and with an edge for each gap between consecutive
-runs.  Because classes do not cross and because of the nested chain
-structure of the crossing classes, this graph is a \emph{cactus}: its
+runs.  Because components do not cross and because of the nested chain
+structure of the crossing components, this graph is a \emph{cactus}: its
 cycles are edge-disjoint, and it can be decomposed as follows.
 \begin{itemize}
-\item \emph{Pockets.}  Between two consecutive runs of the same class
-  $X$ there may be classes $C_1,\ldots,C_r$ (at the outermost level
+\item \emph{Pockets.}  Between two consecutive runs of the same component
+  $X$ there may be components $C_1,\ldots,C_r$ (at the outermost level
   inside these two runs).  They can only be floating, and they
   appear nowhere else.  The gaps $X$--$C_1$--$\cdots$--$C_r$--$X$
   form a cycle.  To connect everything, all gaps of the cycle except one
   must be bridged, and the cheapest way is to omit the largest gap.  The
   pockets inside each $C_j$ are independent of this.
-\item \emph{Outer paths.}  At the top level, the classes to the left of
+\item \emph{Outer paths.}  At the top level, the components to the left of
   $A_1$ and to the right of $\rhoo A_1$ hang on a path, and all their
   gaps must be bridged.
 \item \emph{Rings.}  The gaps from $A_j$ to $A_{j+1}$ on the left
@@ -1551,11 +1553,11 @@ connecting the cactus.
 
 @ {\bf The central term.}
 Connecting the quotient is not enough: in the end, there must be a
-central class.  If there is none yet, some class $X$ must be joined
+central component.  If there is none yet, some component $X$ must be joined
 to its own image.  Closing a ring completely does not achieve this,
 because the right half of a ring is just the image of its left half.
 Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a central
-class.  Therefore, if there is no central class, the middle cycle must be
+component.  Therefore, if there is no central component, the middle cycle must be
 closed completely, and its largest gap is paid as well.
 
 @ The function |cycle| handles one cycle with |n| gaps of sizes |g|.
@@ -1771,14 +1773,14 @@ static int height_extra(int h, int s)
 Figure~\ref{fig:boundex} shows how the parts of the bound work together.
 
 (a)~This is the state of Figure~\ref{fig:example}.  The runs of
-class~$B$ enclose two pockets without other classes; they cost nothing.
-At the top level, the crossing classes are $A$, $B$, $D$, where $B$ is
-the central class and $D=\rhoo A$.  The middle cycle leads from $A$ over
-$B$ and the floating class $C$ to $D$, and its gaps have 1, 1, and 3
+component~$B$ enclose two pockets without other components; they cost nothing.
+At the top level, the crossing components are $A$, $B$, $D$, where $B$ is
+the central component and $D=\rhoo A$.  The middle cycle leads from $A$ over
+$B$ and the floating component $C$ to $D$, and its gaps have 1, 1, and 3
 columns.  The largest gap is omitted, and the other two are bridged
 with one cell each.  There is no need to bridge the gap between $C$
 and~$D$: when $A$ is connected to~$B$, the image of this connection
-connects $D=\rhoo A$ to $\rhoo B=B$.  A central class exists and the sides
+connects $D=\rhoo A$ to $\rhoo B=B$.  A central component exists and the sides
 are touched, so no further connections are needed.  For the height,
 the polyomino must reach row $\Vstar=8$.  The frontier is in row~3, and
 the bridge between $A$ and $B$ is a tent of one cell, whose peak is in
@@ -1789,9 +1791,9 @@ the picture shows a completion with 6 cells.
 
 (b)~Here $W=9$ and $\Vstar=4$, and row~1 has just been finished.  The
 middle row contains the cells $u=\pm2$, but not the center.  The two
-frontier cells form the classes $A$ and $\rhoo A$.  In the cactus, they
+frontier cells form the components $A$ and $\rhoo A$.  In the cactus, they
 are the same node, and connecting the cactus costs nothing.  But there
-is no central class, and therefore the single gap of the middle cycle, with
+is no central component, and therefore the single gap of the middle cycle, with
 3 columns, must be bridged.  The tent over this gap can reach row~3.
 No side has been touched.  The best cell of the structure for reaching
 both the right side and the top is the cell of the tent in
@@ -1847,15 +1849,15 @@ is a polyomino with $6+10=16$ cells.
   (a)~The state of Figure~\ref{fig:example}: the gaps $A$--$B$ and
   $B$--$C$ are bridged, the largest gap $C$--$D$ of the middle cycle is
   omitted, and a staircase leads to row~8.
-  (b)~The classes $A$ and $B=\rhoo A$ are paired, and there is no central
-  class: the gap between them must be bridged, and a staircase from the
+  (b)~The components $A$ and $B=\rhoo A$ are paired, and there is no central
+  component: the gap between them must be bridged, and a staircase from the
   tent reaches the right side and row~4 simultaneously.}
 \label{fig:boundex}
 \end{figure}
 
 Figure~\ref{fig:boundex2} shows three more examples.  In each of them,
-the central class~$Z$ reaches the frontier in two places, with a floating
-class~$F$ in the pocket between them, and no side has been touched.
+the central component~$Z$ reaches the frontier in two places, with a floating
+component~$F$ in the pocket between them, and no side has been touched.
 The center is in a cell, and row~2 is being processed.
 
 (a)~$W=17$, $\Vstar=8$; the frontier cells are at the positions 2, 6,
@@ -1866,7 +1868,7 @@ $\max(8-4,\min(4,12))=4$: a straight chain of 4 cells leads into the
 corner, to column~0 in row~8.  The bound is $3+4=7$ cells.  (Reaching the
 side and the top separately would cost $3+2+4=9$.)
 
-(b)~The same, but the floating class is at position~4.  One cell bridges the
+(b)~The same, but the floating component is at position~4.  One cell bridges the
 gap of one column.  This cell is at position $j=3$ in row $h=3$, and its score is
 $\max(8-3,\min(3,13))=5$.  Now the missing rows dominate: the chain reaches the side
 after 3 cells, in row~6, bounces off, and needs 2 more cells for the
@@ -1885,12 +1887,12 @@ In all three cases, the picture shows a completion with this number of
 cells, so the bound is tight.
 
 For the large state of Figure~\ref{fig:types}, the bound is 35 cells.
-The pockets of the classes 1, 2, and~5 have two gaps of 3 columns each,
+The pockets of the components 1, 2, and~5 have two gaps of 3 columns each,
 of which one must be bridged ($3+3+3$ cells).  The ring formed by the
-classes 1 and~4 on the left and 7, 8, and~9 on the right has gaps of 3,
+components 1 and~4 on the left and 7, 8, and~9 on the right has gaps of 3,
 3, and 8 columns; the largest is omitted (6 cells).  The middle cycle
-through the classes 4, 5, and~7 has two gaps of one column (1 cell).
-The floating class~10 hangs on the outer path behind class~9, with a
+through the components 4, 5, and~7 has two gaps of one column (1 cell).
+The floating component~10 hangs on the outer path behind component~9, with a
 gap of 3 columns (3 cells).  These are 19 cells.  A tent over a gap of
 3 columns in row~8 reaches row~10, and the top row is $\Vstar=26$, so 16
 more cells are needed for the missing rows.  The values have been confirmed by
@@ -1971,7 +1973,7 @@ calling the function |bound| of the program for these states.
   \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
 \end{scope}
 \end{tikzpicture}
-\caption{Three states with a central class $Z$ and a floating class $F$
+\caption{Three states with a central component $Z$ and a floating component $F$
   (green), and cheapest completions: hooks that bridge a gap (orange)
   and the chain to the side and to the top (light orange).  The images
   in the lower half are drawn only for the cells of the state.
@@ -1999,7 +2001,7 @@ static int cactus_bound(const state_t *s, int kink)
     return cost;
 }
 
-@ Run |j| extends from position |rs[j]| to |re[j]| and belongs to class
+@ Run |j| extends from position |rs[j]| to |re[j]| and belongs to component
 |rl[j]|.
 @<Find the runs...@>=
     int rs[MAXW], re[MAXW], rl[MAXW], R = 0;
@@ -2031,13 +2033,13 @@ static int cactus_bound(const state_t *s, int kink)
 
 @ The pockets are processed with a stack, like nested parentheses.
 The gaps of the open pockets are collected in a buffer (|gb|, with
-peaks |pb| and scores |qb|); |sl| and |sb| give the class of each open
+peaks |pb| and scores |qb|); |sl| and |sb| give the component of each open
 pocket and the start of its gaps in the buffer.  Gaps at the top level
 are stored separately: |topgap[t]| is the gap after the |t|-th top-level
-class |toplab[t]|.  When a run of the class on top of the stack is
+component |toplab[t]|.  When a run of the component on top of the stack is
 found, the pocket is closed and paid for.
 @<Scan the runs...@>=
-    /* open pockets: class and start of its gaps in the gap buffer */
+    /* open pockets: component and start of its gaps in the gap buffer */
     int sl[MAXW], sb[MAXW], sp = 0;
     int gb[MAXW], pb[MAXW], qb[MAXW], nb = 0;
     int toplab[MAXW], topgap[MAXW], toppk[MAXW], topsc[MAXW], nt = 0;
@@ -2072,7 +2074,7 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |cr| lists the crossing classes.  Ring number |i|
+@ At the top level, |cr| lists the crossing components.  Ring number |i|
 consists of the gaps between |cr[i]| and |cr[i+1]| and their
 counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
 @<Pay for the outer paths...@>=
@@ -2119,7 +2121,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
             }
         }
         if (m & 1)
-            NCL = 0;                    /* central class present */
+            NCL = 0;                    /* central component present */
     } else {
         for (int t = 0; t < nt - 1; t++) {
             cost += topgap[t];
@@ -2134,7 +2136,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
         int d1 = rs[0], d2 = W - 1 - re[R - 1];
         DEDGE = min(d1, d2);
     }
-    /* without a central class the middle cycle must be closed completely:
+    /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
     if (NCL) {
         int ex = 1 << 20;
@@ -2157,7 +2159,7 @@ static int exact_bound(const state_t *s)
     int touches = s->touches;
     int sup[MAXW + 1];
     int occ[MAXW], no = 0;
-    for (int j = 1; j <= s->num_classes; j++) {
+    for (int j = 1; j <= s->num_components; j++) {
         int q = s->partner[j];
         sup[j] = (q != 0 && q < j) ? q : j;
     }
@@ -2405,8 +2407,8 @@ static void count_case(void)
         fprintf(stderr, "strip too wide\n");
         exit(1);
     }
-    MAXC = (W + 1) / 2 + 1;
-    KW = (3 * W + MAXC + 1 + 63) / 64;
+    MAX_COMPONENTS = (W + 1) / 2 + 1;
+    KW = (3 * W + MAX_COMPONENTS + 1 + 63) / 64;
     NMAX_plus_1 = NMAX + 1;
 
     int kmin = 0;
@@ -2426,9 +2428,9 @@ current cell and |nxt| for the states after it.
 @ {\bf Initial states.}
 If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
 enumerate all nonempty subsets of it that are symmetric under
-$i\leftrightarrow W-1-i$.  Every cell is a class of its own; the partner
+$i\leftrightarrow W-1-i$.  Every cell is a component of its own; the partner
 of a cell is its mirror cell, and the center cell, if present, is the
-central class.  The weight is the number of cells.
+central component.  The weight is the number of cells.
 If $M_v$ is odd, we start with the empty state before the twin row.
 @<Create the initial states@>=
     size_t t_init;
@@ -2500,7 +2502,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
                 state_t sk;
                 unpack(cur->keys + si * KW, &sk);
                 for (int occ = 0; occ <= 1; occ++) {
-                    if (occ && k > 1 && sk.num_classes == 0)
+                    if (occ && k > 1 && sk.num_components == 0)
                         continue;
                     int status = step(&sk, i, occ, last, first_twin, &key);
                     if (status == DEAD)
@@ -2509,7 +2511,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
                         record(k - 1, cur, si, sk.touches);
                         continue;
                     }
-                    if (key.num_classes == 0 && !(first_twin && !last))
+                    if (key.num_components == 0 && !(first_twin && !last))
                         continue;
                     int add = occ ? 2 : 0;
                     @<Add state |si| to the state |key| of the new table, with pruning@>@;
@@ -2533,7 +2535,7 @@ they cannot be completed or because all weights were too large.
                     int lowerbound = 0;
                     if (ti != NO_STATE)
                         lowerbound = nxt->lowerbound[ti];
-                    else if (key.num_classes > 0) {
+                    else if (key.num_components > 0) {
                         lowerbound = bound(&key, k, kmin, i, last, first_twin);
                         if (lowerbound < 0)
                             continue;
@@ -2573,7 +2575,7 @@ is switched off.
                                 continue;
                             int val = 2 * o2;
                             if (st2 == OK) {
-                                if (k2.num_classes == 0)
+                                if (k2.num_components == 0)
                                     continue;
                                 int lowerbound2 = bound(&k2, k, kmin, i2, last2, 0);
                                 if (lowerbound2 < 0)
@@ -2604,7 +2606,7 @@ number of completions.  We merge each state with its mirror image by
 keeping the lexicographically smaller one.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
 The positions are reversed, and |canon| then
-renumbers the classes.
+renumbers the components.
 @<Merge every state with its mirror image@>=
         if (REFLECT && M_u == 0 && cur->n) {
             /* merge each state with its mirror image $u\to-u$ */
@@ -2711,10 +2713,10 @@ the range where the program can be useful.
 \begin{itemize}
 \item The strip has at most |MAXW|${}=160$ columns.  Since strips of all
   widths up to $N$ are needed, this means $N\le160$, which is checked above.
-\item Class labels are stored in bytes.  Hence a label cannot go beyond 255.
-  A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ classes.
+\item Component labels are stored in bytes.  Hence a label cannot go beyond 255.
+  A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ components.
 \item The weight in a count record is a byte, which would allow $N\le255$.
-\item A packed key has at most 12 words of 64 bits; $3W+|MAXC|+1\le 563$ bits
+\item A packed key has at most 12 words of 64 bits; $3W+|MAX_COMPONENTS|+1\le 563$ bits
   are needed.
 \item States and count records are numbered with 32-bit integers, so a
   table can hold fewer than $2^{32}\approx 4.3\cdot10^9$ records.  (There
@@ -3082,7 +3084,7 @@ We list them roughly in the order of increasing effort.
   reads the old row, which is only scanned once, from a file.
 \item \emph{Splitting the table by the untouched part of the frontier.}
   While the cells in the left part of a row are decided, the frontier
-  cells far to the right of the kink are not touched: their class labels
+  cells far to the right of the kink are not touched: their component labels
   may change, but the pattern of occupied and empty positions stays the
   same, whatever is decided on the left.  Two states with different
   patterns in the right part can therefore never lead to the same

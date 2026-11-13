@@ -45,7 +45,7 @@ static int exact_bound(const state_t *s)
     int touches = s->touches;
     int sup[MAXW + 1];
     int occ[MAXW], no = 0;
-    for (int j = 1; j <= s->num_classes; j++) {
+    for (int j = 1; j <= s->num_components; j++) {
         int q = s->partner[j];
         sup[j] = (q != 0 && q < j) ? q : j;
     }
