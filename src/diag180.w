@@ -1232,9 +1232,20 @@ For each byte position of the key there is a table of 256 random numbers,
 and the hash value is the sum of the table entries for the bytes of the key.
 As Knuth remarks, this gives a good hash function although most of
 the key bits tend to be zero.
-The random numbers are produced at the start of the program by the
-generator SplitMix64~\cite{SplitMix} with a fixed seed, so that all runs
-behave in the same way.
+The random numbers are produced at the start of the program by a
+generator of the {\sc SplitMix} family~\cite[Section~3, Figure~16]{SplitMix}
+with a fixed seed, so that all runs behave in the same way.
+In the terms of that figure,
+the state is advanced as in the method {\tt nextSeed}, with
+the increment {\tt GOLDEN\_GAMMA}
+(the odd integer closest to $2^{64}/\phi$, which is the increment $\gamma$ of
+a generator created with an explicit seed), and the new state
+is scrambled by the function {\tt mix64variant13}
+(David Stafford's ``Mix13'' variant of the {\sc MurmurHash3} finalizer).
+We take the upper 32 bits of the result.
+The method {\tt nextLong} of Figure~17 in~\cite{SplitMix} uses the
+function {\tt mix64} in place of {\tt mix64variant13};
+the combination used here is the one that is widely known as ``SplitMix64''.
 
 An earlier version of the program used an ad-hoc hash function
 (multiplications and shifts of the 64-bit words of the key).  In a
@@ -1262,13 +1273,13 @@ static inline uint32_t hash_of_key(const uint8_t *key)
 @ We can keep |HASH_BITS[l][0]=0| without loss of universality.
 @<Initialize the random bits for hashing@>=
     {
-        uint64_t x = 0; /* the state of SplitMix64 */
+        uint64_t x = 0; /* the state (``seed'') of the generator */
         for (int l = 0; l < MAX_BYTES_PER_KEY; l++)
             for (int b = 1; b < 256; b++) {
-                uint64_t z = (x += 0x9E3779B97F4A7C15ull);
-                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+                uint64_t z = (x += 0x9E3779B97F4A7C15ull); /* {\tt nextSeed} with {\tt GOLDEN\_GAMMA} */
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull; /* {\tt mix64variant13} */
                 z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
-                HASH_BITS[l][b] = (z ^ (z >> 31)) >> 32;
+                HASH_BITS[l][b] = (z ^ (z >> 31)) >> 32; /* upper half */
             }
     }
 
