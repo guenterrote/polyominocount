@@ -1120,6 +1120,7 @@ typedef struct {
     rec_t *rec;
     size_t nrec, rcap;
     uint32_t *hash;               /* index + 1, 0 = empty */
+    uint8_t *lowerbound;          /* the lower bound of each state */
 } table_t;
 
 @ @<Sub...@>=
@@ -1145,6 +1146,7 @@ static void tab_init(table_t *t, size_t cap)
     t->keys = xrealloc(0, cap * KW * 8);
     t->head = xrealloc(0, cap * 4);
     t->hash = 0; /* allocated by |tab_clear| */
+    t->lowerbound = 0; /* likewise */
     t->rcap = 2 * cap;
     t->nrec = 0;
     t->rec = xrealloc(0, t->rcap * sizeof(rec_t));
@@ -1156,12 +1158,13 @@ static void tab_free(table_t *t)
     free(t->head);
     free(t->rec);
     free(t->hash);
+    free(t->lowerbound);
 }
 
 static size_t tab_bytes(const table_t *t)
 {
     return t->n * (KW * 8 + 4) + t->nrec * sizeof(rec_t)
-        + (t->hash ? (t->hmask + 1) * 4 : 0);
+        + (t->hash ? (t->hmask + 1) * 4 + t->n : 0);
 }
 
 @ The hash function mixes all words of the key.
@@ -1197,6 +1200,7 @@ static void tab_grow(table_t *t)
     size_t cap = t->cap * 2;
     t->keys = xrealloc(t->keys, cap * KW * 8);
     t->head = xrealloc(t->head, cap * 4);
+    t->lowerbound = xrealloc(t->lowerbound, cap);
     size_t h = (t->hmask + 1) * 2;
     free(t->hash);
     t->hash = calloc(h, sizeof(uint32_t));
@@ -1217,45 +1221,47 @@ static void tab_grow(table_t *t)
 
 @ The array |hash| is needed only while a table is being built.  When
 the table is complete, its states are just scanned sequentially.
-Therefore |tab_clear|, which prepares an empty table, allocates the hash
-array, and |tab_release_hash| gives it back as soon as the table is
-complete.  In this way, only one of the two tables has a hash array
-at any time.
+The same holds for the array |lowerbound|, in which we remember the
+lower bound of each state (Section~\ref{sec:bound}), so that it is computed only once and not
+every time when the state is reached.
+Therefore |tab_clear|, which prepares an empty table, allocates these
+two arrays, and |tab_finish| gives them back as soon as the table is
+complete.  In this way, only one of the two tables has these arrays
+at any time.  (When |tab_clear| is called, the table is new or
+it has been finished, so that there is nothing to free.)
 @<Sub...@>=
 static void tab_clear(table_t *t)
 {
     t->n = 0;
     t->nrec = 0;
-    free(t->hash);
-    t->hash = calloc(t->hmask + 1, sizeof(uint32_t));
+    t->hash = calloc(t->hmask + 1, sizeof(uint32_t)); /* all slots empty */
     if (!t->hash) {
         fprintf(stderr, "out of memory\n");
         exit(1);
     }
+    t->lowerbound = xrealloc(0, t->cap);
 }
 
-static void tab_release_hash(table_t *t)
+static void tab_finish(table_t *t)
 {
     free(t->hash);
     t->hash = 0;
+    free(t->lowerbound);
+    t->lowerbound = 0;
 }
 
-@ The function |tab_get| returns the number of the state with a given
-byte key.  If the state is not yet in the table, it is created, with an
-empty list of records.
+@ A state is looked up by its packed key.  The function |tab_find|
+returns the number of the state, or |NO_STATE| if the state is not in the
+table.  In the latter case, |tab_create| can be used to create the state,
+with an empty list of records.  (The variable |HASH_SLOT| remembers the
+empty slot where the search of |tab_find| has ended, so that
+|tab_create| does not have to search again.)
+@d NO_STATE ((size_t)-1)
 @<Sub...@>=
-static size_t tab_get(table_t *t, const uint8_t *key)
+static size_t HASH_SLOT;
+
+static size_t tab_find(const table_t *t, const uint64_t *w)
 {
-    uint64_t w[12];
-    pack(key, w);
-    if (CHECK) {
-        uint8_t k2[2 * MAXW + 4];
-        unpack(w, k2);
-        if (memcmp(k2, key, KL)) {
-            fprintf(stderr, "pack/unpack mismatch\n");
-            exit(2);
-        }
-    }
     size_t p = hkey(w) & t->hmask;
     while (t->hash[p]) {
         size_t i = t->hash[p] - 1;
@@ -1263,6 +1269,13 @@ static size_t tab_get(table_t *t, const uint8_t *key)
             return i;
         p = (p + 1) & t->hmask;
     }
+    HASH_SLOT = p;
+    return NO_STATE;
+}
+
+static size_t tab_create(table_t *t, const uint64_t *w)
+{
+    size_t p = HASH_SLOT;
     if (t->n == t->cap) {
         tab_grow(t);
         p = hkey(w) & t->hmask;
@@ -1273,26 +1286,43 @@ static size_t tab_get(table_t *t, const uint8_t *key)
     t->hash[p] = i + 1;
     memcpy(t->keys + i * KW, w, KW * 8);
     t->head[i] = 0;
+    t->lowerbound[i] = 0;
     return i;
 }
 
-@ Adding |c| to the counter for weight |wt| of state |si|.  The list is
-kept sorted by increasing weight.  In the variable |prev| we remember
-the record after which a new record has to be inserted (0 for the
-beginning of the list), as an index and not as a pointer, because the
-array of records may be moved when it grows.
+@ The function |pack_key| packs a byte key.  With the option \texttt{-C},
+it checks that unpacking gives the byte key back.
 @<Sub...@>=
-static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
+static void pack_key(const uint8_t *key, uint64_t *w)
 {
-    uint32_t prev = 0, r = t->head[si];
-    while (r && t->rec[r - 1].wt < wt) {
-        prev = r;
-        r = t->rec[r - 1].next;
+    pack(key, w);
+    if (CHECK) {
+        uint8_t k2[2 * MAXW + 4];
+        unpack(w, k2);
+        if (memcmp(k2, key, KL)) {
+            fprintf(stderr, "pack/unpack mismatch\n");
+            exit(2);
+        }
     }
-    if (r && t->rec[r - 1].wt == wt) {
-        t->rec[r - 1].c = addm(t->rec[r - 1].c, c);
-        return;
-    }
+}
+
+@ The function |tab_get| returns the number of the state with a given
+byte key.  If the state is not yet in the table, it is created.
+@<Sub...@>=
+static size_t tab_get(table_t *t, const uint8_t *key)
+{
+    uint64_t w[12];
+    pack_key(key, w);
+    size_t i = tab_find(t, w);
+    return i != NO_STATE ? i : tab_create(t, w);
+}
+
+@ A new record with weight |wt| and count |c| is taken from the end of
+the array of records.  The function returns its number plus~1, as it is
+stored in the links.
+@<Sub...@>=
+static uint32_t new_record(table_t *t, int wt, cnt_t c, uint32_t next)
+{
     if (t->nrec == t->rcap) {
         if (t->rcap >= 0xFFFFFFFFu) {
             fprintf(stderr, "too many count records for 32-bit links\n");
@@ -1304,32 +1334,44 @@ static void tab_add(table_t *t, size_t si, int wt, cnt_t c)
     rec_t *q = &t->rec[t->nrec++];
     q->c = c;
     q->wt = wt;
-    q->next = r;
-    if (prev)
-        t->rec[prev - 1].next = t->nrec;
-    else
-        t->head[si] = t->nrec;
+    q->next = next;
+    return t->nrec;
 }
 
-@ Inserting into a table with pruning.  The counters of the state |si|
-of the table |src|, shifted by the weight |add| of the newly added cell,
-are added to the state |key| of the table |t|, but only for the weights
-that can still lead to a polyomino with at most $N$ cells, given that at
-least |lowerbound| further units of weight are necessary.  Since the list is
-sorted, we can stop at the first weight that is too large.  If already
-the smallest weight is too large, the state is not even created.
-(The tables |src| and |t| are always different.)
+@ Adding the counters of one state to another.  The counters of the
+state |si| of the table |src|, shifted by the weight |add| of the newly
+added cell, are added to the state |ti| of the table |t|, but only
+for the weights up to |limit|.  (This is where the pruning takes place:
+the caller chooses |limit| such that the larger weights cannot lead to a polyomino with
+at most $N$ cells.)  Since both lists are sorted by
+increasing weight, this is done like a merge, in one simultaneous pass over the two
+lists.  The variable |r| is the current position in the target list, and
+|prev| is the record before it (0 at the beginning of the list).  We
+use indices and not pointers, because the array of records may be moved
+when it grows.  (The tables |src| and |t| are always different.)
 @<Sub...@>=
-static void insert_pruned(table_t *t, const uint8_t *key, const table_t *src,
-                          size_t si, int add, int lowerbound)
+static void add_list(table_t *t, size_t ti, const table_t *src, size_t si,
+                     int add, int limit)
 {
-    int lim = NMAX - lowerbound - add;
-    uint32_t r = src->head[si];
-    if (!r || src->rec[r - 1].wt > lim)
-        return;
-    size_t ti = tab_get(t, key);
-    for (; r && src->rec[r - 1].wt <= lim; r = src->rec[r - 1].next)
-        tab_add(t, ti, src->rec[r - 1].wt + add, src->rec[r - 1].c);
+    uint32_t prev = 0, r = t->head[ti];
+    for (uint32_t s = src->head[si]; s && src->rec[s - 1].wt <= limit;
+         s = src->rec[s - 1].next) {
+        int wt = src->rec[s - 1].wt + add;
+        while (r && t->rec[r - 1].wt < wt) {
+            prev = r;
+            r = t->rec[r - 1].next;
+        }
+        if (r && t->rec[r - 1].wt == wt)
+            t->rec[r - 1].c = addm(t->rec[r - 1].c, src->rec[s - 1].c);
+        else {
+            uint32_t q = new_record(t, wt, src->rec[s - 1].c, r);
+            if (prev)
+                t->rec[prev - 1].next = q;
+            else
+                t->head[ti] = q;
+            prev = q;
+        }
+    }
 }
 
 @* The lower bound.
@@ -2328,6 +2370,7 @@ of a cell is its mirror cell, and the center cell, if present, is the
 central class.  The weight is the number of cells.
 If $M_v$ is odd, we start with the empty state before the twin row.
 @<Create the initial states@>=
+    size_t t_init;
     if (E == 0) {
         int vm = M_v / 2;
         int half[MAXW], nh = 0;
@@ -2358,17 +2401,19 @@ If $M_v$ is odd, we start with the empty state before the twin row.
             }
             int touches = isc[0] || isc[W - 1];
             canon(f, par, touches, key);
-            tab_add(cur, tab_get(cur, key), nc, 1);
+            t_init = tab_get(cur, key);
+            cur->head[t_init] = new_record(cur, nc, 1, 0);
         }
         v0 = vm + 1;
         V0 = v0;
     } else {
         memset(key, 0, KL);
-        tab_add(cur, tab_get(cur, key), 0, 1);
+        t_init = tab_get(cur, key);
+        cur->head[t_init] = new_record(cur, 0, 1, 0);
         v0 = (M_v + 1) / 2;
         V0 = v0;
     }
-    tab_release_hash(cur);
+    tab_finish(cur);
 
 @ The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
@@ -2411,18 +2456,44 @@ is completed while row $k$ is processed has its top in row $k-1$.
                         record(k - 1, cur, si, touches);
                         continue;
                     }
+                    if (m == 0 && !(first_twin && !last))
+                        continue;
                     int add = occ ? 2 : 0;
-                    if (m == 0) {
-                        if (first_twin && !last)
-                            insert_pruned(nxt, key, cur, si, add, 0);
-                        continue;
-                    }
-                    int lowerbound = bound(key, result_touches, k, kmin, i, last, first_twin);
-                    if (lowerbound < 0)
-                        continue;
-@<Sharpen |lowerbound| by looking one cell ahead@>@;
-                    insert_pruned(nxt, key, cur, si, add, lowerbound);
+                    @<Add state |si| to the state |key| of the new table, with pruning@>@;
                 }
+
+@ The lower bound depends only on the new state and not on the state
+|si| from which it was reached.
+We therefore compute the bound only when
+the state is not yet in the new table, and we store it with the state.
+If already the smallest weight of the state |si| is too large, the new state is
+not created, and in this case the bound is not remembered.
+(The bound of the empty state is 0.)
+In a run with $N=42$, a quarter of the 30.6 million new keys were
+already in the table.  The bound was computed 22.9 million times, and 16.2 million
+states were created; the remaining 6.7 million keys were discarded, because
+they cannot be completed or because all weights were too large.
+@<Add state |si| to the state |key|...@>=
+                    uint64_t w[12];
+                    pack_key(key, w);
+                    size_t ti = tab_find(nxt, w);
+                    int lowerbound = 0;
+                    if (ti != NO_STATE)
+                        lowerbound = nxt->lowerbound[ti];
+                    else if (m > 0) {
+                        lowerbound = bound(key, result_touches, k, kmin, i, last, first_twin);
+                        if (lowerbound < 0)
+                            continue;
+@<Sharpen |lowerbound| by looking one cell ahead@>@;
+                    }
+                    int limit = NMAX - lowerbound - add;
+                    if (cur->rec[cur->head[si] - 1].wt > limit)
+                        continue;
+                    if (ti == NO_STATE) {
+                        ti = tab_create(nxt, w);
+                        nxt->lowerbound[ti] = lowerbound;
+                    }
+                    add_list(nxt, ti, cur, si, add, limit);
 
 @ {\bf Lookahead.}
 The bound does not know which cells of the current row are already
@@ -2470,7 +2541,7 @@ is switched off.
             size_t by = tab_bytes(cur) + tab_bytes(nxt);
             if (by > MAXBYTES)
                 MAXBYTES = by, MAXRECS = cur->nrec, MAXKW = KW;
-            tab_release_hash(cur); /* the new table is complete */
+            tab_finish(cur); /* the new table is complete */
             if (!last && (VERB >= 2 || (VERB == 1 && wall() - T_LAST >= PSEC)))
                 stat_line("#cell", k, v, ci + 1, nu, cur, nxt);
 
@@ -2495,12 +2566,12 @@ renumbers the classes.
                     f[a] = sk[W - 1 - a];
                 canon(f, sk + W - 1, sk[KL - 1], rkey);
                 const uint8_t *use = memcmp(rkey, sk, KL) < 0 ? rkey : sk;
-                insert_pruned(nxt, use, cur, si, 0, 0);
+                add_list(nxt, tab_get(nxt, use), cur, si, 0, NMAX);
             }
             table_t *x = cur;
             cur = nxt;
             nxt = x;
-            tab_release_hash(cur);
+            tab_finish(cur);
         }
 
 @* The main program.
