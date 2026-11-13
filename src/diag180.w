@@ -382,8 +382,8 @@ contributes 2 to the size~$n$.  We call the contribution to $n$ the
 We do not build it cell by cell; we start with all possible symmetric
 subsets of the middle row.  If $M_v$ is odd, there is no middle row,
 but the first row $v_0=(M_v+1)/2$ of $P^+$ is adjacent to its own image, the
-row $v_0-1$.  We call it the \emph{twin row}; it needs a special
-treatment of adjacencies.
+row $v_0-1$.  We call it the \emph{twin row}.  It is not built cell by cell either:
+we start with all possible subsets of the twin row.
 
 After $k$ rows beyond the middle have been built, the polyomino extends
 over $2k+1$ rows if $M_v$ is even and over $2k$ rows if $M_v$ is odd.
@@ -731,32 +731,6 @@ static void join(uint8_t *f, uint8_t *par, int a, int b)
     }
 }
 
-@ In the twin row, we need a variation: the component $A$ becomes connected
-to the \emph{image} of the component~$B$, and hence $\rhoo(A)$ becomes
-connected to~$B$.  If $B$ is central or paired, $\rhoo(B)$ is on the frontier (as $B$ itself or as another
-component), and this is an ordinary |join|.  Otherwise $B$ is floating, and its image
-is now attached to~$A$.  If $A=B$, this makes $A$ the central component.
-If $A$ is the central component, it swallows~$B$.
-If $A$ is paired, its partner swallows~$B$.
-In the remaining case, both components were floating, and now $A$ and $B$ are
-paired with each other.
-@<Sub...@>=
-static void join_image(uint8_t *f, uint8_t *par, int a, int b)
-{
-    if (!is_floating(par, b))
-        join(f, par, a, par[b]); /* |par[b]| is $B$ itself if $B$ is central */
-    else if (a == b)
-        par[a] = a;
-    else if (is_central(par, a))
-        relabel(f, b, a);
-    else if (is_paired(par, a))
-        relabel(f, b, par[a]);
-    else {
-        par[a] = b;
-        par[b] = a;
-    }
-}
-
 @ The canonical state is obtained by renumbering the components from
 left to right.
 @<Sub...@>=
@@ -834,8 +808,7 @@ After the decision, the cell at position $i-1$ has no undecided
 neighbors any more and is retired; at the end of a row, the same holds
 for position $i+1$.  (Retiring an empty position does no harm.)
 @<Sub...@>=
-static int step(const state_t *s, int i, int occ, int last, int first_twin,
-                state_t *result)
+static int step(const state_t *s, int i, int occ, int last, state_t *result)
 {
     uint8_t f[MAXW], par[MAXLAB];
     memcpy(f, s->label, W);
@@ -847,11 +820,6 @@ static int step(const state_t *s, int i, int occ, int last, int first_twin,
         for (int nb = i - 1; nb <= i + 1; nb += 2)
             if (nb >= 0 && nb < W && f[nb])
                 join(f, par, nw, f[nb]);
-        if (first_twin) { /* special treatment of the two starting lines */
-            for (int jj = W - 2 - i; jj <= W - i; jj += 2)
-                if (jj >= 0 && jj <= i && f[jj])
-                    join_image(f, par, nw, f[jj]);
-        }
     }
     int status = OK;
     if (i - 1 >= 0)
@@ -863,19 +831,6 @@ static int step(const state_t *s, int i, int occ, int last, int first_twin,
     canon(f, par, s->touches || (occ && (i == 0 || i == W - 1)), result);
     return OK;
 }
-
-@ {\bf The twin row.}
-In the twin row $v_0=(M_v+1)/2$, which exists if $M_v$ is odd, the lower
-neighbors of the cell $(u,v_0)$ at position~$i$ are the cells $(u\pm1,v_0-1)$.
-They are the images of the cells of the twin row itself at the
-positions $W-1-(i\pm1)$, that is, $W-2-i$ and $W-i$.
-If such a position equals $i$, the new cell is adjacent to its own
-image and becomes the central component.  If it is smaller than $i$ and occupied,
-the new cell is joined with the \emph{image} of that cell.  (Both
-situations are handled by |join_image|.)  If it
-is larger than $i$, the adjacency will be found later, when that cell is
-decided.  The parameter |first_twin| is true while the twin row is
-processed.
 
 @* Packed keys.
 \label{sec:packed}
@@ -1454,15 +1409,14 @@ weight~2.
 @ First, a state in which every component is floating can never be
 completed: whatever is attached to a component $X$ is attached in mirror
 image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
-never meet.  (The empty state, which occurs only in the twin row, is
-fine.)
+never meet.
 @<Sub...@>=
 static int completion_possible(const state_t *s)
 {
     for (int j = 1; j <= s->num_components; j++)
         if (s->partner[j] != 0)
             return 1;
-    return s->num_components == 0;
+    return 0;
 }
 
 @*1 Connections on the diagonal lattice.
@@ -2221,10 +2175,8 @@ must still be added to a nonempty state, or $-1$ if the state can never
 be completed.  Here |k| is the number of the current row, counted from
 the first row of $P^+$, and |kmin| is the smallest number of rows for
 which the height reaches $W$.
-The cactus bound is not valid in the middle of the twin row, because
-there the adjacencies to the image row are not yet all known.
 @<Sub...@>=
-static int bound(const state_t *s, int k, int kmin, int i, int last, int first_twin)
+static int bound(const state_t *s, int k, int kmin, int i, int last)
 {
     const uint8_t *label = s->label;
     int lowerbound = max(2 * (kmin - k), 0);
@@ -2237,15 +2189,13 @@ static int bound(const state_t *s, int k, int kmin, int i, int last, int first_t
             }
         lowerbound = max(lowerbound, 2 * dist);
     }
-    if (!first_twin || last) {
-        if (!completion_possible(s))
-            return -1;
-        int kink = (!last && !label[i] && i + 1 < W && label[i + 1]) ? i + 1 : -1;
-        CUR_V = V0 + k - 1;
-        VSTAR = V0 + kmin - 1;
-        int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
-        lowerbound = max(lowerbound, eb);
-    }
+    if (!completion_possible(s))
+        return -1;
+    int kink = (!last && !label[i] && i + 1 < W && label[i + 1]) ? i + 1 : -1;
+    CUR_V = V0 + k - 1;
+    VSTAR = V0 + kmin - 1;
+    int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
+    lowerbound = max(lowerbound, eb);
     return lowerbound;
 }
 
@@ -2363,6 +2313,20 @@ static void stat_line(const char *tag, int k, int v, int ci, int nu,
     fflush(stderr);
 }
 
+@ The following function is used for enumerating the subsets of the
+first row, when the initial states are created.  It is explained there.
+@<Sub...@>=
+static int next_subset(uint8_t *chosen, int num_choices, int from)
+{
+    int j = from;
+    while (j < num_choices && chosen[j])
+        chosen[j++] = 0;
+    if (j == num_choices)
+        return 0;
+    chosen[j] = 1;
+    return 1;
+}
+
 @ Here is the function that treats one case.
 @<Sub...@>=
 static void count_case(void)
@@ -2371,7 +2335,7 @@ static void count_case(void)
     @<Local variables of |count_case|@>@;
     @<Create the initial states@>@;
     int cells_v[MAXW];
-    for (int k = 1; cur->n; k++) {
+    for (int k = 1 + E; cur->n; k++) {
         @<Determine the cells of row |k|@>@;
         for (int ci = 0; ci < nu; ci++) {
             @<Decide cell |ci| of the row for all states@>@;
@@ -2426,57 +2390,144 @@ current cell and |nxt| for the states after it.
     int v0;
 
 @ {\bf Initial states.}
-If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
-enumerate all nonempty subsets of it that are symmetric under
-$i\leftrightarrow W-1-i$.  Every cell is a component of its own; the partner
-of a cell is its mirror cell, and the center cell, if present, is the
-central component.  The weight is the number of cells.
-If $M_v$ is odd, we start with the empty state before the twin row.
-@<Create the initial states@>=
-    size_t t_init;
+The first row is not built cell by cell.  We enumerate all possibilities
+for this row and create one state for each of them.  The possibilities
+are the nonempty subsets of a list |choice| of |num_choices| positions.
+Since their number is exponential in |W|, we must not look at all of
+them: a subset with more than |max_chosen| elements is too heavy, whatever
+is added later, because |kmin-k| further rows are necessary in any case, with weight~2 each.
+The subsets are generated in the order of binary numbers, with
+the array |chosen| as the counter.  The function |next_subset| adds 1 at
+the position |from|; adding 1 at the lowest nonzero position skips all
+supersets of the current subset.
+@ @<Create the initial states@>=
+    int choice[MAXW], num_choices = 0, max_chosen;
+    uint8_t chosen[MAXW];
     if (E == 0) {
-        int vm = M_v / 2;
-        int half[MAXW], nh = 0;
-        for (int i = 0; i < W; i++)
-            if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
-                half[nh++] = i;
-        /* all nonempty subsets of half with at most NMAX cells in the row */
-        for (uint64_t mask = 1; mask < (1ull << nh); mask++) {
-            int cells[MAXW], nc = 0, isc[MAXW];
-            memset(isc, 0, sizeof(int) * W);
-            for (int b = 0; b < nh; b++)
-                if (mask >> b & 1) {
-                    isc[half[b]] = 1;
-                    isc[W - 1 - half[b]] = 1;
-                }
-            for (int i = 0; i < W; i++)
-                if (isc[i])
-                    cells[nc++] = i;
-            if (nc > NMAX)
-                continue;
-            uint8_t f[MAXW], par[MAXLAB];
-            memset(f, 0, W);
-            for (int a = 0; a < nc; a++)
-                f[cells[a]] = a + 1;
-            for (int a = 0; a < nc; a++) {
-                int i = cells[a], j = W - 1 - i;
-                par[a + 1] = f[j]; /* the cell itself if |j == i| */
-            }
-            int touches = isc[0] || isc[W - 1];
-            canon(f, par, touches, &key);
-            t_init = tab_get(cur, &key);
-            cur->head[t_init] = new_record(cur, nc, 1, 0);
-        }
-        v0 = vm + 1;
-        V0 = v0;
+        @<Prepare the choices for the middle row@>@;
     } else {
-        memset(&key, 0, sizeof(key)); /* the empty state */
-        t_init = tab_get(cur, &key);
-        cur->head[t_init] = new_record(cur, 0, 1, 0);
-        v0 = (M_v + 1) / 2;
-        V0 = v0;
+        @<Prepare the choices for the twin row@>@;
+    }
+    memset(chosen, 0, num_choices);
+    for (int from = 0; next_subset(chosen, num_choices, from);) {
+        int num_chosen = 0, lowest = -1;
+        for (int b = num_choices - 1; b >= 0; b--)
+            if (chosen[b]) {
+                num_chosen++;
+                lowest = b;
+            }
+        if (num_chosen > max_chosen) {
+            from = lowest; /* skip all supersets */
+            continue;
+        }
+        from = 0;
+        if (E == 0) {
+            @<Create the state for a subset of the middle row@>@;
+        } else {
+            @<Create the state for a subset of the twin row@>@;
+        }
     }
     tab_finish(cur);
+
+@ If $M_v$ is even, the middle row $v_m=M_v/2$ is its own image.  We
+enumerate all nonempty subsets of it that are symmetric under
+$i\leftrightarrow W-1-i$: we choose among the positions in the right
+half, including the center.  A chosen position stands for two cells,
+except the center.  The first row to be built is $v_0=v_m+1$.
+@<Prepare the choices for the middle row@>=
+        int vm = M_v / 2;
+        for (int i = 0; i < W; i++)
+            if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
+                choice[num_choices++] = i;
+        max_chosen = (NMAX - 2 * kmin + 1) / 2;
+        v0 = vm + 1;
+        V0 = v0;
+
+@ Every cell of the middle row is a component of its own; the partner
+of a cell is its mirror cell, and the center cell, if present, is the
+central component.  The weight is the number of cells.
+@<Create the state for a subset of the middle row@>=
+            uint8_t f[MAXW], par[MAXLAB];
+            int nc = 0;
+            memset(f, 0, W);
+            for (int b = 0; b < num_choices; b++)
+                if (chosen[b])
+                    f[choice[b]] = f[W - 1 - choice[b]] = 1;
+            for (int i = 0; i < W; i++)
+                if (f[i])
+                    f[i] = ++nc;
+            for (int i = 0; i < W; i++)
+                if (f[i])
+                    par[f[i]] = f[W - 1 - i]; /* the cell itself at the center */
+            if (nc + 2 * kmin <= NMAX) {
+                canon(f, par, f[0] != 0, &key);
+                size_t ti = tab_get(cur, &key);
+                cur->head[ti] = new_record(cur, nc, 1, 0);
+            }
+
+@ {\bf The twin row.}
+If $M_v$ is odd, the first row $v_0=(M_v+1)/2$ of $P^+$ is the twin row.
+Its image is the row $v_0-1$ directly below it.  We choose an arbitrary
+nonempty subset of the twin row, and the row-by-row construction starts with the next row.
+@<Prepare the choices for the twin row@>=
+        v0 = (M_v + 1) / 2;
+        V0 = v0;
+        for (int i = 0; i < W; i++)
+            if (((umin + i - v0) % 2 + 2) % 2 == 0)
+                choice[num_choices++] = i;
+        max_chosen = (NMAX - 2 * (kmin - 1)) / 2;
+
+@ The twin row and its image row together form a zigzag band with
+exactly one cell at each position: a cell of the twin row at the
+positions of one parity, and a cell of the image row at the positions of
+the other parity.  The cell of the image row at position $q$ is the
+image of the cell of the twin row at position $W-1-q$.  We record in
+|band[q]| whether the cell at position~$q$ of the band is occupied.
+Cells at adjacent positions of the band are neighbors.  Hence the
+connected components of the known part are the maximal runs of occupied
+positions in the band.  A run that consists of a single cell of the
+image row has no cell on the frontier, and it gets no label.  The image
+of a run is the run at the mirror position: the |r|-th run from the left
+is the image of the |r|-th run from the right.  Thus, a single cell of
+the twin row is a floating component, the run that contains the two
+middle positions of the band is the central component, and all other
+components are paired.  There are no nested components.
+
+The state is then treated like any state at the end of a row: we compute
+the lower bound and create the state if it is not too heavy.  The weight
+is 2 for each cell.
+@<Create the state for a subset of the twin row@>=
+            uint8_t band[MAXW + 1];
+            int is_twin[MAXW], run_label[MAXW], num_runs = 0, m = 0;
+            memset(band, 0, W + 1);
+            memset(is_twin, 0, W * sizeof(int));
+            for (int b = 0; b < num_choices; b++) {
+                is_twin[choice[b]] = 1;
+                if (chosen[b])
+                    band[choice[b]] = band[W - 1 - choice[b]] = 1;
+            }
+            for (int q = 0; q < W; q++) {
+                key.label[q] = 0;
+                if (!band[q])
+                    continue;
+                if (q == 0 || !band[q - 1])
+                    run_label[num_runs++] = 0; /* a new run */
+                if (is_twin[q]) {
+                    if (!run_label[num_runs - 1])
+                        run_label[num_runs - 1] = ++m;
+                    key.label[q] = run_label[num_runs - 1];
+                }
+            }
+            for (int r = 0; r < num_runs; r++)
+                if (run_label[r])
+                    key.partner[run_label[r]] = run_label[num_runs - 1 - r];
+            key.num_components = m;
+            key.touches = band[0];
+            int lowerbound = bound(&key, 1, kmin, W - 1, 1);
+            if (lowerbound >= 0 && 2 * num_chosen + lowerbound <= NMAX) {
+                size_t ti = tab_get(cur, &key);
+                cur->head[ti] = new_record(cur, 2 * num_chosen, 1, 0);
+            }
 
 @ The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
@@ -2485,7 +2536,6 @@ is even.
         for (int i = 0; i < W; i++)
             if (((umin + i - v) % 2 + 2) % 2 == 0)
                 cells_v[nu++] = i;
-        int first_twin = (E == 1 && k == 1);
 
 @ @<Decide cell |ci| of the row for all states@>=
 int i = cells_v[ci];
@@ -2496,23 +2546,19 @@ for (size_t si = 0; si < cur->n; si++) {
 }
 @<Swap the tables and update the statistics@>@;
 
-@ The empty state exists only in the twin row.  A polyomino that
+@ A polyomino that
 is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |si|...@>=
                 state_t sk;
                 unpack(cur->keys + si * KW, &sk);
                 for (int occ = 0; occ <= 1; occ++) {
-                    if (occ && k > 1 && sk.num_components == 0)
-                        continue;
-                    int status = step(&sk, i, occ, last, first_twin, &key);
+                    int status = step(&sk, i, occ, last, &key);
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
                         record(k - 1, cur, si, sk.touches);
                         continue;
                     }
-                    if (key.num_components == 0 && !(first_twin && !last))
-                        continue;
                     int add = occ ? 2 : 0;
                     @<Add state |si| to the state |key| of the new table, with pruning@>@;
                 }
@@ -2523,7 +2569,6 @@ We therefore compute the bound only when
 the state is not yet in the new table, and we store it with the state.
 If already the smallest weight of the state |si| is too large, the new state is
 not created, and in this case the bound is not remembered.
-(The bound of the empty state is 0.)
 In a run with $N=42$, a quarter of the 30.6 million new keys were
 already in the table.  The bound was computed 22.9 million times, and 16.2 million
 states were created; the remaining 6.7 million keys were discarded, because
@@ -2532,11 +2577,11 @@ they cannot be completed or because all weights were too large.
                     uint64_t w[12];
                     pack_key(&key, w);
                     size_t ti = tab_find(nxt, w);
-                    int lowerbound = 0;
+                    int lowerbound;
                     if (ti != NO_STATE)
                         lowerbound = nxt->lowerbound[ti];
-                    else if (key.num_components > 0) {
-                        lowerbound = bound(&key, k, kmin, i, last, first_twin);
+                    else {
+                        lowerbound = bound(&key, k, kmin, i, last);
                         if (lowerbound < 0)
                             continue;
 @<Sharpen |lowerbound| by looking one cell ahead@>@;
@@ -2561,13 +2606,13 @@ the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
 @<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
+                    if (LOOKAHEAD && !last && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
                         /* one step ahead: the next cell is present or not */
                         int i2 = cells_v[ci + 1], last2 = ci + 1 == nu - 1;
                         int la = 1 << 20;
                         state_t k2;
                         for (int o2 = 0; o2 <= 1 && la; o2++) {
-                            int st2 = step(&key, i2, o2, last2, 0, &k2);
+                            int st2 = step(&key, i2, o2, last2, &k2);
                             if (st2 == DEAD)
                                 continue;
                             /* a completion only counts if it is a valid polyomino */
@@ -2575,9 +2620,7 @@ is switched off.
                                 continue;
                             int val = 2 * o2;
                             if (st2 == OK) {
-                                if (k2.num_components == 0)
-                                    continue;
-                                int lowerbound2 = bound(&k2, k, kmin, i2, last2, 0);
+                                int lowerbound2 = bound(&k2, k, kmin, i2, last2);
                                 if (lowerbound2 < 0)
                                     continue;
                                 val += lowerbound2;

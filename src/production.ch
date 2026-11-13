@@ -106,9 +106,9 @@ static int exact_bound(const state_t *s)
 @z
 
 @x
-        int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
+    int eb = 2 * (OLDBOUND ? exact_bound(s) : cactus_bound(s, kink));
 @y
-        int eb = 2 * cactus_bound(s, kink);
+    int eb = 2 * cactus_bound(s, kink);
 @z
 
 @x
@@ -116,11 +116,11 @@ the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
 @<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
+                    if (LOOKAHEAD && !last && (LOOKAHEAD == 2 || (!key.label[i] && i + 1 < W && key.label[i + 1]))) {
 @y
 the lookahead counts only if it would be a valid polyomino.
 @<Sharpen |lowerbound|...@>=
-                    if (!last && !first_twin && !key.label[i] && i + 1 < W && key.label[i + 1]) {
+                    if (!last && !key.label[i] && i + 1 < W && key.label[i + 1]) {
 @z
 
 @x

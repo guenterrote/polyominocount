@@ -31,11 +31,11 @@ i=find("static int HEIGHT = 1;"); ch(i,i+1,"")
 i=find("        return HEIGHT ? top : 0;"); assert L[i+1]=="    if (!HEIGHT)" and L[i+2]=="        return DEDGE;"
 ch(i,i+3,"        return top;")
 i=find("@ An older and weaker bound is retained"); j=find("@ The function |bound| returns"); ch(i,j,"")
-i=find("        int eb = 2 * (OLDBOUND ?"); ch(i,i+1,"        int eb = 2 * cactus_bound(s, kink);")
+i=find("    int eb = 2 * (OLDBOUND ?"); ch(i,i+1,"    int eb = 2 * cactus_bound(s, kink);")
 i=find("the lookahead counts only if it would be a valid polyomino.  With the")
 assert L[i+2]=="is switched off." and L[i+3].startswith("@<Sharpen") and L[i+4].lstrip().startswith("if (LOOKAHEAD &&")
 ch(i,i+5,"the lookahead counts only if it would be a valid polyomino.\n"+L[i+3]+"\n"
-   "                    if (!last && !first_twin && !key.label[i] && i + 1 < W && key.label[i + 1]) {")
+   "                    if (!last && !key.label[i] && i + 1 < W && key.label[i + 1]) {")
 i=find("  -N     no lookahead;"); assert L[i+2].startswith("  -K")
 ch(i,i+3,"")
 i=find("static int OLDBOUND = 0;"); ch(i,i+1,"")
