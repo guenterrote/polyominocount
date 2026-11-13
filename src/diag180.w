@@ -711,10 +711,10 @@ of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 @<Sub...@>=
 static void join(uint8_t *label, uint8_t *partner, int a, int b)
 {
-    /* on entry: |a| and |b| are labels that occur on the frontier; the partner relation is symmetric:
+    /* on entry: |a| and |b| are labels that occur on the frontier, possibly |a == b|; the partner relation is symmetric:
        |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
        afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
-    if (a == b)
+    if (a == b) /* the new cell touches the same component a second time */
         return;
     int partner_a = partner[a], partner_b = partner[b];
     relabel(label, b, a);
@@ -845,9 +845,9 @@ static int step(const state_t *state, int i, int occupied, int last_in_row, stat
 @* Packed keys.
 \label{sec:packed}
 The unpacked states are convenient but wasteful.  In the tables, a state is
-stored as a bit string in |WORDS_PER_KEY| 64-bit words:
+stored as a bit string of |BYTES_PER_KEY| bytes:
 \begin{itemize}
-\item 3 bits per position, with one of the following six codes 0--5:
+\item 3 bits for each position that can hold a frontier cell, with one of the following six codes 0--5:
   |C_EMPTY| for an empty position;
   |C_CONTINUE| if the cell continues the run of its left neighbor;
   and for the first cell of a run:
@@ -865,32 +865,34 @@ picture.  Component~1 has two runs, at the positions 1 and~3
 (\texttt{F},~\texttt{L}).  Component~2 has three runs: at position~5
 (\texttt{F}), at position~7 (\texttt{M}), and at the positions 9 and~10
 (\texttt{L}, \texttt{C}), which are adjacent because the kink is between
-them.  The components 3 and~4 are single cells (\texttt{S}).  The 17 codes
+them.  The components 3 and~4 are single cells (\texttt{S}).
+Only 9 of the 17 positions can hold a frontier cell: the positions
+$1,3,5,7,9$ of the current row and the positions $10,12,14,16$ of the
+previous row.  Their codes \texttt{FLFMLCSES}
 are followed by the bits $1,1,0,1$ for the four components (only component~3
 is floating) and by the touched bit~1.
-These are $3\cdot17+4+1=56$ bits, which fit into one word.
+These are $3\cdot9+4+1=32$ bits, or 4 bytes.
 {\bf How long must a key be?}
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
 of valid sequences of the five codes other than |C_CONTINUE| for $m$
 frontier cells grows like $5^m m^{-3/2}$.  Thus,
 $\log_2 5\approx 2.32$ bits per frontier cell are necessary, and
 3~bits per frontier cell are close to this information-theoretic minimum.
-However, our key has 3~bits for each of the $W$ positions, and
-only every other position can hold a frontier cell: the
+Only every other position can hold a frontier cell: the
 frontier cells of a row occupy the positions of one parity.  The only
 exception is the kink, where a cell of row $v$ and a cell of row $v-1$
 are in adjacent positions.  (This is also the only place where
-the code |C_CONTINUE| can occur.)  Thus there are only about $m=W/2$
-frontier cells, the other positions are always empty, and the key is about
-twice as long as it would have to be with the same simple encoding, and
-2.6 times as long as the minimum.
-We have kept the straightforward encoding because the keys are only a
-moderate part of the memory, see Section~\ref{sec:space}, where we also
-discuss shorter keys.
+the code |C_CONTINUE| can occur.)  Thus there are at most $\lfloor W/2\rfloor+1$
+frontier cells, and only their codes are stored.  The key is about
+1.3 times as long as the minimum.
+Ranking the states, as in~\cite{twisted}, would give the shortest
+possible keys, but ranking and unranking are slow.
 
+The length of the key is fixed for each strip.  It is measured in bytes
+and not in larger units, in order to waste no space by rounding.
 
 @<Glob...@>=
-static int WORDS_PER_KEY; /* length of a packed key in 64-bit words */
+static int BYTES_PER_KEY; /* length of a packed key */
 
 @ @<Type...@>=
 enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST };
@@ -915,26 +917,26 @@ unpacking the packed key gives back the original state.  We have run
 this check for $N\le 30$.
 
 @ Bit strings are written and read with two small routines.  No field
-has more than 3 bits.
+has more than 3 bits, so that a field extends over at most two bytes.
 @<Sub...@>=
-static inline void put_bits(uint64_t *words, int *bit_position, uint64_t value, int num_bits)
+static inline void put_bits(uint8_t *bytes, int *bit_position, int value, int num_bits)
 {
-    /* on entry: the words have been cleared, and |value| has at most |num_bits| bits */
-    int word = *bit_position >> 6, offset = *bit_position & 63;
-    words[word] |= value << offset;
-    if (offset + num_bits > 64)
-        words[word + 1] |= value >> (64 - offset);
+    /* on entry: the bytes have been cleared, and |value| has at most |num_bits| bits, |num_bits| $\le8$ */
+    int byte = *bit_position >> 3, offset = *bit_position & 7;
+    bytes[byte] |= value << offset;
+    if (offset + num_bits > 8)
+        bytes[byte + 1] |= value >> (8 - offset);
     *bit_position += num_bits;
 }
 
-static inline int get_bits(const uint64_t *words, int *bit_position, int num_bits)
+static inline int get_bits(const uint8_t *bytes, int *bit_position, int num_bits)
 {
-    int word = *bit_position >> 6, offset = *bit_position & 63;
-    uint64_t value = words[word] >> offset;
-    if (offset + num_bits > 64)
-        value |= words[word + 1] << (64 - offset);
+    int byte = *bit_position >> 3, offset = *bit_position & 7;
+    int value = bytes[byte] >> offset;
+    if (offset + num_bits > 8)
+        value |= bytes[byte + 1] << (8 - offset);
     *bit_position += num_bits;
-    return value & ((1u << num_bits) - 1);
+    return value & ((1 << num_bits) - 1);
 }
 
 @ Packing and unpacking are done in two steps.  The intermediate form
@@ -1018,46 +1020,63 @@ static void decode(const coded_t *coded, state_t *s)
     s->touches = coded->touches;
 }
 
+@ {\bf Which positions can hold a frontier cell?}
+Suppose that the cell at position |decided_position| was the last cell
+that has been decided.  The cells of its row occupy the positions of the
+same parity, up to |decided_position|.  The remaining frontier cells
+belong to the previous row: they are at the positions of the other
+parity, to the right of |decided_position|.  (The cell at
+$|decided_position|-1$ has just been retired.)  All other positions are
+empty, and we don't store their codes.  At the end of a row, and for the first row,
+|decided_position| is the last position of the row.
+@<Sub...@>=
+static inline int can_hold_frontier_cell(int j, int decided_position)
+{
+    return (((j ^ decided_position) & 1) != 0) == (j > decided_position);
+}
+
 @ Compaction into a bit string, and the reverse.  The number of components
 is not stored: it is the number of codes |C_SINGLETON| and |C_FIRST|.
 @<Sub...@>=
-static void compress(const coded_t *coded, uint64_t *words)
+static void compress(const coded_t *coded, int decided_position, uint8_t *bytes)
 {
+    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY| */
     int pos = 0;
-    memset(words, 0, WORDS_PER_KEY * 8);
+    memset(bytes, 0, BYTES_PER_KEY);
     for (int i = 0; i < W; i++)
-        put_bits(words, &pos, coded->code[i], 3);
+        if (can_hold_frontier_cell(i, decided_position))
+            put_bits(bytes, &pos, coded->code[i], 3);
     for (int j = 1; j <= coded->num_components; j++)
-        put_bits(words, &pos, coded->crossing[j], 1);
-    put_bits(words, &pos, coded->touches, 1);
+        put_bits(bytes, &pos, coded->crossing[j], 1);
+    put_bits(bytes, &pos, coded->touches, 1);
 }
 
-static void expand(const uint64_t *words, coded_t *coded)
+static void expand(const uint8_t *bytes, int decided_position, coded_t *coded)
 {
     int pos = 0, m = 0;
     for (int i = 0; i < W; i++) {
-        coded->code[i] = get_bits(words, &pos, 3);
+        coded->code[i] = can_hold_frontier_cell(i, decided_position) ? get_bits(bytes, &pos, 3) : C_EMPTY;
         if (coded->code[i] == C_SINGLETON || coded->code[i] == C_FIRST)
             m++;
     }
     for (int j = 1; j <= m; j++)
-        coded->crossing[j] = get_bits(words, &pos, 1);
+        coded->crossing[j] = get_bits(bytes, &pos, 1);
     coded->num_components = m;
-    coded->touches = get_bits(words, &pos, 1);
+    coded->touches = get_bits(bytes, &pos, 1);
 }
 
 @ @<Sub...@>=
-static void pack(const state_t *s, uint64_t *words)
+static void pack(const state_t *s, int decided_position, uint8_t *bytes)
 {
     coded_t coded;
     encode(s, &coded);
-    compress(&coded, words);
+    compress(&coded, decided_position, bytes);
 }
 
-static void unpack(const uint64_t *words, state_t *s)
+static void unpack(const uint8_t *bytes, int decided_position, state_t *s)
 {
     coded_t coded;
-    expand(words, &coded);
+    expand(bytes, decided_position, &coded);
     decode(&coded, s);
 }
 
@@ -1151,7 +1170,8 @@ typedef struct {
 
 typedef struct {
     size_t num_states, state_capacity, hash_mask;
-    uint64_t *keys;
+    int decided_position; /* determines the layout of the keys */
+    uint8_t *keys;
     uint32_t *first_record;               /* first record + 1 */
     record_t *records;
     size_t num_records, record_capacity;
@@ -1173,14 +1193,14 @@ static void *checked_realloc(void *p, size_t s)
 @ @<Sub...@>=
 static void table_allocate(table_t *t, size_t capacity)
 {
-    /* on entry: |WORDS_PER_KEY| has been set for the current strip */
+    /* on entry: |BYTES_PER_KEY| has been set for the current strip */
     t->num_states = 0;
     t->state_capacity = capacity;
     size_t hash_size = 16;
     while (hash_size < 2 * capacity)
         hash_size <<= 1;
     t->hash_mask = hash_size - 1;
-    t->keys = checked_realloc(0, capacity * WORDS_PER_KEY * 8);
+    t->keys = checked_realloc(0, capacity * BYTES_PER_KEY);
     t->first_record = checked_realloc(0, capacity * 4);
     t->hash = 0; /* allocated by |table_initialize| */
     t->lowerbound = 0; /* likewise */
@@ -1200,31 +1220,68 @@ static void table_free(table_t *t)
 
 static size_t table_bytes(const table_t *t)
 {
-    return t->num_states * (WORDS_PER_KEY * 8 + 4) + t->num_records * sizeof(record_t)
+    return t->num_states * (BYTES_PER_KEY + 4) + t->num_records * sizeof(record_t)
         + (t->hash ? (t->hash_mask + 1) * 4 + t->num_states : 0);
 }
 
-@ The hash function mixes all words of the key.
-It is an ad-hoc construction and not a function from the literature:
-each word of the key is added by exclusive-or, and then the value is
-multiplied by an odd 64-bit constant and combined with a shifted copy of itself.
-This multiply-and-shift step is the building block of the mixing
-function of the pseudorandom generator SplitMix64~\cite{SplitMix}, from
-which the multiplier is taken.  The starting value is $2^{64}$ divided by
-the golden ratio, the classical multiplier of Fibonacci hashing.
-We have not analyzed the quality of this function; a poor distribution
-would only cost time through longer probe sequences, never correctness.
-@<Sub...@>=
-static inline uint64_t hash_of_key(const uint64_t *k)
+@ {\bf The hash function.}
+We use ``universal hashing'' ({\sl TAOCP}, exercise 6.4--72), following
+Knuth's program {\sc POLYNUM}~\cite{polynum}, from which the function
+|hash_of_key| and the idea of leaving the entries for the byte value~0 at zero are taken:
+For each byte position of the key there is a table of 256 random numbers,
+and the hash value is the sum of the table entries for the bytes of the key.
+As Knuth remarks, this gives a good hash function although most of
+the key bits tend to be zero.
+The random numbers are produced at the start of the program by a
+generator of the {\sc SplitMix} family~\cite[Section~3, Figure~16]{SplitMix}
+with a fixed seed, so that all runs behave in the same way.
+In the terms of that figure,
+the state is advanced as in the method {\tt nextSeed}, with
+the increment {\tt GOLDEN\_GAMMA}
+(the odd integer closest to $2^{64}/\phi$, which is the increment $\gamma$ of
+a generator created with an explicit seed), and the new state
+is scrambled by the function {\tt mix64variant13}
+(David Stafford's ``Mix13'' variant of the {\sc MurmurHash3} finalizer).
+We take the upper 32 bits of the result.
+The method {\tt nextLong} of Figure~17 in~\cite{SplitMix} uses the
+function {\tt mix64} in place of {\tt mix64variant13};
+the combination used here is the one that is widely known as ``SplitMix64''.
+
+An earlier version of the program used an ad-hoc hash function
+(multiplications and shifts of the 64-bit words of the key).  In a
+run with $N=42$, a search in the hash table then looked at 1.02 occupied
+slots on average; with universal hashing this number is 0.44.
+(Three quarters of the searches are unsuccessful, and the tables are
+often much less than half full.)
+
+The hash values have 32 bits.  This is sufficient, because a table has
+fewer than $2^{32}$ states.
+
+@d MAX_BYTES_PER_KEY 41 /* $3\cdot81+82+1=326$ bits for $W=160$ */
+@<Glob...@>=
+static uint32_t HASH_BITS[MAX_BYTES_PER_KEY][256]; /* random bits for universal hashing */
+
+@ @<Sub...@>=
+static inline uint32_t hash_of_key(const uint8_t *key)
 {
-    uint64_t hash_size = 0x9E3779B97F4A7C15ull;
-    for (int i = 0; i < WORDS_PER_KEY; i++) {
-        hash_size ^= k[i];
-        hash_size *= 0xBF58476D1CE4E5B9ull;
-        hash_size ^= hash_size >> 31;
-    }
-    return hash_size;
+    uint32_t h = HASH_BITS[0][key[0]];
+    for (int l = 1; l < BYTES_PER_KEY; l++)
+        h += HASH_BITS[l][key[l]];
+    return h;
 }
+
+@ We can keep |HASH_BITS[l][0]=0| without loss of universality.
+@<Initialize the random bits for hashing@>=
+    {
+        uint64_t x = 0; /* the state (``seed'') of the generator */
+        for (int l = 0; l < MAX_BYTES_PER_KEY; l++)
+            for (int b = 1; b < 256; b++) {
+                uint64_t z = (x += 0x9E3779B97F4A7C15ull); /* {\tt nextSeed} with {\tt GOLDEN\_GAMMA} */
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull; /* {\tt mix64variant13} */
+                z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+                HASH_BITS[l][b] = (z ^ (z >> 31)) >> 32; /* upper half */
+            }
+    }
 
 @ When the table is full, the capacity is doubled and all states are
 rehashed.  ``Full'' refers to the arrays |keys| and |first_record| of the
@@ -1236,7 +1293,7 @@ static void table_grow(table_t *t)
 {
     /* on entry: the table is being built (it has its hash array), and it is full */
     size_t capacity = t->state_capacity * 2;
-    t->keys = checked_realloc(t->keys, capacity * WORDS_PER_KEY * 8);
+    t->keys = checked_realloc(t->keys, capacity * BYTES_PER_KEY);
     t->first_record = checked_realloc(t->first_record, capacity * 4);
     t->lowerbound = checked_realloc(t->lowerbound, capacity);
     size_t hash_size = (t->hash_mask + 1) * 2;
@@ -1249,7 +1306,7 @@ static void table_grow(table_t *t)
     t->hash_mask = hash_size - 1;
     t->state_capacity = capacity;
     for (size_t i = 0; i < t->num_states; i++) {
-        size_t slot = hash_of_key(t->keys + i * WORDS_PER_KEY) & t->hash_mask;
+        size_t slot = hash_of_key(t->keys + i * BYTES_PER_KEY) & t->hash_mask;
         while (t->hash[slot])
             slot = (slot + 1) & t->hash_mask;
         t->hash[slot] = i + 1;
@@ -1268,9 +1325,10 @@ complete.  In this way, only one of the two tables has these arrays
 at any time.  (When |table_initialize| is called, the table is new or
 it has been finished, so that there is nothing to free.)
 @<Sub...@>=
-static void table_initialize(table_t *t)
+static void table_initialize(table_t *t, int decided_position)
 {
     /* on entry: the table is new or finished: it has no hash array */
+    t->decided_position = decided_position;
     t->num_states = 0;
     t->num_records = 0;
     t->hash = calloc(t->hash_mask + 1, sizeof(uint32_t)); /* all slots empty */
@@ -1299,13 +1357,13 @@ empty slot where the search of |table_find| has ended, so that
 @<Sub...@>=
 static size_t HASH_SLOT;
 
-static size_t table_find(const table_t *t, const uint64_t *packed_key)
+static size_t table_find(const table_t *t, const uint8_t *packed_key)
 {
-    /* on entry: the table is being built; unused bits of |packed_key| are zero, so that equal states have equal words */
+    /* on entry: the table is being built; unused bits of |packed_key| are zero, so that equal states have equal keys */
     size_t slot = hash_of_key(packed_key) & t->hash_mask;
     while (t->hash[slot]) {
         size_t i = t->hash[slot] - 1;
-        if (!memcmp(t->keys + i * WORDS_PER_KEY, packed_key, WORDS_PER_KEY * 8))
+        if (!memcmp(t->keys + i * BYTES_PER_KEY, packed_key, BYTES_PER_KEY))
             return i;
         slot = (slot + 1) & t->hash_mask;
     }
@@ -1313,7 +1371,7 @@ static size_t table_find(const table_t *t, const uint64_t *packed_key)
     return NO_STATE;
 }
 
-static size_t table_create(table_t *t, const uint64_t *packed_key)
+static size_t table_create(table_t *t, const uint8_t *packed_key)
 {
     /* on entry: the preceding operation on this table was an unsuccessful |table_find| for the same key */
     size_t slot = HASH_SLOT;
@@ -1325,7 +1383,7 @@ static size_t table_create(table_t *t, const uint64_t *packed_key)
     }
     size_t i = t->num_states++;
     t->hash[slot] = i + 1;
-    memcpy(t->keys + i * WORDS_PER_KEY, packed_key, WORDS_PER_KEY * 8);
+    memcpy(t->keys + i * BYTES_PER_KEY, packed_key, BYTES_PER_KEY);
     t->first_record[i] = 0;
     t->lowerbound[i] = 0;
     return i;
@@ -1334,12 +1392,12 @@ static size_t table_create(table_t *t, const uint64_t *packed_key)
 @ The function |pack_and_check| packs a state.  With the option \texttt{-C},
 it checks that unpacking gives the state back.
 @<Sub...@>=
-static void pack_and_check(const state_t *s, uint64_t *packed_key)
+static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
 {
-    pack(s, packed_key);
+    pack(s, decided_position, packed_key);
     if (CHECK_PACKING) {
         state_t unpacked;
-        unpack(packed_key, &unpacked);
+        unpack(packed_key, decided_position, &unpacked);
         if (unpacked.num_components != s->num_components || compare_states(&unpacked, s)) {
             fprintf(stderr, "pack/unpack mismatch\n");
             exit(2);
@@ -1352,8 +1410,8 @@ unpacked form.  If the state is not yet in the table, it is created.
 @<Sub...@>=
 static size_t table_find_or_create(table_t *t, const state_t *s)
 {
-    uint64_t packed_key[12];
-    pack_and_check(s, packed_key);
+    uint8_t packed_key[MAX_BYTES_PER_KEY];
+    pack_and_check(s, t->decided_position, packed_key);
     size_t i = table_find(t, packed_key);
     return i != NO_STATE ? i : table_create(t, packed_key);
 }
@@ -2238,7 +2296,7 @@ $|uspan|=|vspan|$.
 @<Glob...@>=
 static counter_t *PORTRAIT, *SQUARE; /* results of one case */
 static counter_t *RECTANGLE; /* results for the current height */
-static size_t MAX_STATES, MAX_BYTES, MAX_RECORDS, MAX_KEY_WORDS; /* statistics */
+static size_t MAX_STATES, MAX_BYTES, MAX_RECORDS, MAX_KEY_BYTES; /* statistics */
 
 @ These vectors are allocated at the beginning of the program, as soon
 as $N$ is known.
@@ -2390,7 +2448,7 @@ static void count_case(void)
         exit(1);
     }
     MAX_COMPONENTS = (W + 1) / 2 + 1;
-    WORDS_PER_KEY = (3 * W + MAX_COMPONENTS + 1 + 63) / 64;
+    BYTES_PER_KEY = (3 * (W / 2 + 1) + MAX_COMPONENTS + 1 + 7) / 8;
     NMAX_plus_1 = NMAX + 1;
 
     int min_rows = 0;
@@ -2403,7 +2461,6 @@ current cell and |next| for the states after it.
     table_t A, B, *current = &A, *next = &B;
     table_allocate(&A, 1024);
     table_allocate(&B, 1024);
-    table_initialize(current);
     state_t new_state;
     int first_row;
 
@@ -2424,6 +2481,7 @@ is added later, because |min_rows-k| further rows are necessary in any case, wit
     uint8_t chosen[MAXW]; /* the current subset */
     int num_chosen = 0, done = 0;
     memset(chosen, 0, num_choices);
+    table_initialize(current, choice[num_choices - 1]); /* the last position of the first row */
     while (!done) {
         @<Generate the next subset for which the size |num_chosen| does not exceed |max_chosen|; set |done| if finished@>@;
         if (done)
@@ -2576,7 +2634,7 @@ is even.
 @ @<Decide cell |cell_number| of the row for all states@>=
 int i = row_cells[cell_number];
 int last_in_row = cell_number == num_row_cells - 1;
-table_initialize(next);
+table_initialize(next, i);
 for (size_t source_state = 0; source_state < current->num_states; source_state++) {
     @<Extend state |source_state| by the two choices for cell |i|@>@;
 }
@@ -2586,7 +2644,7 @@ for (size_t source_state = 0; source_state < current->num_states; source_state++
 is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |source_state|...@>=
                 state_t old_state;
-                unpack(current->keys + source_state * WORDS_PER_KEY, &old_state);
+                unpack(current->keys + source_state * BYTES_PER_KEY, current->decided_position, &old_state);
                 for (int occupied = 0; occupied <= 1; occupied++) {
                     int status = step(&old_state, i, occupied, last_in_row, &new_state);
                     if (status == DEAD)
@@ -2610,8 +2668,8 @@ already in the table.  The bound was computed 22.9 million times, and 16.2 milli
 states were created; the remaining 6.7 million keys were discarded, because
 they cannot be completed or because all weights were too large.
 @<Add state |source_state| to the state |new_state|...@>=
-                    uint64_t packed_key[12];
-                    pack_and_check(&new_state, packed_key);
+                    uint8_t packed_key[MAX_BYTES_PER_KEY];
+                    pack_and_check(&new_state, next->decided_position, packed_key);
                     size_t target_state = table_find(next, packed_key);
                     int lowerbound;
                     if (target_state != NO_STATE)
@@ -2673,7 +2731,7 @@ is switched off.
             MAX_STATES = max(MAX_STATES, current->num_states);
             size_t bytes = table_bytes(current) + table_bytes(next);
             if (bytes > MAX_BYTES)
-                MAX_BYTES = bytes, MAX_RECORDS = current->num_records, MAX_KEY_WORDS = WORDS_PER_KEY;
+                MAX_BYTES = bytes, MAX_RECORDS = current->num_records, MAX_KEY_BYTES = BYTES_PER_KEY;
             table_finish(current); /* the new table is complete */
             if (!last_in_row && (VERBOSITY >= 2 || (VERBOSITY == 1 && wall_time() - LAST_REPORT_TIME >= PROGRESS_SECONDS)))
                 print_status_line("#cell", k, v, cell_number + 1, num_row_cells, current, next);
@@ -2689,10 +2747,10 @@ renumbers the components.
 @<Merge every state with its mirror image@>=
         if (MERGE_MIRROR_STATES && M_u == 0 && current->num_states) {
             /* merge each state with its mirror image $u\to-u$ */
-            table_initialize(next);
+            table_initialize(next, current->decided_position);
             state_t old_state, mirror;
             for (size_t source_state = 0; source_state < current->num_states; source_state++) {
-                unpack(current->keys + source_state * WORDS_PER_KEY, &old_state);
+                unpack(current->keys + source_state * BYTES_PER_KEY, current->decided_position, &old_state);
                 uint8_t label[MAXW];
                 for (int a = 0; a < W; a++)
                     label[a] = old_state.label[W - 1 - a];
@@ -2732,6 +2790,7 @@ int main(int argc, char **argv)
     @<Parse the command line@>@;
     clock_t t0 = clock();
     START_TIME = LAST_REPORT_TIME = wall_time();
+    @<Initialize the random bits for hashing@>@;
     @<Print the program parameters@>@;
     if (argc - arg == 4) {
         @<Count a single case and print the result@>@;
@@ -2795,8 +2854,10 @@ the range where the program can be useful.
 \item Component labels are stored in bytes.  Hence a label cannot go beyond 255.
   A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ components.
 \item The weight in a count record is a byte, which would allow $N\le255$.
-\item A packed key has at most 12 words of 64 bits; $3W+|MAX_COMPONENTS|+1\le 563$ bits
-  are needed.
+\item A packed key has at most |MAX_BYTES_PER_KEY|${}=41$ bytes;
+  $3(\lfloor W/2\rfloor+1)+|MAX_COMPONENTS|+1\le 326$ bits are needed.
+\item The hash values have 32 bits, which is sufficient for the
+  tables that are possible under the next limit.
 \item States and count records are numbered with 32-bit integers, so a
   table can hold fewer than $2^{32}\approx 4.3\cdot10^9$ records.  (There
   are always at least as many records as states.)  This is the limit
@@ -2832,7 +2893,7 @@ self-describing.
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
         fprintf(stream, "# output: results file %s, progress -v %d -p %g s\n",
                 RESULT_FILE_NAME, VERBOSITY, PROGRESS_SECONDS);
-        fprintf(stream, "# sizes: counter %zu bytes, count record %zu bytes, key word 64 bits\n",
+        fprintf(stream, "# sizes: counter %zu bytes, count record %zu bytes\n",
                 sizeof(counter_t), sizeof(record_t));
         fflush(stream);
     }
@@ -2915,8 +2976,8 @@ $\fix_{\rhoo}(n)$ and its three parts for the three types of centers.
         }
 
 @ @<Print the final statistics@>=
-    fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu 64-bit words)\n",
-            MAX_BYTES / 1e6, MAX_RECORDS, MAX_KEY_WORDS);
+    fprintf(stderr, "# peak memory %.1f MB (both tables; %zu count records, key %zu bytes)\n",
+            MAX_BYTES / 1e6, MAX_RECORDS, MAX_KEY_BYTES);
     fprintf(stderr, "# max states %zu, %.2fs\n", MAX_STATES,
             (double)(clock() - t0) / CLOCKS_PER_SEC);
 
@@ -3093,8 +3154,9 @@ $n$ & center in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 @*1 Saving space in larger runs.
 \label{sec:space}
 For $N=71$, the memory requirement of 3 GB was no obstacle, and we have
-not tried to reduce it.  At the peak, a state needs about 70 bytes:
-16 bytes for the packed key (two 64-bit words for $W=29$), 4 bytes for
+not tried to reduce it.  (That run was made with an earlier version of the program,
+whose keys were twice as long.)  At the peak, a state now needs about 62 bytes:
+8 bytes for the packed key (62 bits for $W=29$), 4 bytes for
 the list head, at least 8 bytes for its share of the hash array
 (two slots of 4 bytes), and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the
@@ -3102,7 +3164,7 @@ weight, 3 wasted by alignment), of which there are 2.6 per state.
 (This number is taken from the run for $N=71$: at the moment of the
 largest memory usage, the larger table had $5.14\cdot10^7$ count records
 for $1.97\cdot10^7$ states.)
-(The actual memory at the peak was 150 bytes per state of the larger
+(The actual memory at the peak of that run was 150 bytes per state of the larger
 table, because the old and the new table exist at the same time, and
 because the arrays grow by doubling and are not full.
 At that time, the program also kept the hash array of the old table,
@@ -3133,15 +3195,6 @@ We list them roughly in the order of increasing effort.
   are independent and can be done in parallel.
   A cheaper intermediate step is to store the records of a state
   contiguously instead of as a linked list, which removes the link.
-\item \emph{Shorter keys.}  As explained in Section~\ref{sec:packed},
-  only every other position can hold a frontier cell.  Storing 3 bits
-  only for the $\lceil W/2\rceil+1$ positions where a frontier cell is
-  possible (the positions of the right parity on both sides of the kink,
-  and the kink) halves this part of the key.  For
-  $W=29$ the key would then fit into one word instead of two.
-  Ranking the states, as in~\cite{twisted}, would give the shortest
-  possible keys, with $\log_2 5\approx2.32$ bits per frontier cell, but
-  ranking and unranking are slow.
 \item \emph{Separating the structure from the counting.}  Knuth's
   programs {\sc POLYNUM} and {\sc POLYSLAVE}~\cite{polynum} split the work
   into two phases.  The first program runs the transfer-matrix method
