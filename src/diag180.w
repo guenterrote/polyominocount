@@ -538,16 +538,16 @@ types of classes.
     8/4/5,8/6/7,8/10/8,7/19/9,7/23/10}
     \node at (\u,\v) {\tiny\color{white}\l};
   \foreach \v in {-8,-4,0,4,8} \node[left] at (-27.5,\v) {\scriptsize$v=\v$};
-  \foreach \i in {0,4,...,52} \node at (\i-26,-10.6) {\tiny\i};
+  \foreach \i in {0,4,...,52} \node at (\i-26,11) {\scriptsize\i};
   \foreach \i/\l in {0/1,4/2,8/3,12/2,16/1,20/4,22/5,26/6,30/5,32/7,
     36/8,45/9,49/10}
-    \node at (\i-26,-12) {\tiny\l};
+    \node at (\i-26,12.8) {\footnotesize\l};
   \foreach \i/\l in {0/F,4/F,8/S,12/L,16/L,20/S,22/F,26/S,30/L,32/S,
     36/S,45/S,49/S}
-    \node at (\i-26,-13.4) {\tiny\texttt{\l}};
-  \node[left] at (-27.5,-10.6) {\scriptsize position};
-  \node[left] at (-27.5,-12) {\scriptsize label};
-  \node[left] at (-27.5,-13.4) {\scriptsize code};
+    \node at (\i-26,14.6) {\footnotesize\texttt{\l}};
+  \node[left] at (-27.5,11) {\scriptsize position};
+  \node[left] at (-27.5,12.8) {\scriptsize label};
+  \node[left] at (-27.5,14.6) {\scriptsize code};
 \end{tikzpicture}
 
 \caption{A larger example with all types of classes: $W=53$, center type~C,
@@ -565,7 +565,7 @@ types of classes.
   The component of class~10 extends far into the lower half, but it
   does not reach the lower frontier.
   The crossing classes form the nested chain $1,4,5,7,9$.
-  Below the picture: the labels and the codes of the packed key
+  Above the picture: the labels and the codes of the packed key
   (Section~\ref{sec:packed}) at the occupied positions; all other
   positions have label 0 and code~\texttt{E}.}
 \label{fig:types}
@@ -594,7 +594,7 @@ A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAXC| classes.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
-positions are given below the picture.  The entries for the classes
+positions are given above the picture.  The entries for the classes
 $1,2,3,4$ are $4$, $2$, $0$, $1$, and the touched bit
 is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
@@ -619,12 +619,12 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   \foreach \u/\l in {-7/A,-5/A,-3/B,-1/B,1/B} \node at (\u,3) {\color{white}$\l$};
   \foreach \u/\l in {2/B,4/C,8/D} \node at (\u,2) {\color{white}$\l$};
   \foreach \v in {-4,-2,0,2,4} \node[left] at (-9.6,\v) {$v=\v$};
-  \node[left] at (-9.6,-6) {position $i$};
-  \node[left] at (-9.6,-7.3) {|f[i]|};
-  \node[left] at (-9.6,-8.6) {code};
-  \foreach \i in {0,...,16} \node at (\i-8,-6) {\scriptsize\i};
-  \foreach \l [count=\i from 0] in {0,1,0,1,0,2,0,2,0,2,2,0,3,0,0,0,4} \node at (\i-8,-7.3) {\l};
-  \foreach \l [count=\i from 0] in {E,F,E,L,E,F,E,M,E,L,C,E,S,E,E,E,S} \node at (\i-8,-8.6) {\texttt{\l}};
+  \node[left] at (-9.6,5.8) {position $i$};
+  \node[left] at (-9.6,7.1) {|label[i]|};
+  \node[left] at (-9.6,8.4) {code};
+  \foreach \i in {0,...,16} \node at (\i-8,5.8) {\small\i};
+  \foreach \l [count=\i from 0] in {0,1,0,1,0,2,0,2,0,2,2,0,3,0,0,0,4} \node at (\i-8,7.1) {\l};
+  \foreach \l [count=\i from 0] in {E,F,E,L,E,F,E,M,E,L,C,E,S,E,E,E,S} \node at (\i-8,8.4) {\texttt{\l}};
 \end{tikzpicture}
 \caption{A state for the center type~C with $W=17$ columns, $u=-8\dts8$, after the cell
   $(u,v)=(1,3)$ at position $i=9$ has been decided.  The upper half
@@ -635,7 +635,7 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   (label~4), so $A$ and $D$ are paired.  Class $B$ (label~2) contains
   the center: it is the central class.  Class $C$ (label~3) is a new cell
   in row~2; its image is not on the frontier: it is floating.
-  Below the picture: the labels of the state, and the codes of
+  Above the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
   initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
   \texttt{F}irst, \texttt{M}iddle, \texttt{L}ast.}
@@ -893,7 +893,7 @@ stored as a bit string in |KW| 64-bit words:
 \item 1 bit per class: 0 if the class is floating, 1 otherwise.
 \item 1 bit: touched.
 \end{itemize}
-For the state of Figure~\ref{fig:example}, the codes are shown below the
+For the state of Figure~\ref{fig:example}, the codes are shown above the
 picture.  Class~1 has two runs, at the positions 1 and~3
 (\texttt{F},~\texttt{L}).  Class~2 has three runs: at position~5
 (\texttt{F}), at position~7 (\texttt{M}), and at the positions 9 and~10
