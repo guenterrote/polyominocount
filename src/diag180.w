@@ -711,10 +711,10 @@ of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 @<Sub...@>=
 static void join(uint8_t *label, uint8_t *partner, int a, int b)
 {
-    /* on entry: |a| and |b| are labels that occur on the frontier; the partner relation is symmetric:
+    /* on entry: |a| and |b| are labels that occur on the frontier, possibly |a == b|; the partner relation is symmetric:
        |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
        afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
-    if (a == b)
+    if (a == b) /* the new cell touches the same component a second time */
         return;
     int partner_a = partner[a], partner_b = partner[b];
     relabel(label, b, a);
