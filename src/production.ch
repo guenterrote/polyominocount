@@ -21,83 +21,83 @@ updated here.
 @z
 
 @x
-static int HEIGHT = 1; /* use the height terms? (option \texttt{-H} turns them off) */
+static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 @y
 @z
 
 @x
-        return HEIGHT ? top : 0;
-    if (!HEIGHT)
-        return DEDGE;
+        return USE_HEIGHT_TERMS ? missing_rows : 0;
+    if (!USE_HEIGHT_TERMS)
+        return SIDE_DISTANCE;
 @y
-        return top;
+        return missing_rows;
 @z
 
 @x
 @ An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
-side.  It ignores the kink, the self term, and the height.
+side.  It ignores the kink, the central term, and the height.
 @<Sub...@>=
-static int exact_bound(const uint8_t *key, int tch)
+static int spanning_tree_bound(const state_t *s)
 {
-    int sup[MAXL + 1];
-    int occ[MAXL], no = 0;
-    for (int j = 1; j <= MAXC; j++) {
-        int q = key[L + j - 1];
-        if (!q)
-            break;
-        sup[j] = (q != PSELF && q != PGHOST && q < j) ? q : j;
+    const uint8_t *label = s->label;
+    int touches = s->touches;
+    int representative[MAXW + 1];
+    int occupied[MAXW], num_occupied = 0;
+    for (int j = 1; j <= s->num_components; j++) {
+        int q = s->partner[j];
+        representative[j] = (q != 0 && q < j) ? q : j;
     }
-    for (int i = 0; i < L; i++)
-        if (key[i])
-            occ[no++] = i;
-    if (!no)
+    for (int i = 0; i < W; i++)
+        if (label[i])
+            occupied[num_occupied++] = i;
+    if (!num_occupied)
         return 0;
     /* Kruskal over gaps between consecutive occupied positions */
-    int par[MAXL + 1];
-    int ncls = 0;
-    int seen[MAXL + 1];
+    int parent[MAXW + 1];
+    int num_sets = 0;
+    int seen[MAXW + 1];
     memset(seen, 0, sizeof(seen));
-    for (int a = 0; a < no; a++) {
-        int s = sup[key[occ[a]]];
-        if (!seen[s]) {
-            seen[s] = 1;
-            ncls++;
+    for (int a = 0; a < num_occupied; a++) {
+        int rep = representative[label[occupied[a]]];
+        if (!seen[rep]) {
+            seen[rep] = 1;
+            num_sets++;
         }
-        par[s] = s;
+        parent[rep] = rep;
     }
     int cost = 0;
-    if (ncls > 1) {
+    if (num_sets > 1) {
         /* counting sort of gaps by weight */
-        int ne = no - 1;
-        int wgt[MAXL], ord[MAXL], bucket[MAXL + 1];
+        int num_gaps = num_occupied - 1;
+        int gap[MAXW], order[MAXW], bucket[MAXW + 1];
         memset(bucket, 0, sizeof(bucket));
-        for (int a = 0; a < ne; a++) {
-            wgt[a] = occ[a + 1] - occ[a] - 1;
-            bucket[wgt[a]]++;
+        for (int a = 0; a < num_gaps; a++) {
+            gap[a] = occupied[a + 1] - occupied[a] - 1;
+            bucket[gap[a]]++;
         }
-        for (int g = 1; g <= L; g++)
+        for (int g = 1; g <= W; g++)
             bucket[g] += bucket[g - 1];
-        for (int a = ne - 1; a >= 0; a--)
-            ord[--bucket[wgt[a]]] = a;
-        for (int e = 0; e < ne && ncls > 1; e++) {
-            int a = ord[e];
-            int x = sup[key[occ[a]]], y = sup[key[occ[a + 1]]];
-            while (par[x] != x)
-                x = par[x];
-            while (par[y] != y)
-                y = par[y];
+        for (int a = num_gaps - 1; a >= 0; a--)
+            order[--bucket[gap[a]]] = a;
+        for (int e = 0; e < num_gaps && num_sets > 1; e++) {
+            int a = order[e];
+            int x = representative[label[occupied[a]]], y = representative[label[occupied[a + 1]]];
+            while (parent[x] != x)
+                x = parent[x];
+            while (parent[y] != y)
+                y = parent[y];
             if (x != y) {
-                par[x] = y;
-                cost += wgt[a];
-                ncls--;
+                parent[x] = y;
+                cost += gap[a];
+                num_sets--;
             }
         }
     }
-    if (!tch) {
-        int d1 = occ[0], d2 = L - 1 - occ[no - 1];
-        cost += d1 < d2 ? d1 : d2;
+    if (!touches) {
+        int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
+        cost += min(left_distance, right_distance);
     }
     return cost;
 }
@@ -106,21 +106,21 @@ static int exact_bound(const uint8_t *key, int tch)
 @z
 
 @x
-        int eb = 2 * (OLDBOUND ? exact_bound(key, nt) : cactus_bound(key, nt, kink));
+    int connection_bound = 2 * (USE_OLD_BOUND ? spanning_tree_bound(state) : cactus_bound(state, kink));
 @y
-        int eb = 2 * cactus_bound(key, nt, kink);
+    int connection_bound = 2 * cactus_bound(state, kink);
 @z
 
 @x
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
 is switched off.
-@<Sharpen |lb|...@>=
-                    if (LOOKAHEAD && !last && !first_twin && (LOOKAHEAD == 2 || (!key[i] && i + 1 < L && key[i + 1]))) {
+@<Sharpen |lowerbound|...@>=
+                    if (LOOKAHEAD && !last_in_row && (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
 @y
 the lookahead counts only if it would be a valid polyomino.
-@<Sharpen |lb|...@>=
-                    if (!last && !first_twin && !key[i] && i + 1 < L && key[i + 1]) {
+@<Sharpen |lowerbound|...@>=
+                    if (!last_in_row && !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
 @z
 
 @x
@@ -131,7 +131,7 @@ the lookahead counts only if it would be a valid polyomino.
 @z
 
 @x
-static int OLDBOUND = 0; /* \texttt{-K} */
+static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 @y
 @z
 
@@ -141,25 +141,25 @@ static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
 @z
 
 @x
-        else if (!strcmp(argv[a], "-A"))
-            LOOKAHEAD = 2, a++;
-        else if (!strcmp(argv[a], "-N"))
-            LOOKAHEAD = 0, a++;
-        else if (!strcmp(argv[a], "-H"))
-            HEIGHT = 0, a++;
-        else if (!strcmp(argv[a], "-K"))
-            OLDBOUND = 1, a++;
+        else if (!strcmp(argv[arg], "-A"))
+            LOOKAHEAD = 2, arg++;
+        else if (!strcmp(argv[arg], "-N"))
+            LOOKAHEAD = 0, arg++;
+        else if (!strcmp(argv[arg], "-H"))
+            USE_HEIGHT_TERMS = 0, arg++;
+        else if (!strcmp(argv[arg], "-K"))
+            USE_OLD_BOUND = 1, arg++;
 @y
 @z
 
 @x
-        fprintf(f, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
-                OLDBOUND ? "old Kruskal (-K)" : "cactus", HEIGHT ? "on" : "off (-H)",
+        fprintf(stream, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
+                USE_OLD_BOUND ? "old Kruskal (-K)" : "cactus", USE_HEIGHT_TERMS ? "on" : "off (-H)",
                 LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
-                REFLECT ? "on" : "off (-R)", CHECK ? "on (-C)" : "off");
+                MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
 @y
-        fprintf(f, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s; pack check %s\n",
-                REFLECT ? "on" : "off (-R)", CHECK ? "on (-C)" : "off");
+        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s; pack check %s\n",
+                MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
 @z
 
 @x

@@ -17,12 +17,12 @@ the moduli.  A result file with modulus 2**128 (128-bit build) needs no
 second modulus.
 
 The columns count FIXED polyominoes that are invariant under the rotation by
-180 degrees (whatever other symmetries they have), by the type of centre.
+180 degrees (whatever other symmetries they have), by the type of center.
 They are in the OEIS (John Mason, 2025, from Shirakawa's table):
-    A390653(n) = R180C(n)        centre in a cell
-    A390654(n) = R180M(2n) / 2   centre on the midpoint of a horizontal edge
+    A390653(n) = R180C(n)        center in a cell
+    A390654(n) = R180M(2n) / 2   center on the midpoint of a horizontal edge
                                  (R180M counts horizontal and vertical edges)
-    A390655(n) = R180V(2n)       centre at a vertex
+    A390655(n) = R180V(2n)       center at a vertex
 """
 import sys
 from math import prod
