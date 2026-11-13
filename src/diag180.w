@@ -661,6 +661,7 @@ number of components is the same.)
 @<Sub...@>=
 static int compare_states(const state_t *a, const state_t *b)
 {
+    /* on entry: both states are canonical; only |label[0..W-1]| and |partner[1..num_components]| are defined */
     int c = memcmp(a->label, b->label, W);
     if (c)
         return c;
@@ -710,6 +711,9 @@ of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 @<Sub...@>=
 static void join(uint8_t *label, uint8_t *partner, int a, int b)
 {
+    /* on entry: |a| and |b| are labels that occur on the frontier; the partner relation is symmetric:
+       |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
+       afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
     if (a == b)
         return;
     int partner_a = partner[a], partner_b = partner[b];
@@ -736,6 +740,8 @@ left to right.
 @<Sub...@>=
 static void canonical_state(const uint8_t *label, const uint8_t *partner, int touches, state_t *result)
 {
+    /* on entry: the labels are arbitrary numbers below |MAXLAB|, not necessarily consecutive;
+       |partner| is valid for the labels that occur, and the partner of such a label occurs, too */
     uint8_t new_label[MAXLAB], old_label[MAXLAB];
     int num_components = 0;
     memset(new_label, 0, sizeof(new_label));
@@ -773,6 +779,7 @@ enum { OK, DEAD, COMPLETE };
 @ @<Sub...@>=
 static int retire(uint8_t *label, uint8_t *partner, int i)
 {
+    /* on entry: the cell at position |i| has no undecided neighbor any more; the position may be empty */
     int retired_label = label[i];
     if (!retired_label)
         return OK;
@@ -810,6 +817,9 @@ for position $i+1$.  (Retiring an empty position does no harm.)
 @<Sub...@>=
 static int step(const state_t *state, int i, int occupied, int last_in_row, state_t *result)
 {
+    /* on entry: |state| is canonical and not empty; |label[i] == 0|, because the previous cell in this column,
+       two rows below, has been retired; the cells of the current row are at positions $\le i-2$,
+       and the positions $i-1$ and $i+1$ hold cells of the previous row */
     uint8_t label[MAXW], partner[MAXLAB];
     memcpy(label, state->label, W);
     memcpy(partner, state->partner, state->num_components + 1);
@@ -909,6 +919,7 @@ has more than 3 bits.
 @<Sub...@>=
 static inline void put_bits(uint64_t *words, int *bit_position, uint64_t value, int num_bits)
 {
+    /* on entry: the words have been cleared, and |value| has at most |num_bits| bits */
     int word = *bit_position >> 6, offset = *bit_position & 63;
     words[word] |= value << offset;
     if (offset + num_bits > 64)
@@ -945,6 +956,7 @@ where its first and its last run start.
 @<Sub...@>=
 static void encode(const state_t *s, coded_t *coded)
 {
+    /* on entry: the state is canonical: the first run of component $j$ comes before the first run of component $j+1$ */
     int first_run[MAXLAB], last_run[MAXLAB];
     int num_components = 0;
     for (int i = 0; i < W; i++)
@@ -980,6 +992,7 @@ from left to right, and they are matched from the outside to the inside.
 @<Sub...@>=
 static void decode(const coded_t *coded, state_t *s)
 {
+    /* on entry: the codes are properly nested, as produced by |encode| */
     int stack[MAXLAB], stack_size = 0, num_components = 0;
     for (int i = 0; i < W; i++) {
         switch (coded->code[i]) {
@@ -1078,6 +1091,7 @@ static uint64_t MODULUS = 0; /* the modulus $M$; 0 means no reduction */
 @ @<Sub...@>=
 static inline counter_t add_mod(counter_t a, counter_t b)
 {
+    /* on entry: |a| and |b| are reduced modulo |MODULUS|; the sum may overflow if |MODULUS| $>2^{63}$, which the test |s < a| detects */
     if (!MODULUS)
         return a + b;
     counter_t s = a + b;
@@ -1159,6 +1173,7 @@ static void *checked_realloc(void *p, size_t s)
 @ @<Sub...@>=
 static void table_allocate(table_t *t, size_t capacity)
 {
+    /* on entry: |WORDS_PER_KEY| has been set for the current strip */
     t->num_states = 0;
     t->state_capacity = capacity;
     size_t hash_size = 16;
@@ -1219,6 +1234,7 @@ factor lies between $1/4$ and $1/2$, and linear probing is fast in this range.
 @<Sub...@>=
 static void table_grow(table_t *t)
 {
+    /* on entry: the table is being built (it has its hash array), and it is full */
     size_t capacity = t->state_capacity * 2;
     t->keys = checked_realloc(t->keys, capacity * WORDS_PER_KEY * 8);
     t->first_record = checked_realloc(t->first_record, capacity * 4);
@@ -1254,6 +1270,7 @@ it has been finished, so that there is nothing to free.)
 @<Sub...@>=
 static void table_initialize(table_t *t)
 {
+    /* on entry: the table is new or finished: it has no hash array */
     t->num_states = 0;
     t->num_records = 0;
     t->hash = calloc(t->hash_mask + 1, sizeof(uint32_t)); /* all slots empty */
@@ -1284,6 +1301,7 @@ static size_t HASH_SLOT;
 
 static size_t table_find(const table_t *t, const uint64_t *packed_key)
 {
+    /* on entry: the table is being built; unused bits of |packed_key| are zero, so that equal states have equal words */
     size_t slot = hash_of_key(packed_key) & t->hash_mask;
     while (t->hash[slot]) {
         size_t i = t->hash[slot] - 1;
@@ -1297,6 +1315,7 @@ static size_t table_find(const table_t *t, const uint64_t *packed_key)
 
 static size_t table_create(table_t *t, const uint64_t *packed_key)
 {
+    /* on entry: the preceding operation on this table was an unsuccessful |table_find| for the same key */
     size_t slot = HASH_SLOT;
     if (t->num_states == t->state_capacity) {
         table_grow(t);
@@ -1345,6 +1364,7 @@ stored in the links.
 @<Sub...@>=
 static uint32_t new_record(table_t *t, int weight, counter_t count, uint32_t next)
 {
+    /* on entry: the array |records| may be moved: the caller must not keep pointers into it */
     if (t->num_records == t->record_capacity) {
         if (t->record_capacity >= 0xFFFFFFFFu) {
             fprintf(stderr, "too many count records for 32-bit links\n");
@@ -1375,6 +1395,8 @@ when it grows.  (The tables |source| and |target| are always different.)
 static void add_list(table_t *target, size_t target_state, const table_t *source, size_t source_state,
                      int added_weight, int weight_limit)
 {
+    /* on entry: |source| is a finished table and |target| is the table that is being built;
+       both lists are sorted by increasing weight */
     uint32_t previous = 0, target_record = target->first_record[target_state];
     for (uint32_t source_record = source->first_record[source_state]; source_record && source->records[source_record - 1].weight <= weight_limit;
          source_record = source->records[source_record - 1].next) {
@@ -1612,6 +1634,7 @@ below, depending on the parity.
 @<Sub...@>=
 static inline int frontier_row(int j)
 {
+    /* on entry: position |j| holds a frontier cell, and |CURRENT_ROW| is the row that is being processed */
     return ((umin + j - CURRENT_ROW) % 2 + 2) % 2 ? CURRENT_ROW - 1 : CURRENT_ROW;
 }
 
@@ -1642,6 +1665,7 @@ The best cell on a sequence of cells of slope $\pm1$ is the one closest to a dia
 @<Sub...@>=
 static int gap_score(int a, int row_a, int b, int row_b)
 {
+    /* on entry: $a<b$; the path starts next to the frontier cell in column |a| and ends in column |b| */
     int best = 1 << 20;
     for (int j = a + 1; j <= b; j++) {
         int row_from_left = row_a + 1 + (j - a - 1), row_from_right = row_b + (b - j);
@@ -1660,6 +1684,7 @@ its peak and score are returned (this is used for the central term).
 @<Sub...@>=
 static int cycle_cost(const int *gap, const int *peak, const int *score, int num_gaps, int *max1_out, int *peak_out, int *score_out)
 {
+    /* on entry: |num_gaps| $\ge1$ */
     int sum = 0, max1 = -1, num_max = 0, max2 = 0, peak_of_max = -1000, score_of_max = 1 << 20;
     for (int t = 0; t < num_gaps; t++) {
         sum += gap[t];
@@ -1701,6 +1726,7 @@ structure reaches height |height| and score |score|.
 @<Sub...@>=
 static inline int finish_cost(int height, int score)
 {
+    /* on entry: the global variables of the height computation have been set by |cactus_bound| */
     int missing_rows = max(TARGET_ROW - height, 0);
     if (CURRENT_TOUCHES)
         return USE_HEIGHT_TERMS ? missing_rows : 0;
@@ -1944,6 +1970,8 @@ kink, if the cell before it has been decided empty, and $-1$ otherwise.
 @<Sub...@>=
 static int cactus_bound(const state_t *state, int kink)
 {
+    /* on entry: |CURRENT_ROW| and |TARGET_ROW| have been set; |kink| is $-1$, or the position right of the kink
+       if that position holds a frontier cell and the position left of it does not */
     const uint8_t *label = state->label;
     int touches = state->touches;
     @<Find the runs of the frontier@>@;
@@ -2178,6 +2206,8 @@ which the height reaches $W$.
 @<Sub...@>=
 static int bound(const state_t *state, int k, int min_rows, int i, int last_in_row)
 {
+    /* on entry: |state| is not empty; it is the state after position |i| of row |k| has been decided;
+       |FIRST_ROW| has been set */
     const uint8_t *label = state->label;
     int lowerbound = max(2 * (min_rows - k), 0);
     if (!state->touches) {
@@ -2222,6 +2252,7 @@ touches the sides and is at least as high as wide.
 @<Sub...@>=
 static void record_results(int top_row_number, const table_t *source, size_t source_state, int touches)
 {
+    /* on entry: the state |source_state| has just become a complete polyomino whose top row has the number |top_row_number| */
     int height = vspan(top_row_number);
     if (!touches || height < W)
         return;
@@ -2317,6 +2348,7 @@ static void print_status_line(const char *tag, int k, int v, int cell_number, in
 @<Sub...@>=
 static void count_case(void)
 {
+    /* on entry: |M_x|, |M_y|, and |umax| specify the case, and the result vectors have been allocated */
     @<Set up the geometry of the case@>@;
     @<Local variables of |count_case|@>@;
     @<Create the initial states@>@;
