@@ -674,18 +674,18 @@ int added_weight,int weight_limit)
 {
 
 
-uint32_t previous= 0,target_record= target->first_record[target_state];
-for(uint32_t source_record= source->first_record[source_state];source_record&&source->records[source_record-1].weight<=weight_limit;
-source_record= source->records[source_record-1].next){
-int weight= source->records[source_record-1].weight+added_weight;
-while(target_record&&target->records[target_record-1].weight<weight){
-previous= target_record;
-target_record= target->records[target_record-1].next;
+uint32_t previous= 0,t_index= target->first_record[target_state];
+for(uint32_t s_index= source->first_record[source_state];s_index&&source->records[s_index-1].weight<=weight_limit;
+s_index= source->records[s_index-1].next){
+int weight= source->records[s_index-1].weight+added_weight;
+while(t_index&&target->records[t_index-1].weight<weight){
+previous= t_index;
+t_index= target->records[t_index-1].next;
 }
-if(target_record&&target->records[target_record-1].weight==weight)
-target->records[target_record-1].count= add_mod(target->records[target_record-1].count,source->records[source_record-1].count);
+if(t_index&&target->records[t_index-1].weight==weight)
+target->records[t_index-1].count= add_mod(target->records[t_index-1].count,source->records[s_index-1].count);
 else{
-uint32_t new_one= new_record(target,weight,source->records[source_record-1].count,target_record);
+uint32_t new_one= new_record(target,weight,source->records[s_index-1].count,t_index);
 if(previous)
 target->records[previous-1].next= new_one;
 else

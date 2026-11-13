@@ -1445,7 +1445,7 @@ for the weights up to |weight_limit|.  (This is where the pruning takes place:
 the caller chooses |weight_limit| such that the larger weights cannot lead to a polyomino with
 at most $N$ cells.)  Since both lists are sorted by
 increasing weight, this is done like a merge, in one simultaneous pass over the two
-lists.  The variable |target_record| is the current position in the target list, and
+lists.  The variable |t_index| is the current position in the target list, and
 |previous| is the record before it (0 at the beginning of the list).  We
 use indices and not pointers, because the array of records may be moved
 when it grows.  (The tables |source| and |target| are always different.)
@@ -1455,18 +1455,18 @@ static void add_list(table_t *target, size_t target_state, const table_t *source
 {
     /* on entry: |source| is a finished table and |target| is the table that is being built;
        both lists are sorted by increasing weight */
-    uint32_t previous = 0, target_record = target->first_record[target_state];
-    for (uint32_t source_record = source->first_record[source_state]; source_record && source->records[source_record - 1].weight <= weight_limit;
-         source_record = source->records[source_record - 1].next) {
-        int weight = source->records[source_record - 1].weight + added_weight;
-        while (target_record && target->records[target_record - 1].weight < weight) {
-            previous = target_record;
-            target_record = target->records[target_record - 1].next;
+    uint32_t previous = 0, t_index = target->first_record[target_state];
+    for (uint32_t s_index = source->first_record[source_state]; s_index && source->records[s_index - 1].weight <= weight_limit;
+         s_index = source->records[s_index - 1].next) {
+        int weight = source->records[s_index - 1].weight + added_weight;
+        while (t_index && target->records[t_index - 1].weight < weight) {
+            previous = t_index;
+            t_index = target->records[t_index - 1].next;
         }
-        if (target_record && target->records[target_record - 1].weight == weight)
-            target->records[target_record - 1].count = add_mod(target->records[target_record - 1].count, source->records[source_record - 1].count);
+        if (t_index && target->records[t_index - 1].weight == weight)
+            target->records[t_index - 1].count = add_mod(target->records[t_index - 1].count, source->records[s_index - 1].count);
         else {
-            uint32_t new_one = new_record(target, weight, source->records[source_record - 1].count, target_record);
+            uint32_t new_one = new_record(target, weight, source->records[s_index - 1].count, t_index);
             if (previous)
                 target->records[previous - 1].next = new_one;
             else
