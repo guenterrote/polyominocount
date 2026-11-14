@@ -2554,7 +2554,6 @@ current cell and |next| for the states after it.
     table_allocate(&A, 1024);
     table_allocate(&B, 1024);
     state_t new_state;
-    int first_row;
 
 @*1 Initial states.
 The first row is not built cell by cell.  We enumerate all possibilities
@@ -2626,8 +2625,7 @@ except the center.  The first row to be built is $v_0=v_m+1$.
             if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * min_rows + 1) / 2;
-        first_row = vm + 1;
-        FIRST_ROW = first_row;
+        FIRST_ROW = vm + 1;
 
 @ Every cell of the middle row is a component of its own; the partner
 of a cell is its mirror cell, and the center cell, if present, is the
@@ -2656,10 +2654,9 @@ If $M_v$ is odd, the first row $v_0=(M_v+1)/2$ of $P^+$ is the twin row.
 Its image is the row $v_0-1$ directly below it.  We choose an arbitrary
 nonempty subset of the twin row, and the row-by-row construction starts with the next row.
 @<Prepare the choices for the twin row@>=
-        first_row = (M_v + 1) / 2;
-        FIRST_ROW = first_row;
+        FIRST_ROW = (M_v + 1) / 2;
         for (int i = 0; i < W; i++)
-            if (((umin + i - first_row) % 2 + 2) % 2 == 0)
+            if (((umin + i - FIRST_ROW) % 2 + 2) % 2 == 0)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * (min_rows - 1)) / 2;
 
@@ -2719,7 +2716,7 @@ is 2 for each cell.
 The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
 @<Determine the cells of row |k|@>=
-        int v = first_row + k - 1, num_row_cells = 0;
+        int v = FIRST_ROW + k - 1, num_row_cells = 0;
         for (int i = 0; i < W; i++)
             if (((umin + i - v) % 2 + 2) % 2 == 0)
                 row_cells[num_row_cells++] = i;
