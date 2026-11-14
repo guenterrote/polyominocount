@@ -1429,13 +1429,16 @@ static size_t table_find_or_create(table_t *t, const state_t *s)
 }
 
 @*1 Count records.
-A new record with weight |weight| and count |count| is taken from the end of
-the array of records.  The function returns its number plus~1, as it is
+A new record 
+is taken from the end of
+the array of records and initialized from the parameters of the function.  The function returns its number plus~1, following the convention how it is
 stored in the links.
+(As the array |records| may be moved by a |realloc| call, the program should not use pointers into it, just indices.)
+
+
 @<Sub...@>=
 static uint32_t new_record(table_t *t, int weight, counter_t count, uint32_t next)
 {
-    /* on entry: the array |records| may be moved: the caller must not keep pointers into it */
     if (t->num_records == t->record_capacity) {
         if (t->record_capacity >= 0xFFFFFFFFu) {
             fprintf(stderr, "too many count records for 32-bit links\n");
@@ -1457,8 +1460,8 @@ added cell, are added to the state |target_state| of the table |target|, but onl
 for the weights up to |weight_limit|.  (This is where the pruning takes place:
 the caller chooses |weight_limit| such that the larger weights cannot lead to a polyomino with
 at most $N$ cells.)  Since both lists are sorted by
-increasing weight, this is done like a merge, in one simultaneous pass over the two
-lists.  The variable |t_index| is the current position in the target list, and
+increasing weight, this is done in one simultaneous pass over the two
+lists like in merging.  The variable |t_index| is the current position in the target list, and
 |previous| is the record before it (0 at the beginning of the list).  We
 use indices and not pointers, because the array of records may be moved
 when it grows.  (The tables |source| and |target| are always different.)
@@ -1466,7 +1469,7 @@ when it grows.  (The tables |source| and |target| are always different.)
 static void add_list(table_t *target, size_t target_state, const table_t *source, size_t source_state,
                      int added_weight, int weight_limit)
 {
-    /* on entry: |source| is a finished table and |target| is the table that is being built;
+    /* |source| is a finished table and |target| is the table that is being built and updated;
        both lists are sorted by increasing weight */
     uint32_t previous = 0, t_index = target->first_record[target_state];
     for (uint32_t s_index = source->first_record[source_state]; s_index && source->records[s_index - 1].weight <= weight_limit;
