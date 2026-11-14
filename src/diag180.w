@@ -318,8 +318,8 @@ $i$ is position $W-1-i$.
   with two arms.  The strip has $W=9$ columns, $u=-4\dts4$, and the
   middle row is $v=0$.
   (b)~Center on the midpoint of a vertical edge, $(M_x,M_y)=(1,0)$: 6
-  cells, $W=4$, $u=-1\dts2$.  There is no middle row; the twin row
-  $v=1$ is adjacent to its image, the row $v=0$.
+  cells, $W=4$, $u=-1\dts2$.  There is no middle row; there is a twin row
+  $v=1$, which is adjacent to its image, the row $v=0$.
   (c)~Center at a vertex, $(M_x,M_y)=(1,1)$: 8 cells, a $2\times2$ block
   with two arms, $W=5$, $u=-2\dts2$, middle row $v=1$.}
 \label{fig:coords}
@@ -431,7 +431,9 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   \node[left] at (-1.8,5) {row $v-1$};
 \end{tikzpicture}
 \caption{The situation after position $i=6$ of row $v$ has
-  been decided.  Blue cells belong to $P^+$, gray cells are decided and
+  been decided.
+  The kink is at position~7.
+  Blue cells belong to $P^+$, gray cells are decided and
   empty, white cells are undecided.  The thick red curve separates the
   decided cells from the unprocessed cells, and the frontier consists of
   all cells that touch an edge of the red curve from below: the cells
@@ -551,7 +553,8 @@ types of components.
   \node[left] at (-27.5,12.8) {\scriptsize label};
   \node[left] at (-27.5,14.6) {\scriptsize code};
 \end{tikzpicture}
-
+[CLAUDE: Fig.3+4: put the line with the POSITION labels back below the figure.
+(Only this line.)]
 \caption{A larger example with all types of components: $W=53$, center type~C,
   row~8 has been decided up to position~38.  The red line is the
   frontier, and the dotted line is its image, the lower frontier.
@@ -587,7 +590,7 @@ In its unpacked form, a state is a record of type |state_t| with the following f
   position $i$, or 0 if there is none.  Labels are numbered $1,2,\ldots,|num_components|$
   in the order of their first appearance from left to right, which makes
   the representation canonical.
-\item |partner[j]|, for each component $j\ge1$: the label of its partner if it
+\item |partner[j]|, for each component $j=1,2,\ldots$: the label of its partner if it
   is a paired component; $j$ itself if $j$ is the central component (it is its own image);
   and 0 if $j$ is a floating component.
 \item |touches|: the \emph{touched} bit.
@@ -596,7 +599,7 @@ A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
 |MAX_COMPONENTS| components.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
-positions are given above the picture.  The entries for the components
+positions are given above the picture.  The partners for the components
 $1,2,3,4$ are $4$, $2$, $0$, $1$, and the touched bit
 is~1, because the columns $u=-8$ and $u=8$ are occupied.
 
@@ -624,9 +627,9 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   \node[left] at (-9.6,5.8) {position $i$};
   \node[left] at (-9.6,7.1) {|label[i]|};
   \node[left] at (-9.6,8.4) {code};
-  \foreach \i in {0,...,16} \node at (\i-8,5.8) {\small\i};
-  \foreach \l [count=\i from 0] in {0,1,0,1,0,2,0,2,0,2,2,0,3,0,0,0,4} \node at (\i-8,7.1) {\l};
-  \foreach \l [count=\i from 0] in {E,F,E,L,E,F,E,M,E,L,C,E,S,E,E,E,S} \node at (\i-8,8.4) {\texttt{\l}};
+  \foreach \i in {0,...,16} \node at (\i-8,5.8) {\i};
+  \foreach \l [count=\i from 0] in {0,1,0,1,0,2,0,2,0,2,2,0,3,0,0,0,4} \node at (\i-8,7.1) {\small\l};
+  \foreach \l [count=\i from 0] in {E,F,E,L,E,F,E,M,E,L,C,E,S,E,E,E,S} \node at (\i-8,8.4) {\small\texttt{\l}};
 \end{tikzpicture}
 \caption{A state for the center type~C with $W=17$ columns, $u=-8\dts8$, after the cell
   $(u,v)=(1,3)$ at position $i=9$ has been decided.  The upper half
@@ -635,7 +638,8 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   There are four components.  Component $A$ (label~1) reaches down through the
   middle row to the image of the right arm; its image is the component $D$
   (label~4), so $A$ and $D$ are paired.  Component $B$ (label~2) contains
-  the center: it is the central component.  Component $C$ (label~3) is a new cell
+  the center: it is the central component.  Component $C$ (label~3) is an
+  isolated cell
   in row~2; its image is not on the frontier: it is floating.
   Above the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
@@ -683,9 +687,10 @@ All operations are simple sweeps over the positions.
 
 @d MAXLAB (MAXW + 2) /* bound on the labels in the working arrays */
 @<Sub...@>=
-static inline int is_central(const uint8_t *partner, int a) { return partner[a] == a; }
-static inline int is_floating(const uint8_t *partner, int a) { return partner[a] == 0; }
-static inline int is_paired(const uint8_t *partner, int a) { return partner[a] != 0 && partner[a] != a; }
+static inline int is_central(const uint8_t *partner, int a) { @+ return partner[a] == a; @+ }
+static inline int is_floating(const uint8_t *partner, int a) {  @+return partner[a] == 0; @+}
+static inline int is_paired(const uint8_t *partner, int a)
+{ @+ return partner[a] != 0 && partner[a] != a; @+}
 
 static inline void relabel(uint8_t *label, int from, int to)
 {
@@ -699,7 +704,7 @@ When two components $A$ and $B$ become connected, their images $\rhoo(A)$
 and $\rhoo(B)$ become connected as well.  The cells of $B$ get the label
 of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 \begin{itemize}
-\item If $A$ and $B$ are partners, the union is its own image: it is the central component.
+\item If $A$ and $B$ are partners, the union is its own image: it becomes the central component.
 \item If one of the two is the central component, the union is the central component, and
   it swallows the partner of the other component if that component is paired.
 \item If both are paired (with different partners), their partners are
@@ -714,13 +719,14 @@ static void join(uint8_t *label, uint8_t *partner, int a, int b)
     /* on entry: |a| and |b| are labels that occur on the frontier, possibly |a == b|; the partner relation is symmetric:
        |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
        afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
-    if (a == b) /* the new cell touches the same component a second time */
+    if (a == b) /* the new cell touches the same component a second time. */
         return;
     int partner_a = partner[a], partner_b = partner[b];
     relabel(label, b, a);
     if (partner_a == b)
         partner[a] = a;
-    else if (partner_a == a || partner_b == b) { /* one of them is central */
+	/* a new central component has been formed */
+    else if (partner_a == a || partner_b == b) { /* one of the components is central */
         if (partner_a != 0 && partner_a != a)
             relabel(label, partner_a, a);
         if (partner_b != 0 && partner_b != b)
@@ -872,6 +878,7 @@ previous row.  Their codes \texttt{FLFMLCSES}
 are followed by the bits $1,1,0,1$ for the four components (only component~3
 is floating) and by the touched bit~1.
 These are $3\cdot9+4+1=32$ bits, or 4 bytes.
+
 {\bf How long must a key be?}
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
 of valid sequences of the five codes other than |C_CONTINUE| for $m$
@@ -918,6 +925,7 @@ this check for $N\le 30$.
 
 @ Bit strings are written and read with two small routines.  No field
 has more than 3 bits, so that a field extends over at most two bytes.
+Each bytes is filled from right to left.
 @<Sub...@>=
 static inline void put_bits(uint8_t *bytes, int *bit_position, int value, int num_bits)
 {
@@ -1097,7 +1105,7 @@ counters have 128 bits, and a single run gives the exact values.
 The records become twice as large, but for our runs with $n$ up to 70, memory is not a bottleneck.
 @<Type...@>=
 #ifdef CNT128
-typedef unsigned __int128 counter_t;  /* make CNT128=1: exact to 2\^{}128 */
+typedef unsigned __int128 counter_t;  /* exact to $2^{128}$ */
 #define COUNTER_BITS "128"
 #else
 typedef uint64_t counter_t;
@@ -1139,7 +1147,7 @@ static const char *counter_to_string(counter_t x)
 @* The tables.
 \label{sec:tables}
 The states of one stage of the computation are stored
-consecutively in an array, and their indices in this array
+consecutively like in an array, and their indices in this array
 are stored
 in a hash table
 with open addressing (linear probing).  The states are numbered
@@ -1161,8 +1169,12 @@ the lists contain weights of both parities.
 28, and only 20 out of 9.5 million lists had a gap of more than~2 between
 successive weights.  Each table was examined when it was complete,
 after every cell.  At the end of a row, no list had such a gap.)
+
+The counter records are stored consecutively in a storage area |records|
+like in an array. Its size is limited to $2^{32}-1$ records.
+
 @<Type...@>=
-typedef struct {
+typedef struct { /* a counter record */
     counter_t count;
     uint32_t next;                /* index + 1, 0 = end */
     uint8_t weight;
@@ -1225,9 +1237,10 @@ static size_t table_bytes(const table_t *t)
 }
 
 @ {\bf The hash function.}
-We use ``universal hashing'' ({\sl TAOCP}, exercise 6.4--72), following
+We use \emph{universal hashing},
+following
 Knuth's program {\sc POLYNUM}~\cite{polynum}, from which the function
-|hash_of_key| and the idea of leaving the entries for the byte value~0 at zero are taken:
+|hash_of_key| is taken  (cf.\ {\sl The Art of Computer Programming}, exercise 6.4--72):
 For each byte position of the key there is a table of 256 random numbers,
 and the hash value is the sum of the table entries for the bytes of the key.
 As Knuth remarks, this gives a good hash function although most of
@@ -1476,12 +1489,16 @@ static void add_list(table_t *target, size_t target_state, const table_t *source
     }
 }
 
-@* The lower bound.
+@* The lower bound on the number of cells necessary to reach the boundary.
 \label{sec:bound}
 The key to the efficiency of the program is a good lower bound on the
 number of cells that must still be added to a state before it can
 become a complete polyomino that is as high as it is wide.  A state
 whose weight plus this bound exceeds $N$ is discarded.
+
+[CLAUDE: try to structure all longer sections into meaningful
+subsections.
+Some of them have already bf-highlighted manual headings.]
 
 All bounds in this chapter count cells of $P^+$; each such cell has
 weight~2.
@@ -1548,6 +1565,7 @@ be used for a connection to the right of~$b$).
   \node[below] at (5,3) {(b) at the kink: one more cell};
 \end{scope}
 \end{tikzpicture}
+[CLAUDE: Add the red separating zigzag line]
 \caption{Connecting two frontier cells $a$ and $b$.  (a)~One cell per
   column between them.  (b)~The cell $i$ left of $b$ has been decided
   empty, and $b$ is in the lower row: the path must cross the column of
@@ -1689,6 +1707,8 @@ static int CURRENT_TOUCHES; /* touched bit of the current state */
 
 @ The row of the frontier cell at position |j|: row |CURRENT_ROW| or the row
 below, depending on the parity.
+[CLAUDE: Wouldn't this be easier by comparison with |kink|? Is this
+ever called for cells not on the frontier?]
 @<Sub...@>=
 static inline int frontier_row(int j)
 {
@@ -1697,15 +1717,15 @@ static inline int frontier_row(int j)
 }
 
 @ @<Sub...@>=
-static inline void reach_height(int h)
-{
+static inline void reach_height(int h) @+
+{ @+
     FREE_HEIGHT = max(FREE_HEIGHT, h);
-}
+@+}
 
-static inline void reach_score(int sc)
-{
+static inline void reach_score(int sc) @+
+{ @+
     FREE_SCORE = min(FREE_SCORE, sc);
-}
+@+}
 
 @ The cost of reaching both the top row and a side from row |h| and
 column |j|.
@@ -1718,8 +1738,14 @@ static inline int side_and_top_cost(int h, int j)
 @ The best such cost over the cells of a connecting path, each at its
 highest possible row.  The path leads from the frontier cell |a| in row
 |row_a| to column |b|, where it arrives at row |row_b| or lower.
+[CLAUDE: why ``or lower''?]
 (This function could be streamlined: Check whether we are in the left half or in the right half;
-The best cell on a sequence of cells of slope $\pm1$ is the one closest to a diagonal line through the upper left or upper right corner; so one could directly determine which cell this is. But the total length of the loops in this function is of the order $W$, so it won't make a big difference.)
+The best cell on a sequence of cells of slope $\pm1$ is the one
+closest to a diagonal line through the upper left or upper right
+corner; so one could directly determine which cell this is. But the
+total length of the loops in this function is of the order $W$, so it
+won't make a big difference.)
+[CLAUDE: Why is |a| excluded from the loop but b is included?]
 @<Sub...@>=
 static int gap_score(int a, int row_a, int b, int row_b)
 {
@@ -1854,9 +1880,9 @@ is a polyomino with $6+10=16$ cells.
   \foreach \v/\u in {0/-6,0/0,0/6} {\dc[mid]{\v}{\u}}
   \foreach \v/\u in {4/-4,3/3} {\dc[new]{\v}{\u}}
   \foreach \v/\u in {5/-5,6/-6,7/-7,8/-8} {\dc[cha]{\v}{\u}}
-  \draw[very thick,red!80!black] (-9,2)--(-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
+  \draw[very thick,red!80!black] (-8,3)--(-7,4)--(-6,3)--(-5,4)--(-4,3)
     --(-3,4)--(-2,3)--(-1,4)--(0,3)--(1,4)--(2,3)--(3,2)--(4,3)--(5,2)
-    --(6,3)--(7,2)--(8,3)--(9,2);
+    --(6,3)--(7,2)--(8,3);
   \foreach \u/\l in {-7/A,-5/A,-3/B,-1/B,1/B} \node at (\u,3) {\color{white}$\l$};
   \foreach \u/\l in {2/B,4/C,8/D} \node at (\u,2) {\color{white}$\l$};
   \draw[dashed] (-9,-1)--(-9,9.3) (9,-1)--(9,9.3);
@@ -1882,6 +1908,7 @@ is a polyomino with $6+10=16$ cells.
   \node[below] at (0,-1.4) {(b) 5 cells: central term and staircase};
 \end{scope}
 \end{tikzpicture}
+
 \caption{Two states and cheapest completions.  The cells that bridge gaps are orange, and the chain that leads to the top (and to the side) is light orange.  Only the upper
   half is shown; the image of every new cell is added as well.
   (a)~The state of Figure~\ref{fig:example}: the gaps $A$--$B$ and
@@ -2011,10 +2038,18 @@ calling the function |bound| of the program for these states.
   \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
 \end{scope}
 \end{tikzpicture}
+[CLAUDE: Fig.a. Move cell F two columns to the right.
+Add another figure where the chain reaches the top first and then the
+left edge.
+The following should work cells in columns 6 and 8 that need to be
+connected,
+four more rows to go.
+]
 \caption{Three states with a central component $Z$ and a floating component $F$
   (green), and cheapest completions: hooks that bridge a gap (orange)
   and the chain to the side and to the top (light orange).  The images
-  in the lower half are drawn only for the cells of the state.
+  in the lower half are drawn only for the cells of the state.[CLAUDE:
+  Is this still accurate?]
   (a)~The chain leads straight into the corner.
   (b)~The chain bounces off the side and continues to the top.
   (c)~It is cheaper to bridge the larger gap, because the chain from
@@ -2032,7 +2067,7 @@ static int cactus_bound(const state_t *state, int kink)
        if that position holds a frontier cell and the position left of it does not */
     const uint8_t *label = state->label;
     int touches = state->touches;
-    @<Find the runs of the frontier@>@;
+    @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
     @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
@@ -2103,7 +2138,11 @@ found, the pocket is closed and paid for.
         }
         if (num_open_pockets && pocket_label[num_open_pockets - 1] == component) {
             num_open_pockets--;
-            cost += cycle_cost(pocket_gap + pocket_first_gap[num_open_pockets], pocket_peak + pocket_first_gap[num_open_pockets], pocket_score + pocket_first_gap[num_open_pockets], num_pocket_gaps - pocket_first_gap[num_open_pockets], 0, 0, 0);
+            cost += cycle_cost(pocket_gap +
+            pocket_first_gap[num_open_pockets], pocket_peak +
+            pocket_first_gap[num_open_pockets], pocket_score +
+            pocket_first_gap[num_open_pockets],
+            num_pocket_gaps - pocket_first_gap[num_open_pockets], 0, 0, 0);
             num_pocket_gaps = pocket_first_gap[num_open_pockets];
         } else if (!num_open_pockets)
             top_label[num_top++] = component;
@@ -2114,9 +2153,11 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |crossing| lists the crossing components.  Ring number |i|
+@ At the top level, |crossing| lists the |m| crossing components.  Ring number |i|
 consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
 counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
+[CLAUDE: check formatting of all comments. Below: rho spelled out.
+Later options like -v should be texttt.]
 @<Pay for the outer paths...@>=
     /* top level */
     int crossing[MAXW], num_crossing = 0;
@@ -2175,7 +2216,8 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
     if (!touches) {
         int left_distance = run_start[0], right_distance = W - 1 - run_end[num_runs - 1];
         SIDE_DISTANCE = min(left_distance, right_distance);
-    }
+      }
+      @/
     /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
     if (NUM_MIDDLE) {
@@ -2294,8 +2336,8 @@ The results of a case are collected in two vectors, indexed by~$n$:
 ($|uspan|<|vspan|$) and |SQUARE| for
 $|uspan|=|vspan|$.
 @<Glob...@>=
-static counter_t *PORTRAIT, *SQUARE; /* results of one case */
 static counter_t *RECTANGLE; /* results for the current height */
+static counter_t *PORTRAIT, *SQUARE; /* total results of one case */
 static size_t MAX_STATES, MAX_BYTES, MAX_RECORDS, MAX_KEY_BYTES; /* statistics */
 
 @ These vectors are allocated at the beginning of the program, as soon
@@ -2307,6 +2349,15 @@ as $N$ is known.
 
 @ When a polyomino is complete after |top_row_number| rows, it is counted if it
 touches the sides and is at least as high as wide.
+[CLAUDE:
+rename RECTANGLE to |ROW_RESULTS|,
+take out the addition to target[weight] from this procedure and insert
+it in |count_case| (accumulating from |ROW_RESULTS|),
+explicitly with the two cases as opposed to a pointer |target|.
+Rename |print_rectangle_line| to  |print_row_results|.
+] 
+
+
 @<Sub...@>=
 static void record_results(int top_row_number, const table_t *source, size_t source_state, int touches)
 {
@@ -2323,6 +2374,7 @@ static void record_results(int top_row_number, const table_t *source, size_t sou
 }
 
 @ {\bf Bounding rectangles.}
+[CLAUDE: this should be in a subsection ``reporting'']
 The polyominoes of one case with a given number of rows have the same
 bounding rectangle in diagonal coordinates: $W$ columns wide and
 |vspan(top_row_number)| rows high.  All polyominoes with |top_row_number| rows are completed
@@ -2333,6 +2385,7 @@ The line names the type of center, the width with the range of $u$, the
 height with the range of $v$, and then the nonzero counts in the form
 \texttt{n=}$n$\texttt{:}count.  (The counts are modulo $M$, like
 everything else, and they are complete only for $n\le N$.)
+[CLAUDE. Doe counts for larger n ever exist?]
 Only rectangles that are at least as high as wide are reported;
 the caller tests this.  (A line without any counts would mean that no
 polyomino with at most $N$ cells has this bounding rectangle, although
@@ -2342,10 +2395,15 @@ transposed rectangle, with the same type of center, except that the
 vertical edge becomes a horizontal edge; and the case $(M_x,M_y)=(1,0)$
 of a vertical edge that we compute stands also for the case $(0,1)$ of a
 horizontal edge with the same numbers.
+
 The type of center is not determined by the size of the rectangle alone:
 if both sides are even, the center is the midpoint of an edge, but if
 both sides are odd, the center can be the center of a cell or a vertex
 of the grid.
+
+
+[CLAUDE: the last line (reset the counter) would be more logical
+before the start]
 
 @<Sub...@>=
 static void print_rectangle_line(int top_row_number)
@@ -2426,7 +2484,7 @@ static void count_case(void)
     table_free(&B);
 }
 
-@ The strip with a single column is a special case.
+@ 
 @<Set up the geometry...@>=
     M_v = M_x + M_y;
     M_u = M_x - M_y;
@@ -2436,6 +2494,7 @@ static void count_case(void)
     memset(PORTRAIT, 0, NMAX_plus_1 * sizeof(counter_t));
     memset(SQUARE, 0, NMAX_plus_1 * sizeof(counter_t));
     if (W == 1) {
+      /* The strip with a single column is a special case. */
         if (M_x == 0 && M_y == 0) {
             SQUARE[1] = add_mod(SQUARE[1], 1);
             RECTANGLE[1] = 1;
@@ -2744,6 +2803,15 @@ keeping the lexicographically smaller one.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
 The positions are reversed, and |canonical_state| then
 renumbers the components.
+[CLAUDE: it would be easier to make the comparison at the level of the
+coded states, which contain all information.
+There are no runs, CONTINUE does not appear. FIRST must be matched
+with LAST.
+Go through the list of states. If a state is $<$ its reflection, double
+the counts. If $=$, keep unchanged, otherwise throw away.
+The list of states can be compacted in one sweep without creating a
+new list. The comparison is a simple loop through half of the coded state array.
+]
 @<Merge every state with its mirror image@>=
         if (MERGE_MIRROR_STATES && M_u == 0 && current->num_states) {
             /* merge each state with its mirror image $u\to-u$ */
@@ -2856,9 +2924,8 @@ the range where the program can be useful.
 \item The weight in a count record is a byte, which would allow $N\le255$.
 \item A packed key has at most |MAX_BYTES_PER_KEY|${}=41$ bytes;
   $3(\lfloor W/2\rfloor+1)+|MAX_COMPONENTS|+1\le 326$ bits are needed.
-\item The hash values have 32 bits, which is sufficient for the
-  tables that are possible under the next limit.
-\item States and count records are numbered with 32-bit integers, so a
+  [CLAUDE: Expand the argument. I don't understand the implications.]
+\item States and count records are indexed by 32-bit integers, so a
   table can hold fewer than $2^{32}\approx 4.3\cdot10^9$ records.  (There
   are always at least as many records as states.)  This is the limit
   that would be reached first, and the program stops when it happens.
@@ -2866,8 +2933,11 @@ the range where the program can be useful.
   by a factor of 1.25 per unit of $N$, the limit corresponds to $N\approx 90$.
   Such a run would need about 70 times as much memory and time as the
   run for $N=71$, that is, some 200 GB and 40 days.
+\item The hash values have 32 bits, which is sufficient for the
+  tables that are possible under the previous limit.
 \item The initial states are all symmetric subsets of the middle row,
   which has about $W/2$ cells; about $2^{W/4}$ subsets are tried.
+  [CLAUDE: Is this still current?]
 \end{itemize}
 
 @ Both output streams start with the parameters of the run, beginning
@@ -3040,7 +3110,7 @@ $N$ & max.\ states & records & MB & time (s)\\
 \textbf{Values.}  Table~\ref{tab:values} lists the results for
 $n\le71$.  The values for $n\le59$ %(types M and V: $n\le 58$)
 agree
-with the OEIS; the others are new.  As a further check, we have derived
+with the previous values in the OEIS; the others are new.  As a further check, we have derived
 the numbers of \emph{free} polyominoes whose symmetry group is exactly
 the group generated by the $180^\circ$ rotation (OEIS \oeis{A006747} and its
 three parts \oeis{A351615}, \oeis{A234008}, \oeis{A351616}) from our numbers and from the
