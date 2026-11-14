@@ -34,7 +34,8 @@ static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} tu
 @z
 
 @x
-@ An older and weaker bound is retained for comparison (option
+@*1 The old bound.
+An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.

@@ -30,7 +30,7 @@ assert "diagonals}" in L[i+1]
 i=find("static int USE_HEIGHT_TERMS = 1;"); ch(i,i+1,"")
 i=find("        return USE_HEIGHT_TERMS ? missing_rows : 0;"); assert L[i+1]=="    if (!USE_HEIGHT_TERMS)" and L[i+2]=="        return SIDE_DISTANCE;"
 ch(i,i+3,"        return missing_rows;")
-i=find("@ An older and weaker bound is retained"); j=find("@ The function |bound| returns"); ch(i,j,"")
+i=find("@*1 The old bound."); j=find("@*1 The complete bound."); ch(i,j,"")
 i=find("    int connection_bound = 2 * (USE_OLD_BOUND ?"); ch(i,i+1,"    int connection_bound = 2 * cactus_bound(state, kink);")
 i=find("the lookahead counts only if it would be a valid polyomino.  With the")
 assert L[i+2]=="is switched off." and L[i+3].startswith("@<Sharpen") and L[i+4].lstrip().startswith("if (LOOKAHEAD &&")
