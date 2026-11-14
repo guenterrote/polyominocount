@@ -2336,7 +2336,7 @@ The results of a case are collected in two vectors, indexed by~$n$:
 ($|uspan|<|vspan|$) and |SQUARE| for
 $|uspan|=|vspan|$.
 @<Glob...@>=
-static counter_t *RECTANGLE; /* results for the current height */
+static counter_t *ROW_RESULTS; /* results for the current number of rows */
 static counter_t *PORTRAIT, *SQUARE; /* total results of one case */
 static size_t MAX_STATES, MAX_BYTES, MAX_RECORDS, MAX_KEY_BYTES; /* statistics */
 
@@ -2345,19 +2345,13 @@ as $N$ is known.
 @<Allocate the result vectors@>=
     PORTRAIT = calloc(NMAX_plus_1, sizeof(counter_t)); /* indices $0\dts N$ */
     SQUARE = calloc(NMAX_plus_1, sizeof(counter_t));
-    RECTANGLE = calloc(NMAX_plus_1, sizeof(counter_t));
+    ROW_RESULTS = calloc(NMAX_plus_1, sizeof(counter_t));
 
 @ When a polyomino is complete after |top_row_number| rows, it is counted if it
-touches the sides and is at least as high as wide.
-[CLAUDE:
-rename RECTANGLE to |ROW_RESULTS|,
-take out the addition to target[weight] from this procedure and insert
-it in |count_case| (accumulating from |ROW_RESULTS|),
-explicitly with the two cases as opposed to a pointer |target|.
-Rename |print_rectangle_line| to  |print_row_results|.
-] 
-
-
+touches the sides and is at least as high as wide.  It is first counted
+in the vector |ROW_RESULTS|, which collects the polyominoes with the
+current number of rows.  At the end of the row, this vector is added to
+|SQUARE| or |PORTRAIT|.
 @<Sub...@>=
 static void record_results(int top_row_number, const table_t *source, size_t source_state, int touches)
 {
@@ -2365,27 +2359,24 @@ static void record_results(int top_row_number, const table_t *source, size_t sou
     int height = vspan(top_row_number);
     if (!touches || height < W)
         return;
-    counter_t *target = height == W ? SQUARE : PORTRAIT;
     for (uint32_t r = source->first_record[source_state]; r; r = source->records[r - 1].next) {
         int weight = source->records[r - 1].weight;
-        target[weight] = add_mod(target[weight], source->records[r - 1].count);
-        RECTANGLE[weight] = add_mod(RECTANGLE[weight], source->records[r - 1].count);
+        ROW_RESULTS[weight] = add_mod(ROW_RESULTS[weight], source->records[r - 1].count);
     }
 }
 
-@ {\bf Bounding rectangles.}
-[CLAUDE: this should be in a subsection ``reporting'']
+@*1 Reporting.
+{\bf Bounding rectangles.}
 The polyominoes of one case with a given number of rows have the same
 bounding rectangle in diagonal coordinates: $W$ columns wide and
 |vspan(top_row_number)| rows high.  All polyominoes with |top_row_number| rows are completed
 while row $|top_row_number|+1$ is processed.  At the end of that row, the function
-|print_rectangle_line| writes one line to the log with the number of polyominoes
-in this rectangle for every $n$, and clears the vector |RECTANGLE|.
+|print_row_results| writes one line to the log with the number of polyominoes
+in this rectangle for every $n$.  (The vector |ROW_RESULTS| is cleared at the beginning of every row.)
 The line names the type of center, the width with the range of $u$, the
 height with the range of $v$, and then the nonzero counts in the form
 \texttt{n=}$n$\texttt{:}count.  (The counts are modulo $M$, like
-everything else, and they are complete only for $n\le N$.)
-[CLAUDE. Doe counts for larger n ever exist?]
+everything else.  There are no counts for $n>N$, because weights larger than $N$ are pruned.)
 Only rectangles that are at least as high as wide are reported;
 the caller tests this.  (A line without any counts would mean that no
 polyomino with at most $N$ cells has this bounding rectangle, although
@@ -2401,12 +2392,8 @@ if both sides are even, the center is the midpoint of an edge, but if
 both sides are odd, the center can be the center of a cell or a vertex
 of the grid.
 
-
-[CLAUDE: the last line (reset the counter) would be more logical
-before the start]
-
 @<Sub...@>=
-static void print_rectangle_line(int top_row_number)
+static void print_row_results(int top_row_number)
 {
     static const char *type_name[3] = {
         "R180C center in a cell",
@@ -2418,12 +2405,11 @@ static void print_rectangle_line(int top_row_number)
         fprintf(stderr, "#rect %s (Mx=%d My=%d): width %d (u=%d..%d) x height %d (v=%d..%d):",
                 type_name[M_x + M_y], M_x, M_y, W, umin, umin + W - 1, height, M_v - top_row, top_row);
         for (int n = 0; n <= NMAX; n++)
-            if (RECTANGLE[n])
-                fprintf(stderr, " n=%d:%s", n, counter_to_string(RECTANGLE[n]));
+            if (ROW_RESULTS[n])
+                fprintf(stderr, " n=%d:%s", n, counter_to_string(ROW_RESULTS[n]));
         fprintf(stderr, "\n");
         fflush(stderr);
     }
-    memset(RECTANGLE, 0, NMAX_plus_1 * sizeof(counter_t));
 }
 
 @ Progress is reported on the standard error stream, after every row
@@ -2451,7 +2437,7 @@ static void print_status_line(const char *tag, int k, int v, int cell_number, in
     LAST_REPORT_TIME = now;
     counter_t done = 0;
     for (int n = 0; n <= NMAX; n++)
-        done = add_mod(done, add_mod(PORTRAIT[n], SQUARE[n]));
+        done = add_mod(done, add_mod(add_mod(PORTRAIT[n], SQUARE[n]), ROW_RESULTS[n]));
     fprintf(stderr, "%s Mx=%d My=%d umax=%d W=%d row k=%d v=%d cell %d/%d: "
             "%zu states, %zu records, %.1f MB, done %s, %.1fs wall, %.1fs cpu\n",
             tag, M_x, M_y, umax, W, k, v, cell_number, num_cells, current->num_states, current->num_records,
@@ -2470,6 +2456,7 @@ static void count_case(void)
     @<Create the initial states@>@;
     int row_cells[MAXW];
     for (int k = 1 + TWIN; current->num_states; k++) {
+        memset(ROW_RESULTS, 0, NMAX_plus_1 * sizeof(counter_t));
         @<Determine the cells of row |k|@>@;
         for (int cell_number = 0; cell_number < num_row_cells; cell_number++) {
             @<Decide cell |cell_number| of the row for all states@>@;
@@ -2477,12 +2464,25 @@ static void count_case(void)
         @<Merge every state with its mirror image@>@;
         if (VERBOSITY >= 1)
             print_status_line("#row ", k, v, num_row_cells, num_row_cells, current, next);
-        if (vspan(k - 1) >= W) /* lower rectangles are not counted in this case */
-            print_rectangle_line(k - 1);
+        @<Add the results of this row to the totals and report them@>@;
     }
     table_free(&A);
     table_free(&B);
 }
+
+@ The polyominoes that are completed while row $k$ is processed have
+$k-1$ rows.  They have been collected in |ROW_RESULTS|, provided that they are at
+least as high as wide; lower rectangles are not counted in this case.
+@<Add the results of this row to the totals and report them@>=
+        if (vspan(k - 1) == W) {
+            for (int n = 0; n <= NMAX; n++)
+                SQUARE[n] = add_mod(SQUARE[n], ROW_RESULTS[n]);
+            print_row_results(k - 1);
+        } else if (vspan(k - 1) > W) {
+            for (int n = 0; n <= NMAX; n++)
+                PORTRAIT[n] = add_mod(PORTRAIT[n], ROW_RESULTS[n]);
+            print_row_results(k - 1);
+        }
 
 @ 
 @<Set up the geometry...@>=
@@ -2493,12 +2493,12 @@ static void count_case(void)
     TWIN = M_v & 1;
     memset(PORTRAIT, 0, NMAX_plus_1 * sizeof(counter_t));
     memset(SQUARE, 0, NMAX_plus_1 * sizeof(counter_t));
+    memset(ROW_RESULTS, 0, NMAX_plus_1 * sizeof(counter_t));
     if (W == 1) {
       /* The strip with a single column is a special case. */
         if (M_x == 0 && M_y == 0) {
-            SQUARE[1] = add_mod(SQUARE[1], 1);
-            RECTANGLE[1] = 1;
-            print_rectangle_line(0);
+            SQUARE[1] = ROW_RESULTS[1] = 1;
+            print_row_results(0);
         }
         return;
     }
