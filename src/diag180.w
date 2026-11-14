@@ -2492,7 +2492,6 @@ static void count_case(void)
         for (int cell_number = 0; cell_number < num_row_cells; cell_number++) {
             @<Decide cell |cell_number| of the row for all states@>@;
         }
-        @<Merge every state with its mirror image@>@;
         if (VERBOSITY >= 1)
             print_status_line("#row ", k, v, num_row_cells, num_row_cells, current, next);
         @<Add the results of this row to the totals and report them@>@;
@@ -2761,6 +2760,9 @@ they cannot be completed or because all weights were too large.
 @<Add state |source_state| to the state |new_state|...@>=
                     uint8_t packed_key[MAX_BYTES_PER_KEY];
                     pack_and_check(&new_state, next->decided_position, packed_key);
+                    if (last_in_row && MERGE_MIRROR_STATES && M_u == 0) {
+                        @<Replace |packed_key| by the key of the mirror image if that key is smaller@>@;
+                    }
                     size_t target_state = table_find(next, packed_key);
                     int lowerbound;
                     if (target_state != NO_STATE)
@@ -2834,15 +2836,24 @@ numbers of completions.  We merge each state with its mirror image by
 keeping the smaller of the two in some fixed order, and adding the counts.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
 
-It is not sufficient to keep the smaller state of each pair
-and to double its counts.  This would be correct at the first row where the
+The merging costs no extra pass over the table:  When the last cell of a row is
+decided, every new state is replaced by its mirror image
+before it is looked up in the new table, if the mirror image is smaller.
+The counts of the two states then accumulate in the same list
+automatically.  The lower bound is computed for the state that arrives first;
+at the end of a row, there is no kink, and the bound makes no
+difference between left and right.
+
+It would not be correct to go through the finished table, keep the smaller state of each pair,
+and double its counts.  This would work at the first row where the
 merging takes place.  In later rows, however, the tables contain
 only the successors of the states that were kept, and the count of
-a state $t$ is no longer equal to the count of its mirror image $t'$:
+a state $t$ is not equal to the count of its mirror image $t'$:
 some of the polyominoes that lead to $t$ are represented by their mirror
 images, which lead to~$t'$.  Only the sum of the two counts is
-meaningful.  We must therefore find the mirror state in the table, and we do
-this by building a new table.
+meaningful.  (In a run with $N=30$, only about one tenth of the mirror pairs had equal
+counts after the first row, and for more than a third of the states,
+the mirror image was not in the table at all.)
 
 We work with the coded states, in which the mirror image is easy to
 form: the codes are read from right to left, and |C_FIRST| is exchanged
@@ -2852,67 +2863,42 @@ does not occur.)
 We compare the sequence of codes with the mirrored sequence
 lexicographically.  It suffices to look at the left half: if the two
 sequences agree there, they agree everywhere.
-@<Merge every state with its mirror image@>=
-        if (MERGE_MIRROR_STATES && M_u == 0 && current->num_states) {
-            table_initialize(next, current->decided_position);
-            for (size_t source_state = 0; source_state < current->num_states; source_state++) {
-                const uint8_t *packed_key = current->keys + source_state * BYTES_PER_KEY;
-                uint8_t mirror_key[MAX_BYTES_PER_KEY];
-                uint8_t mirror_crossing[MAXLAB]; /* the crossing flags of the mirror image */
-                coded_t coded;
-                expand(packed_key, current->decided_position, &coded);
-                int comparison = 0; /* positive if the mirror image is smaller than the state */
-                for (int a = 0, b = W - 1; a < b && comparison == 0; a++, b--)
-                    comparison = (int)coded.code[a] - MIRRORED_CODE[coded.code[b]];
-                if (comparison >= 0) {
-                    @<Compute the flags of the mirror image and compare them with the flags of the state if |comparison == 0|@>@;
-                }
-                if (comparison > 0) {
-                    @<Put the key of the mirror image into |mirror_key|@>@;
-                    packed_key = mirror_key;
-                }
-                size_t target_state = table_find(next, packed_key);
-                if (target_state == NO_STATE)
-                    target_state = table_create(next, packed_key);
-                add_list(next, target_state, current, source_state, 0, NMAX);
-            }
-            table_t *swap = current;
-            current = next;
-            next = swap;
-            table_finish(current);
-        }
+@<Replace |packed_key| by the key of the mirror image if that key is smaller@>=
+                        coded_t coded, mirror;
+                        encode(&new_state, &coded);
+                        int comparison = 0; /* positive if the mirror image is smaller than the state */
+                        for (int a = 0, b = W - 1; a < b && comparison == 0; a++, b--)
+                            comparison = (int)coded.code[a] - MIRRORED_CODE[coded.code[b]];
+                        if (comparison >= 0) {
+                            @<Compute the flags of the mirror image and compare them with the flags of the state if |comparison == 0|@>@;
+                        }
+                        if (comparison > 0) {
+                            for (int a = 0; a < W; a++)
+                                mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
+                            mirror.num_components = coded.num_components;
+                            mirror.touches = coded.touches;
+                            compress(&mirror, next->decided_position, packed_key);
+                        }
 
 @ @<Glob...@>=
 static const uint8_t MIRRORED_CODE[6] = {C_EMPTY, C_CONTINUE, C_SINGLETON, C_LAST, C_MIDDLE, C_FIRST};
 
 @ In the mirror image, the components are numbered from right
 to left, in the order in which their last runs appear in the original state.
-We need the labels of the original state to find the flags that tell
-which components are crossing.
 
 If the codes are symmetric, the state and its mirror image have the
-same components, but they can still differ in these flags.  (For example, of two symmetric
+same components, but they can still differ in the flags that tell
+which components are crossing.  (For example, of two symmetric
 single cells, one can be the central component, while the other is
 floating.)  In this case we compare the two sequences of flags
 lexicographically.
 @<Compute the flags of the mirror image...@>=
-                    state_t state;
-                    decode(&coded, &state);
-                    int mirror_label = 0;
-                    for (int b = W - 1; b >= 0; b--)
-                        if (coded.code[b] == C_SINGLETON || coded.code[b] == C_LAST)
-                            mirror_crossing[++mirror_label] = coded.crossing[state.label[b]];
-                    for (int j = 1; j <= coded.num_components && comparison == 0; j++)
-                        comparison = (int)coded.crossing[j] - (int)mirror_crossing[j];
-
-@ @<Put the key of the mirror image into |mirror_key|@>=
-                    coded_t mirror;
-                    for (int a = 0; a < W; a++)
-                        mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
-                    memcpy(mirror.crossing, mirror_crossing, MAXLAB);
-                    mirror.num_components = coded.num_components;
-                    mirror.touches = coded.touches;
-                    compress(&mirror, current->decided_position, mirror_key);
+                            int mirror_label = 0;
+                            for (int b = W - 1; b >= 0; b--)
+                                if (coded.code[b] == C_SINGLETON || coded.code[b] == C_LAST)
+                                    mirror.crossing[++mirror_label] = coded.crossing[new_state.label[b]];
+                            for (int j = 1; j <= coded.num_components && comparison == 0; j++)
+                                comparison = (int)coded.crossing[j] - (int)mirror.crossing[j];
 
 @* The main program.
 \label{sec:cmdline}
