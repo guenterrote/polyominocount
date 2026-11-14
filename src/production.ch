@@ -39,75 +39,73 @@ An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
-@<Sub...@>=
-static int spanning_tree_bound(const state_t *s)
-{
-    const uint8_t *label = s->label;
-    int touches = s->touches;
-    int representative[MAXW + 1];
-    int occupied[MAXW], num_occupied = 0;
-    for (int j = 1; j <= s->num_components; j++) {
-        int q = s->partner[j];
-        representative[j] = (q != 0 && q < j) ? q : j;
-    }
-    for (int i = 0; i < W; i++)
-        if (label[i])
-            occupied[num_occupied++] = i;
-    if (!num_occupied)
-        return 0;
-    /* Kruskal over gaps between consecutive occupied positions */
-    int parent[MAXW + 1];
-    int num_sets = 0;
-    int seen[MAXW + 1];
-    memset(seen, 0, sizeof(seen));
-    for (int a = 0; a < num_occupied; a++) {
-        int rep = representative[label[occupied[a]]];
-        if (!seen[rep]) {
-            seen[rep] = 1;
-            num_sets++;
+The code is part of the function |bound| below; the state is not empty.
+@<Set |connection_bound| to the old spanning tree bound@>=
+        int representative[MAXW + 1];
+        int occupied[MAXW], num_occupied = 0;
+        for (int j = 1; j <= state->num_components; j++) {
+            int q = state->partner[j];
+            representative[j] = (q != 0 && q < j) ? q : j;
         }
-        parent[rep] = rep;
-    }
-    int cost = 0;
-    if (num_sets > 1) {
-        /* counting sort of gaps by weight */
-        int num_gaps = num_occupied - 1;
-        int gap[MAXW], order[MAXW], bucket[MAXW + 1];
-        memset(bucket, 0, sizeof(bucket));
-        for (int a = 0; a < num_gaps; a++) {
-            gap[a] = occupied[a + 1] - occupied[a] - 1;
-            bucket[gap[a]]++;
+        for (int j = 0; j < W; j++)
+            if (label[j])
+                occupied[num_occupied++] = j;
+        /* Kruskal over gaps between consecutive occupied positions */
+        int parent[MAXW + 1];
+        int num_sets = 0;
+        int seen[MAXW + 1];
+        memset(seen, 0, sizeof(seen));
+        for (int a = 0; a < num_occupied; a++) {
+            int rep = representative[label[occupied[a]]];
+            if (!seen[rep]) {
+                seen[rep] = 1;
+                num_sets++;
+            }
+            parent[rep] = rep;
         }
-        for (int g = 1; g <= W; g++)
-            bucket[g] += bucket[g - 1];
-        for (int a = num_gaps - 1; a >= 0; a--)
-            order[--bucket[gap[a]]] = a;
-        for (int e = 0; e < num_gaps && num_sets > 1; e++) {
-            int a = order[e];
-            int x = representative[label[occupied[a]]], y = representative[label[occupied[a + 1]]];
-            while (parent[x] != x)
-                x = parent[x];
-            while (parent[y] != y)
-                y = parent[y];
-            if (x != y) {
-                parent[x] = y;
-                cost += gap[a];
-                num_sets--;
+        int cost = 0;
+        if (num_sets > 1) {
+            /* counting sort of gaps by weight */
+            int num_gaps = num_occupied - 1;
+            int gap[MAXW], order[MAXW], bucket[MAXW + 1];
+            memset(bucket, 0, sizeof(bucket));
+            for (int a = 0; a < num_gaps; a++) {
+                gap[a] = occupied[a + 1] - occupied[a] - 1;
+                bucket[gap[a]]++;
+            }
+            for (int g = 1; g <= W; g++)
+                bucket[g] += bucket[g - 1];
+            for (int a = num_gaps - 1; a >= 0; a--)
+                order[--bucket[gap[a]]] = a;
+            for (int e = 0; e < num_gaps && num_sets > 1; e++) {
+                int a = order[e];
+                int x = representative[label[occupied[a]]], y = representative[label[occupied[a + 1]]];
+                while (parent[x] != x)
+                    x = parent[x];
+                while (parent[y] != y)
+                    y = parent[y];
+                if (x != y) {
+                    parent[x] = y;
+                    cost += gap[a];
+                    num_sets--;
+                }
             }
         }
-    }
-    if (!touches) {
-        int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
-        cost += min(left_distance, right_distance);
-    }
-    return cost;
-}
+        if (!state->touches) {
+            int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
+            cost += min(left_distance, right_distance);
+        }
+        connection_bound = 2 * cost;
 
 @y
 @z
 
 @x
-    int connection_bound = 2 * (USE_OLD_BOUND ? spanning_tree_bound(state) : cactus_bound(state, kink));
+    int connection_bound;
+    if (USE_OLD_BOUND) {
+        @<Set |connection_bound| to the old spanning tree bound@>@;
+    } else
+        connection_bound = 2 * cactus_bound(state, kink);
 @y
     int connection_bound = 2 * cactus_bound(state, kink);
 @z

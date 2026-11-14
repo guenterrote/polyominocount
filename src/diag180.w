@@ -1303,31 +1303,27 @@ rehashed.  ``Full'' refers to the arrays |keys| and |first_record| of the
 states.  The array |hash| of indices, in which the probing takes place,
 always has at least twice as many slots as there are states: its load
 factor lies between $1/4$ and $1/2$, and linear probing is fast in this range.
-@<Sub...@>=
-static void table_grow(table_t *t)
-{
-    /* on entry: the table is being built (it has its hash array), and it is full */
-    size_t capacity = t->state_capacity * 2;
-    t->keys = checked_realloc(t->keys, capacity * BYTES_PER_KEY);
-    t->first_record = checked_realloc(t->first_record, capacity * 4);
-    t->lowerbound = checked_realloc(t->lowerbound, capacity);
-    size_t hash_size = (t->hash_mask + 1) * 2;
-    free(t->hash);
-    t->hash = calloc(hash_size, sizeof(uint32_t));
-    if (!t->hash) {
-        fprintf(stderr, "out of memory\n");
-        exit(1);
-    }
-    t->hash_mask = hash_size - 1;
-    t->state_capacity = capacity;
-    for (size_t i = 0; i < t->num_states; i++) {
-        size_t slot = hash_of_key(t->keys + i * BYTES_PER_KEY) & t->hash_mask;
-        while (t->hash[slot])
-            slot = (slot + 1) & t->hash_mask;
-        t->hash[slot] = i + 1;
-    }
-}
-
+This happens inside the function |table_create| below.
+@<Double the capacity of table |t| and rehash all states@>=
+        size_t capacity = t->state_capacity * 2;
+        t->keys = checked_realloc(t->keys, capacity * BYTES_PER_KEY);
+        t->first_record = checked_realloc(t->first_record, capacity * 4);
+        t->lowerbound = checked_realloc(t->lowerbound, capacity);
+        size_t hash_size = (t->hash_mask + 1) * 2;
+        free(t->hash);
+        t->hash = calloc(hash_size, sizeof(uint32_t));
+        if (!t->hash) {
+            fprintf(stderr, "out of memory\n");
+            exit(1);
+        }
+        t->hash_mask = hash_size - 1;
+        t->state_capacity = capacity;
+        for (size_t state = 0; state < t->num_states; state++) {
+            size_t state_slot = hash_of_key(t->keys + state * BYTES_PER_KEY) & t->hash_mask;
+            while (t->hash[state_slot])
+                state_slot = (state_slot + 1) & t->hash_mask;
+            t->hash[state_slot] = state + 1;
+        }
 
 @ The array |hash| is needed only while a table is being built.  When
 the table is complete, its states are just scanned sequentially.
@@ -1392,7 +1388,7 @@ static size_t table_create(table_t *t, const uint8_t *packed_key)
     /* on entry: the preceding operation on this table was an unsuccessful |table_find| for the same key */
     size_t slot = HASH_SLOT;
     if (t->num_states == t->state_capacity) {
-        table_grow(t);
+        @<Double the capacity of table |t| and rehash all states@>@;
         slot = hash_of_key(packed_key) & t->hash_mask;
         while (t->hash[slot])
             slot = (slot + 1) & t->hash_mask;
@@ -1507,14 +1503,15 @@ weight~2.
 completed: whatever is attached to a component $X$ is attached in mirror
 image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
 never meet.
-@<Sub...@>=
-static int completion_possible(const state_t *s)
-{
-    for (int j = 1; j <= s->num_components; j++)
-        if (s->partner[j] != 0)
-            return 1;
-    return 0;
-}
+@<Return $-1$ if all components of |state| are floating@>=
+    {
+        int some_component_is_crossing = 0;
+        for (int j = 1; j <= state->num_components; j++)
+            if (state->partner[j] != 0)
+                some_component_is_crossing = 1;
+        if (!some_component_is_crossing)
+            return -1;
+    }
 
 @*1 Connections on the diagonal lattice.
 Suppose two frontier cells $a<b$ (we identify cells with their
@@ -2271,69 +2268,63 @@ An older and weaker bound is retained for comparison (option
 \texttt{-K}).  It computes a minimum spanning tree over the gaps by
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
-@<Sub...@>=
-static int spanning_tree_bound(const state_t *s)
-{
-    const uint8_t *label = s->label;
-    int touches = s->touches;
-    int representative[MAXW + 1];
-    int occupied[MAXW], num_occupied = 0;
-    for (int j = 1; j <= s->num_components; j++) {
-        int q = s->partner[j];
-        representative[j] = (q != 0 && q < j) ? q : j;
-    }
-    for (int i = 0; i < W; i++)
-        if (label[i])
-            occupied[num_occupied++] = i;
-    if (!num_occupied)
-        return 0;
-    /* Kruskal over gaps between consecutive occupied positions */
-    int parent[MAXW + 1];
-    int num_sets = 0;
-    int seen[MAXW + 1];
-    memset(seen, 0, sizeof(seen));
-    for (int a = 0; a < num_occupied; a++) {
-        int rep = representative[label[occupied[a]]];
-        if (!seen[rep]) {
-            seen[rep] = 1;
-            num_sets++;
+The code is part of the function |bound| below; the state is not empty.
+@<Set |connection_bound| to the old spanning tree bound@>=
+        int representative[MAXW + 1];
+        int occupied[MAXW], num_occupied = 0;
+        for (int j = 1; j <= state->num_components; j++) {
+            int q = state->partner[j];
+            representative[j] = (q != 0 && q < j) ? q : j;
         }
-        parent[rep] = rep;
-    }
-    int cost = 0;
-    if (num_sets > 1) {
-        /* counting sort of gaps by weight */
-        int num_gaps = num_occupied - 1;
-        int gap[MAXW], order[MAXW], bucket[MAXW + 1];
-        memset(bucket, 0, sizeof(bucket));
-        for (int a = 0; a < num_gaps; a++) {
-            gap[a] = occupied[a + 1] - occupied[a] - 1;
-            bucket[gap[a]]++;
+        for (int j = 0; j < W; j++)
+            if (label[j])
+                occupied[num_occupied++] = j;
+        /* Kruskal over gaps between consecutive occupied positions */
+        int parent[MAXW + 1];
+        int num_sets = 0;
+        int seen[MAXW + 1];
+        memset(seen, 0, sizeof(seen));
+        for (int a = 0; a < num_occupied; a++) {
+            int rep = representative[label[occupied[a]]];
+            if (!seen[rep]) {
+                seen[rep] = 1;
+                num_sets++;
+            }
+            parent[rep] = rep;
         }
-        for (int g = 1; g <= W; g++)
-            bucket[g] += bucket[g - 1];
-        for (int a = num_gaps - 1; a >= 0; a--)
-            order[--bucket[gap[a]]] = a;
-        for (int e = 0; e < num_gaps && num_sets > 1; e++) {
-            int a = order[e];
-            int x = representative[label[occupied[a]]], y = representative[label[occupied[a + 1]]];
-            while (parent[x] != x)
-                x = parent[x];
-            while (parent[y] != y)
-                y = parent[y];
-            if (x != y) {
-                parent[x] = y;
-                cost += gap[a];
-                num_sets--;
+        int cost = 0;
+        if (num_sets > 1) {
+            /* counting sort of gaps by weight */
+            int num_gaps = num_occupied - 1;
+            int gap[MAXW], order[MAXW], bucket[MAXW + 1];
+            memset(bucket, 0, sizeof(bucket));
+            for (int a = 0; a < num_gaps; a++) {
+                gap[a] = occupied[a + 1] - occupied[a] - 1;
+                bucket[gap[a]]++;
+            }
+            for (int g = 1; g <= W; g++)
+                bucket[g] += bucket[g - 1];
+            for (int a = num_gaps - 1; a >= 0; a--)
+                order[--bucket[gap[a]]] = a;
+            for (int e = 0; e < num_gaps && num_sets > 1; e++) {
+                int a = order[e];
+                int x = representative[label[occupied[a]]], y = representative[label[occupied[a + 1]]];
+                while (parent[x] != x)
+                    x = parent[x];
+                while (parent[y] != y)
+                    y = parent[y];
+                if (x != y) {
+                    parent[x] = y;
+                    cost += gap[a];
+                    num_sets--;
+                }
             }
         }
-    }
-    if (!touches) {
-        int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
-        cost += min(left_distance, right_distance);
-    }
-    return cost;
-}
+        if (!state->touches) {
+            int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
+            cost += min(left_distance, right_distance);
+        }
+        connection_bound = 2 * cost;
 
 @*1 The complete bound.
 The function |bound| returns a lower bound on the \emph{weight} that
@@ -2357,13 +2348,16 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
             }
         lowerbound = max(lowerbound, 2 * side_distance);
     }
-    if (!completion_possible(state))
-        return -1;
+    @<Return $-1$ if all components of |state| are floating@>@;
     int kink = (!last_in_row && !label[i] && i + 1 < W && label[i + 1]) ? i + 1 : -1;
     CURRENT_ROW = FIRST_ROW + k - 1;
     CURRENT_POSITION = i;
     TARGET_ROW = FIRST_ROW + min_rows - 1;
-    int connection_bound = 2 * (USE_OLD_BOUND ? spanning_tree_bound(state) : cactus_bound(state, kink));
+    int connection_bound;
+    if (USE_OLD_BOUND) {
+        @<Set |connection_bound| to the old spanning tree bound@>@;
+    } else
+        connection_bound = 2 * cactus_bound(state, kink);
     lowerbound = max(lowerbound, connection_bound);
     return lowerbound;
 }
@@ -2386,23 +2380,20 @@ as $N$ is known.
     SQUARE = calloc(NMAX_plus_1, sizeof(counter_t));
     ROW_RESULTS = calloc(NMAX_plus_1, sizeof(counter_t));
 
-@ When a polyomino is complete after |top_row_number| rows, it is counted if it
+@ When a polyomino is complete after $k-1$ rows, it is counted if it
 touches the sides and is at least as high as wide.  It is first counted
 in the vector |ROW_RESULTS|, which collects the polyominoes with the
 current number of rows.  At the end of the row, this vector is added to
 |SQUARE| or |PORTRAIT|.
-@<Sub...@>=
-static void record_results(int top_row_number, const table_t *source, size_t source_state, int touches)
-{
-    /* on entry: the state |source_state| has just become a complete polyomino whose top row has the number |top_row_number| */
-    int height = vspan(top_row_number);
-    if (!touches || height < W)
-        return;
-    for (uint32_t r = source->first_record[source_state]; r; r = source->records[r - 1].next) {
-        int weight = source->records[r - 1].weight;
-        ROW_RESULTS[weight] = add_mod(ROW_RESULTS[weight], source->records[r - 1].count);
-    }
-}
+At this point, the state |source_state| of the table |current| has just
+become a complete polyomino while row |k| is processed, so its top row
+has the number $k-1$.
+@<Record the polyominoes that are completed from state |source_state|@>=
+                        if (old_state.touches && vspan(k - 1) >= W)
+                            for (uint32_t r = current->first_record[source_state]; r; r = current->records[r - 1].next) {
+                                int weight = current->records[r - 1].weight;
+                                ROW_RESULTS[weight] = add_mod(ROW_RESULTS[weight], current->records[r - 1].count);
+                            }
 
 @*1 Reporting.
 {\bf Bounding rectangles.}
@@ -2750,7 +2741,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
                     if (status == DEAD)
                         continue;
                     if (status == COMPLETE) {
-                        record_results(k - 1, current, source_state, old_state.touches);
+                        @<Record the polyominoes that are completed from state |source_state|@>@;
                         continue;
                     }
                     int added_weight = occupied ? 2 : 0;
