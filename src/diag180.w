@@ -609,7 +609,7 @@ In its unpacked form, a state is a record of type |state_t| with the following f
 \item |touches|: the \emph{touched} bit.
 \end{itemize}
 A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
-|MAX_COMPONENTS| components.
+that many components.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
 positions are given above the picture.  The partners for the components
@@ -669,9 +669,6 @@ typedef struct {
     uint8_t num_components;
     uint8_t touches; /* the touched bit */
 } state_t;
-
-@ @<Glob...@>=
-static int MAX_COMPONENTS; /* maximum number of components in a state */
 
 @ Two states are compared lexicographically.  (If the labels agree, the
 number of components is the same.)
@@ -866,7 +863,7 @@ static int step(const state_t *state, int i, int occupied, int last_in_row, stat
 The unpacked states are convenient but wasteful.  In the tables, a state is
 stored as a bit string of |BYTES_PER_KEY| bytes:
 \begin{itemize}
-\item 3 bits for each position that can hold a frontier cell, with one of the following six codes 0--5:
+\item 3 bits for each position that can hold a frontier cell, with one of the following eight codes 0--7:
   |C_EMPTY| for an empty position;
   |C_CONTINUE| if the cell continues the run of its left neighbor;
   and for the first cell of a run:
@@ -876,7 +873,12 @@ stored as a bit string of |BYTES_PER_KEY| bytes:
   |C_LAST| for the last run.
   Since components do not cross, a stack is sufficient to recover the
   labels, like for a sequence of parentheses.
-\item 1 bit per component: 0 if the component is floating, 1 otherwise.
+
+  The codes |C_SINGLETON| and |C_FIRST|, which mark the first appearance of a
+  component, come in two variants: the code as it stands if
+  the component is floating, and the code plus~4
+  (|C_SINGLETON_CROSSING| or |C_FIRST_CROSSING|)
+  otherwise.  This uses up the eight possible values of 3~bits.
 \item 1 bit: touched.
 \end{itemize}
 For the state of Figure~\ref{fig:example}, the codes are shown above the
@@ -887,10 +889,11 @@ picture.  Component~1 has two runs, at the positions 1 and~3
 position~10.  The components 3 and~4 are single cells (\texttt{S}).
 Only 9 of the 17 positions can hold a frontier cell: the positions
 $1,3,5,7,9$ of the current row and the positions $10,12,14,16$ of the
-previous row.  Their codes \texttt{FLFMLCSES}
-are followed by the bits $1,1,0,1$ for the four components (only component~3
-is floating) and by the touched bit~1.
-These are $3\cdot9+4+1=32$ bits, or 4 bytes.
+previous row.  Their codes are \texttt{FLFMLCSES}, where the first two codes \texttt{F}
+and the last code \texttt{S} are replaced by their variants with 4 added,
+since only component~3
+is floating.  They are followed by the touched bit~1.
+These are $3\cdot9+1=28$ bits, or 4 bytes.
 
 @*1 The length of a key.
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
@@ -903,8 +906,9 @@ frontier cells of a row occupy the positions of one parity.  The only
 exception is the kink, where a cell of row $v$ and a cell of row $v-1$
 are in adjacent positions.  (This is also the only place where
 the code |C_CONTINUE| can occur.)  Thus there are at most $\lfloor W/2\rfloor+1$
-frontier cells, and only their codes are stored.  The key is about
-1.3 times as long as the minimum.
+frontier cells, and only their codes are stored.  The key is at most
+1.3 times as long as the minimum.  (It is closer than that, because the eight codes
+also tell which components are floating.)
 Ranking the states, as in~\cite{twisted}, would give the shortest
 possible keys, but ranking and unranking are slow.
 
@@ -915,9 +919,9 @@ and not in larger units, in order to waste no space by rounding.
 static int BYTES_PER_KEY; /* length of a packed key */
 
 @ @<Type...@>=
-enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST };
+enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST, C_SINGLETON_CROSSING, C_FIRST_CROSSING };
 
-@*1 One bit per component is enough.
+@*1 Why it is enough to mark the crossing components.
 Call a component \emph{crossing} if it is central or paired, that is, if
 it is not floating.  The union of the frontier and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
@@ -1003,6 +1007,7 @@ static void encode(const state_t *s, coded_t *coded)
         else
             coded->code[i] = last_run[lab] == i ? C_LAST : C_MIDDLE;
     }
+    coded->crossing[0] = 0; /* not used, but |compress| looks at it */
     for (int j = 1; j <= num_components; j++)
         coded->crossing[j] = s->partner[j] != 0;
     coded->num_components = num_components;
@@ -1058,33 +1063,39 @@ static inline int can_hold_frontier_cell(int j, int decided_position)
 }
 
 @*1 Compaction into a bit string.
-This is the second step of packing, and its reverse.  The number of components
-is not stored: it is the number of codes |C_SINGLETON| and |C_FIRST|.
+This is the second step of packing, and its reverse.
+The flag of a crossing component is merged into the code at the position where the
+component appears for the first time, by adding~4 to the code.
+(An earlier version of the program stored one extra bit per component instead.)
 @<Sub...@>=
 static void compress(const coded_t *coded, int decided_position, uint8_t *bytes)
 {
-    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY| */
-    int pos = 0;
+    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY|; |coded->crossing[0]| is 0 */
+    int pos = 0, num_components = 0;
     memset(bytes, 0, BYTES_PER_KEY);
     for (int i = 0; i < W; i++)
-        if (can_hold_frontier_cell(i, decided_position))
-            put_bits(bytes, &pos, coded->code[i], 3);
-    for (int j = 1; j <= coded->num_components; j++)
-        put_bits(bytes, &pos, coded->crossing[j], 1);
+        if (can_hold_frontier_cell(i, decided_position)) {
+            int code = coded->code[i];
+            int is_first = (code == C_SINGLETON) | (code == C_FIRST);
+            num_components += is_first;
+            code += 4 * (is_first & coded->crossing[num_components]); /* |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
+            put_bits(bytes, &pos, code, 3);
+        }
     put_bits(bytes, &pos, coded->touches, 1);
 }
 
 static void expand(const uint8_t *bytes, int decided_position, coded_t *coded)
 {
-    int pos = 0, m = 0;
+    int pos = 0, num_components = 0;
     for (int i = 0; i < W; i++) {
-        coded->code[i] = can_hold_frontier_cell(i, decided_position) ? get_bits(bytes, &pos, 3) : C_EMPTY;
-        if (coded->code[i] == C_SINGLETON || coded->code[i] == C_FIRST)
-            m++;
+        int code = can_hold_frontier_cell(i, decided_position) ? get_bits(bytes, &pos, 3) : C_EMPTY;
+        int crossing = code >= C_SINGLETON_CROSSING;
+        code -= 4 * crossing;
+        if (code == C_SINGLETON || code == C_FIRST)
+            coded->crossing[++num_components] = crossing;
+        coded->code[i] = code;
     }
-    for (int j = 1; j <= m; j++)
-        coded->crossing[j] = get_bits(bytes, &pos, 1);
-    coded->num_components = m;
+    coded->num_components = num_components;
     coded->touches = get_bits(bytes, &pos, 1);
 }
 
@@ -1285,7 +1296,7 @@ often much less than half full.)
 The hash values have 32 bits.  This is sufficient, because a table has
 fewer than $2^{32}$ states.
 
-@d MAX_BYTES_PER_KEY 41 /* $3\cdot81+81+1=325$ bits for $W=160$ */
+@d MAX_BYTES_PER_KEY 31 /* $3\cdot81+1=244$ bits for $W=160$ */
 @<Glob...@>=
 static uint32_t HASH_BITS[MAX_BYTES_PER_KEY][256]; /* random bits for universal hashing */
 
@@ -2664,8 +2675,7 @@ least as high as wide; lower rectangles are not counted in this case.
         fprintf(stderr, "strip too wide\n");
         exit(1);
     }
-    MAX_COMPONENTS = (W + 1) / 2 + 1;
-    BYTES_PER_KEY = (3 * (W / 2 + 1) + MAX_COMPONENTS + 1 + 7) / 8;
+    BYTES_PER_KEY = (3 * (W / 2 + 1) + 1 + 7) / 8;
     NMAX_plus_1 = NMAX + 1;
 
     int min_rows = 0;
@@ -3000,6 +3010,7 @@ sequences agree there, they agree everywhere.
                         if (comparison > 0) {
                             for (int a = 0; a < W; a++)
                                 mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
+                            mirror.crossing[0] = 0;
                             mirror.num_components = coded.num_components;
                             mirror.touches = coded.touches;
                             compress(&mirror, next->decided_position, packed_key);
@@ -3116,12 +3127,11 @@ the range where the program can be useful.
   A strip of width $W$ has at most $\lceil W/2\rceil+1\le 81$ components.
 \item The weight in a count record is a byte, which would allow $N\le255$.
 \item The buffers for a packed key, and the tables of random
-  numbers for hashing, are prepared for keys of at most |MAX_BYTES_PER_KEY|${}=41$ bytes.
+  numbers for hashing, are prepared for keys of at most |MAX_BYTES_PER_KEY|${}=31$ bytes.
   This is sufficient for all widths up to |MAXW|:
   The key for a strip of width $W$ has 3 bits for each of the
-  $\lfloor W/2\rfloor+1$ positions that can hold a frontier cell, one bit
-  for each of the at most $|MAX_COMPONENTS|=\lceil W/2\rceil+1$ components, and the touched
-  bit.  For $W=160$, these are $3\cdot 81+81+1=325$ bits.
+  $\lfloor W/2\rfloor+1$ positions that can hold a frontier cell, and the touched
+  bit.  For $W=160$, these are $3\cdot 81+1=244$ bits.
   (If |MAXW| is increased, |MAX_BYTES_PER_KEY| must be increased accordingly.)
 \item States and count records are indexed by 32-bit integers, so a
   table can hold fewer than $2^{32}\approx 4.3\cdot10^9$ records.  (There
@@ -3434,8 +3444,8 @@ $n$ & center in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 \label{sec:space}
 For $N=71$, the memory requirement of 3 GB was no obstacle, and we have
 not tried to reduce it.  (That run was made with an earlier version of the program,
-whose keys were twice as long.)  At the peak, a state now needs about 62 bytes:
-8 bytes for the packed key (62 bits for $W=29$), 4 bytes for
+whose keys were almost three times as long.)  At the peak, a state now needs about 60 bytes:
+6 bytes for the packed key (46 bits for $W=29$), 4 bytes for
 the list head, at least 8 bytes for its share of the hash array
 (two slots of 4 bytes), and 16 bytes for each of its
 count records (8 bytes for the counter, 4 for the link, 1 for the

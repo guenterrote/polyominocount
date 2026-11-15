@@ -4,7 +4,7 @@
 
 #define MAXW 160
 #define MAXLAB (MAXW+2) 
-#define MAX_BYTES_PER_KEY 41
+#define MAX_BYTES_PER_KEY 31
 #define NO_STATE ((size_t) -1) 
 /*2:*/
 #line 169 "diag180.w"
@@ -31,18 +31,18 @@ uint8_t num_components;
 uint8_t touches;
 }state_t;
 
-/*:13*//*19:*/
-#line 795 "diag180.w"
+/*:13*//*18:*/
+#line 792 "diag180.w"
 
 enum{OK,DEAD,COMPLETE};
 
-/*:19*//*24:*/
-#line 917 "diag180.w"
+/*:18*//*23:*/
+#line 921 "diag180.w"
 
-enum{C_EMPTY,C_CONTINUE,C_SINGLETON,C_FIRST,C_MIDDLE,C_LAST};
+enum{C_EMPTY,C_CONTINUE,C_SINGLETON,C_FIRST,C_MIDDLE,C_LAST,C_SINGLETON_CROSSING,C_FIRST_CROSSING};
 
-/*:24*//*27:*/
-#line 970 "diag180.w"
+/*:23*//*26:*/
+#line 974 "diag180.w"
 
 typedef struct{
 uint8_t code[MAXW];
@@ -51,21 +51,21 @@ uint8_t num_components;
 uint8_t touches;
 }coded_t;
 
-/*:27*//*33:*/
-#line 1121 "diag180.w"
+/*:26*//*32:*/
+#line 1132 "diag180.w"
 
 #ifdef CNT128
 typedef unsigned __int128 counter_t;
 #define COUNTER_BITS "128"
 #else
-#line 1126 "diag180.w"
+#line 1137 "diag180.w"
  typedef uint64_t counter_t;
 #define COUNTER_BITS "64"
 #endif
-#line 1129 "diag180.w"
+#line 1140 "diag180.w"
 
-/*:33*//*37:*/
-#line 1191 "diag180.w"
+/*:32*//*36:*/
+#line 1202 "diag180.w"
 
 typedef struct{
 counter_t count;
@@ -84,7 +84,7 @@ uint32_t*hash;
 uint8_t*lowerbound;
 }table_t;
 
-/*:37*/
+/*:36*/
 #line 171 "diag180.w"
 
 /*8:*/
@@ -98,28 +98,23 @@ static int W;
 static int TWIN;
 static int NMAX_plus_1;
 
-/*:8*//*14:*/
-#line 673 "diag180.w"
-
-static int MAX_COMPONENTS;
-
-/*:14*//*23:*/
-#line 914 "diag180.w"
+/*:8*//*22:*/
+#line 918 "diag180.w"
 
 static int BYTES_PER_KEY;
 
-/*:23*//*34:*/
-#line 1130 "diag180.w"
+/*:22*//*33:*/
+#line 1141 "diag180.w"
 
 static uint64_t MODULUS= 0;
 
-/*:34*//*40:*/
-#line 1289 "diag180.w"
+/*:33*//*39:*/
+#line 1300 "diag180.w"
 
 static uint32_t HASH_BITS[MAX_BYTES_PER_KEY][256];
 
-/*:40*//*60:*/
-#line 1828 "diag180.w"
+/*:39*//*59:*/
+#line 1839 "diag180.w"
 
 static int CURRENT_ROW,TARGET_ROW,FIRST_ROW;
 static int USE_HEIGHT_TERMS= 1;
@@ -130,27 +125,27 @@ static int SIDE_DISTANCE;
 static int CURRENT_TOUCHES;
 static int KINK_POSITION;
 
-/*:60*//*77:*/
-#line 2499 "diag180.w"
+/*:59*//*76:*/
+#line 2510 "diag180.w"
 
 static counter_t*ROW_RESULTS;
 static counter_t*PORTRAIT,*SQUARE;
 static size_t MAX_STATES,MAX_BYTES,MAX_RECORDS,MAX_KEY_BYTES;
 
-/*:77*//*81:*/
-#line 2579 "diag180.w"
+/*:76*//*80:*/
+#line 2590 "diag180.w"
 
 static int VERBOSITY= 1;
 static double PROGRESS_SECONDS= 60;
 static double START_TIME,LAST_REPORT_TIME;
 
-/*:81*//*100:*/
-#line 3008 "diag180.w"
+/*:80*//*99:*/
+#line 3019 "diag180.w"
 
 static const uint8_t MIRRORED_CODE[6]= {C_EMPTY,C_CONTINUE,C_SINGLETON,C_LAST,C_MIDDLE,C_FIRST};
 
-/*:100*//*102:*/
-#line 3041 "diag180.w"
+/*:99*//*101:*/
+#line 3052 "diag180.w"
 
 static int MERGE_MIRROR_STATES= 1;
 static int USE_OLD_BOUND= 0;
@@ -158,7 +153,7 @@ static const char*RESULT_FILE_NAME= "results180.py";
 static int LOOKAHEAD= 1;
 static int CHECK_PACKING= 0;
 
-/*:102*/
+/*:101*/
 #line 172 "diag180.w"
 
 /*9:*/
@@ -166,8 +161,8 @@ static int CHECK_PACKING= 0;
 
 static int vspan(int k){return 2*k+1-TWIN;}
 
-/*:9*//*15:*/
-#line 678 "diag180.w"
+/*:9*//*14:*/
+#line 675 "diag180.w"
 
 static int compare_states(const state_t*a,const state_t*b)
 {
@@ -181,8 +176,8 @@ return c;
 return a->touches-b->touches;
 }
 
-/*:15*//*16:*/
-#line 702 "diag180.w"
+/*:14*//*15:*/
+#line 699 "diag180.w"
 
 static inline int is_central(const uint8_t*partner,int a){return partner[a]==a;}
 static inline int is_floating(const uint8_t*partner,int a){return partner[a]==0;}
@@ -196,8 +191,8 @@ if(label[j]==from)
 label[j]= to;
 }
 
-/*:16*//*17:*/
-#line 729 "diag180.w"
+/*:15*//*16:*/
+#line 726 "diag180.w"
 
 static void join(uint8_t*label,uint8_t*partner,int a,int b)
 {
@@ -226,8 +221,8 @@ partner[partner_b]= a;
 }
 }
 
-/*:17*//*18:*/
-#line 759 "diag180.w"
+/*:16*//*17:*/
+#line 756 "diag180.w"
 
 static void canonical_state(const uint8_t*label,const uint8_t*partner,int touches,state_t*result)
 {
@@ -249,8 +244,8 @@ result->num_components= num_components;
 result->touches= touches;
 }
 
-/*:18*//*20:*/
-#line 798 "diag180.w"
+/*:17*//*19:*/
+#line 795 "diag180.w"
 
 static int retire(uint8_t*label,uint8_t*partner,int i)
 {
@@ -274,8 +269,8 @@ partner[partner[retired_label]]= 0;
 return OK;
 }
 
-/*:20*//*21:*/
-#line 836 "diag180.w"
+/*:19*//*20:*/
+#line 833 "diag180.w"
 
 static int step(const state_t*state,int i,int occupied,int last_in_row,state_t*result)
 {
@@ -304,8 +299,8 @@ canonical_state(label,partner,state->touches||(occupied&&(i==0||i==W-1)),result)
 return OK;
 }
 
-/*:21*//*26:*/
-#line 942 "diag180.w"
+/*:20*//*25:*/
+#line 946 "diag180.w"
 
 static inline void put_bits(uint8_t*bytes,int*bit_position,int value,int num_bits)
 {
@@ -327,8 +322,8 @@ value|= bytes[byte+1]<<(8-offset);
 return value&((1<<num_bits)-1);
 }
 
-/*:26*//*28:*/
-#line 980 "diag180.w"
+/*:25*//*27:*/
+#line 984 "diag180.w"
 
 static void encode(const state_t*s,coded_t*coded)
 {
@@ -355,14 +350,15 @@ coded->code[i]= last_run[lab]==i?C_SINGLETON:C_FIRST;
 else
 coded->code[i]= last_run[lab]==i?C_LAST:C_MIDDLE;
 }
+coded->crossing[0]= 0;
 for(int j= 1;j<=num_components;j++)
 coded->crossing[j]= s->partner[j]!=0;
 coded->num_components= num_components;
 coded->touches= s->touches;
 }
 
-/*:28*//*29:*/
-#line 1016 "diag180.w"
+/*:27*//*28:*/
+#line 1021 "diag180.w"
 
 static void decode(const coded_t*coded,state_t*s)
 {
@@ -392,46 +388,50 @@ s->num_components= num_components;
 s->touches= coded->touches;
 }
 
-/*:29*//*30:*/
-#line 1054 "diag180.w"
+/*:28*//*29:*/
+#line 1059 "diag180.w"
 
 static inline int can_hold_frontier_cell(int j,int decided_position)
 {
 return(((j^decided_position)&1)!=0)==(j> decided_position);
 }
 
-/*:30*//*31:*/
-#line 1063 "diag180.w"
+/*:29*//*30:*/
+#line 1070 "diag180.w"
 
 static void compress(const coded_t*coded,int decided_position,uint8_t*bytes)
 {
 
-int pos= 0;
+int pos= 0,num_components= 0;
 memset(bytes,0,BYTES_PER_KEY);
 for(int i= 0;i<W;i++)
-if(can_hold_frontier_cell(i,decided_position))
-put_bits(bytes,&pos,coded->code[i],3);
-for(int j= 1;j<=coded->num_components;j++)
-put_bits(bytes,&pos,coded->crossing[j],1);
+if(can_hold_frontier_cell(i,decided_position)){
+int code= coded->code[i];
+int is_first= (code==C_SINGLETON)|(code==C_FIRST);
+num_components+= is_first;
+code+= 4*(is_first&coded->crossing[num_components]);
+put_bits(bytes,&pos,code,3);
+}
 put_bits(bytes,&pos,coded->touches,1);
 }
 
 static void expand(const uint8_t*bytes,int decided_position,coded_t*coded)
 {
-int pos= 0,m= 0;
+int pos= 0,num_components= 0;
 for(int i= 0;i<W;i++){
-coded->code[i]= can_hold_frontier_cell(i,decided_position)?get_bits(bytes,&pos,3):C_EMPTY;
-if(coded->code[i]==C_SINGLETON||coded->code[i]==C_FIRST)
-m++;
+int code= can_hold_frontier_cell(i,decided_position)?get_bits(bytes,&pos,3):C_EMPTY;
+int crossing= code>=C_SINGLETON_CROSSING;
+code-= 4*crossing;
+if(code==C_SINGLETON||code==C_FIRST)
+coded->crossing[++num_components]= crossing;
+coded->code[i]= code;
 }
-for(int j= 1;j<=m;j++)
-coded->crossing[j]= get_bits(bytes,&pos,1);
-coded->num_components= m;
+coded->num_components= num_components;
 coded->touches= get_bits(bytes,&pos,1);
 }
 
-/*:31*//*32:*/
-#line 1091 "diag180.w"
+/*:30*//*31:*/
+#line 1102 "diag180.w"
 
 static void pack(const state_t*s,int decided_position,uint8_t*bytes)
 {
@@ -447,8 +447,8 @@ expand(bytes,decided_position,&coded);
 decode(&coded,s);
 }
 
-/*:32*//*35:*/
-#line 1133 "diag180.w"
+/*:31*//*34:*/
+#line 1144 "diag180.w"
 
 static inline counter_t add_mod(counter_t a,counter_t b)
 {
@@ -461,8 +461,8 @@ s-= MODULUS;
 return s;
 }
 
-/*:35*//*36:*/
-#line 1149 "diag180.w"
+/*:34*//*35:*/
+#line 1160 "diag180.w"
 
 static const char*counter_to_string(counter_t x)
 {
@@ -476,8 +476,8 @@ while(x);
 return digit;
 }
 
-/*:36*//*38:*/
-#line 1209 "diag180.w"
+/*:35*//*37:*/
+#line 1220 "diag180.w"
 
 static void*checked_realloc(void*p,size_t s)
 {
@@ -489,8 +489,8 @@ exit(1);
 return p;
 }
 
-/*:38*//*39:*/
-#line 1220 "diag180.w"
+/*:37*//*38:*/
+#line 1231 "diag180.w"
 
 static void table_allocate(table_t*t,size_t capacity)
 {
@@ -525,8 +525,8 @@ return t->num_states*(BYTES_PER_KEY+4)+t->num_records*sizeof(record_t)
 +(t->hash?(t->hash_mask+1)*4+t->num_states:0);
 }
 
-/*:39*//*41:*/
-#line 1292 "diag180.w"
+/*:38*//*40:*/
+#line 1303 "diag180.w"
 
 static inline uint32_t hash_of_key(const uint8_t*key)
 {
@@ -536,8 +536,8 @@ h+= HASH_BITS[l][key[l]];
 return h;
 }
 
-/*:41*//*44:*/
-#line 1352 "diag180.w"
+/*:40*//*43:*/
+#line 1363 "diag180.w"
 
 static void table_initialize(table_t*t,int decided_position)
 {
@@ -561,8 +561,8 @@ free(t->lowerbound);
 t->lowerbound= 0;
 }
 
-/*:44*//*45:*/
-#line 1383 "diag180.w"
+/*:43*//*44:*/
+#line 1394 "diag180.w"
 
 static size_t HASH_SLOT;
 
@@ -585,8 +585,8 @@ static size_t table_create(table_t*t,const uint8_t*packed_key)
 
 size_t slot= HASH_SLOT;
 if(t->num_states==t->state_capacity){
-/*43:*/
-#line 1321 "diag180.w"
+/*42:*/
+#line 1332 "diag180.w"
 
 size_t capacity= t->state_capacity*2;
 t->keys= checked_realloc(t->keys,capacity*BYTES_PER_KEY);
@@ -608,8 +608,8 @@ state_slot= (state_slot+1)&t->hash_mask;
 t->hash[state_slot]= state+1;
 }
 
-/*:43*/
-#line 1405 "diag180.w"
+/*:42*/
+#line 1416 "diag180.w"
 
 slot= hash_of_key(packed_key)&t->hash_mask;
 while(t->hash[slot])
@@ -623,8 +623,8 @@ t->lowerbound[i]= 0;
 return i;
 }
 
-/*:45*//*46:*/
-#line 1420 "diag180.w"
+/*:44*//*45:*/
+#line 1431 "diag180.w"
 
 static void pack_and_check(const state_t*s,int decided_position,uint8_t*packed_key)
 {
@@ -639,8 +639,8 @@ exit(2);
 }
 }
 
-/*:46*//*47:*/
-#line 1436 "diag180.w"
+/*:45*//*46:*/
+#line 1447 "diag180.w"
 
 static size_t table_find_or_create(table_t*t,const state_t*s)
 {
@@ -650,8 +650,8 @@ size_t i= table_find(t,packed_key);
 return i!=NO_STATE?i:table_create(t,packed_key);
 }
 
-/*:47*//*48:*/
-#line 1453 "diag180.w"
+/*:46*//*47:*/
+#line 1464 "diag180.w"
 
 static uint32_t new_record(table_t*t,int weight,counter_t count,uint32_t next)
 {
@@ -670,8 +670,8 @@ q->next= next;
 return t->num_records;
 }
 
-/*:48*//*49:*/
-#line 1482 "diag180.w"
+/*:47*//*48:*/
+#line 1493 "diag180.w"
 
 static void add_list(table_t*target,size_t target_state,const table_t*source,size_t source_state,
 int added_weight,int weight_limit)
@@ -699,8 +699,8 @@ previous= new_one;
 }
 }
 
-/*:49*//*61:*/
-#line 1842 "diag180.w"
+/*:48*//*60:*/
+#line 1853 "diag180.w"
 
 static inline int frontier_row(int j)
 {
@@ -708,8 +708,8 @@ static inline int frontier_row(int j)
 return j<KINK_POSITION?CURRENT_ROW:CURRENT_ROW-1;
 }
 
-/*:61*//*62:*/
-#line 1849 "diag180.w"
+/*:60*//*61:*/
+#line 1860 "diag180.w"
 
 static inline void reach_height(int h)
 {
@@ -721,16 +721,16 @@ static inline void reach_score(int sc)
 FREE_SCORE= min(FREE_SCORE,sc);
 }
 
-/*:62*//*63:*/
-#line 1862 "diag180.w"
+/*:61*//*62:*/
+#line 1873 "diag180.w"
 
 static inline int side_and_top_cost(int h,int j)
 {
 return max(TARGET_ROW-h,min(j,W-1-j));
 }
 
-/*:63*//*64:*/
-#line 1887 "diag180.w"
+/*:62*//*63:*/
+#line 1898 "diag180.w"
 
 static int gap_score(int a,int row_a,int b,int row_b)
 {
@@ -744,8 +744,8 @@ best= min(best,c);
 return best;
 }
 
-/*:64*//*65:*/
-#line 1906 "diag180.w"
+/*:63*//*64:*/
+#line 1917 "diag180.w"
 
 static int cycle_cost(const int*gap,const int*peak,const int*score,int num_gaps,int*max1_out,int*peak_out,int*score_out)
 {
@@ -785,8 +785,8 @@ if(max1_out){
 return sum-max1;
 }
 
-/*:65*//*66:*/
-#line 1948 "diag180.w"
+/*:64*//*65:*/
+#line 1959 "diag180.w"
 
 static inline int finish_cost(int height,int score)
 {
@@ -800,8 +800,8 @@ int separately= SIDE_DISTANCE+missing_rows;
 return min(score,separately);
 }
 
-/*:66*//*67:*/
-#line 1963 "diag180.w"
+/*:65*//*66:*/
+#line 1974 "diag180.w"
 
 static int height_term(int height,int score)
 {
@@ -813,16 +813,16 @@ extra= min(extra,extra_with_option);
 return extra;
 }
 
-/*:67*//*69:*/
-#line 2228 "diag180.w"
+/*:66*//*68:*/
+#line 2239 "diag180.w"
 
 static int cactus_bound(const state_t*state)
 {
 
 const uint8_t*label= state->label;
 int touches= state->touches;
-/*70:*/
-#line 2245 "diag180.w"
+/*69:*/
+#line 2256 "diag180.w"
 
 int run_start[MAXW],run_end[MAXW],run_label[MAXW],num_runs= 0;
 int last_run[MAXW+2];
@@ -839,11 +839,11 @@ last_run[label[i]]= num_runs-1;
 if(!num_runs)
 return 0;
 
-/*:70*/
-#line 2234 "diag180.w"
+/*:69*/
+#line 2245 "diag180.w"
 
-/*71:*/
-#line 2261 "diag180.w"
+/*70:*/
+#line 2272 "diag180.w"
 
 FREE_HEIGHT= -1000;
 FREE_SCORE= 1<<20;
@@ -856,12 +856,12 @@ reach_height(frontier_row(i));
 reach_score(side_and_top_cost(frontier_row(i),i));
 }
 
-/*:71*/
-#line 2235 "diag180.w"
+/*:70*/
+#line 2246 "diag180.w"
 
 int cost= 0;
-/*72:*/
-#line 2280 "diag180.w"
+/*71:*/
+#line 2291 "diag180.w"
 
 
 int pocket_label[MAXW],pocket_first_gap[MAXW],num_open_pockets= 0;
@@ -902,11 +902,11 @@ num_open_pockets++;
 }
 }
 
-/*:72*/
-#line 2237 "diag180.w"
+/*:71*/
+#line 2248 "diag180.w"
 
-/*73:*/
-#line 2323 "diag180.w"
+/*72:*/
+#line 2334 "diag180.w"
 
 
 int crossing[MAXW],num_crossing= 0;
@@ -960,11 +960,11 @@ reach_score(top_score[t]);
 }
 }
 
-/*:73*/
-#line 2238 "diag180.w"
+/*:72*/
+#line 2249 "diag180.w"
 
-/*74:*/
-#line 2376 "diag180.w"
+/*73:*/
+#line 2387 "diag180.w"
 
 SIDE_DISTANCE= 0;
 if(!touches){
@@ -984,14 +984,14 @@ cost+= extra;
 }else
 cost+= height_term(FREE_HEIGHT,FREE_SCORE);
 
-/*:74*/
-#line 2239 "diag180.w"
+/*:73*/
+#line 2250 "diag180.w"
 
 return cost;
 }
 
-/*:69*//*76:*/
-#line 2464 "diag180.w"
+/*:68*//*75:*/
+#line 2475 "diag180.w"
 
 static int bound(const state_t*state,int k,int min_rows,int i,int last_in_row)
 {
@@ -1008,8 +1008,8 @@ side_distance= min(side_distance,distance);
 }
 lowerbound= max(lowerbound,2*side_distance);
 }
-/*53:*/
-#line 1637 "diag180.w"
+/*52:*/
+#line 1648 "diag180.w"
 
 {
 int some_component_is_crossing= 0;
@@ -1020,16 +1020,16 @@ if(!some_component_is_crossing)
 return-1;
 }
 
-/*:53*/
-#line 2480 "diag180.w"
+/*:52*/
+#line 2491 "diag180.w"
 
 CURRENT_ROW= FIRST_ROW+k-1;
 KINK_POSITION= i+1;
 TARGET_ROW= FIRST_ROW+min_rows-1;
 int connection_bound;
 if(USE_OLD_BOUND){
-/*75:*/
-#line 2401 "diag180.w"
+/*74:*/
+#line 2412 "diag180.w"
 
 int representative[MAXW+1];
 int occupied[MAXW],num_occupied= 0;
@@ -1087,8 +1087,8 @@ cost+= min(left_distance,right_distance);
 }
 connection_bound= 2*cost;
 
-/*:75*/
-#line 2486 "diag180.w"
+/*:74*/
+#line 2497 "diag180.w"
 
 }else
 connection_bound= 2*cactus_bound(state);
@@ -1096,8 +1096,8 @@ lowerbound= max(lowerbound,connection_bound);
 return lowerbound;
 }
 
-/*:76*//*80:*/
-#line 2553 "diag180.w"
+/*:75*//*79:*/
+#line 2564 "diag180.w"
 
 static void print_row_results(int top_row_number)
 {
@@ -1118,8 +1118,8 @@ fflush(stderr);
 }
 }
 
-/*:80*//*82:*/
-#line 2584 "diag180.w"
+/*:79*//*81:*/
+#line 2595 "diag180.w"
 
 static double wall_time(void)
 {
@@ -1143,14 +1143,14 @@ now-START_TIME,(double)clock()/CLOCKS_PER_SEC);
 fflush(stderr);
 }
 
-/*:82*//*83:*/
-#line 2609 "diag180.w"
+/*:81*//*82:*/
+#line 2620 "diag180.w"
 
 static void count_case(void)
 {
 
-/*85:*/
-#line 2646 "diag180.w"
+/*84:*/
+#line 2657 "diag180.w"
 
 M_v= M_x+M_y;
 M_u= M_x-M_y;
@@ -1172,35 +1172,34 @@ if(W> MAXW){
 fprintf(stderr,"strip too wide\n");
 exit(1);
 }
-MAX_COMPONENTS= (W+1)/2+1;
-BYTES_PER_KEY= (3*(W/2+1)+MAX_COMPONENTS+1+7)/8;
+BYTES_PER_KEY= (3*(W/2+1)+1+7)/8;
 NMAX_plus_1= NMAX+1;
 
 int min_rows= 0;
 while(vspan(min_rows)<W)
 min_rows++;
 
-/*:85*/
-#line 2613 "diag180.w"
+/*:84*/
+#line 2624 "diag180.w"
 
-/*86:*/
-#line 2677 "diag180.w"
+/*85:*/
+#line 2687 "diag180.w"
 
 table_t A,B,*current= &A,*next= &B;
 table_allocate(&A,1024);
 table_allocate(&B,1024);
 state_t new_state;
 
-/*:86*/
-#line 2614 "diag180.w"
+/*:85*/
+#line 2625 "diag180.w"
 
-/*87:*/
-#line 2690 "diag180.w"
+/*86:*/
+#line 2700 "diag180.w"
 
 int choice[MAXW],num_choices= 0,max_chosen;
 if(TWIN==0){
-/*89:*/
-#line 2747 "diag180.w"
+/*88:*/
+#line 2757 "diag180.w"
 
 int vm= M_v/2;
 for(int i= 0;i<W;i++)
@@ -1209,12 +1208,12 @@ choice[num_choices++]= i;
 max_chosen= (NMAX-2*min_rows+1)/2;
 FIRST_ROW= vm+1;
 
-/*:89*/
-#line 2693 "diag180.w"
+/*:88*/
+#line 2703 "diag180.w"
 
 }else{
-/*91:*/
-#line 2781 "diag180.w"
+/*90:*/
+#line 2791 "diag180.w"
 
 FIRST_ROW= (M_v+1)/2;
 for(int i= 0;i<W;i++)
@@ -1222,8 +1221,8 @@ if(((umin+i-FIRST_ROW)%2+2)%2==0)
 choice[num_choices++]= i;
 max_chosen= (NMAX-2*(min_rows-1))/2;
 
-/*:91*/
-#line 2695 "diag180.w"
+/*:90*/
+#line 2705 "diag180.w"
 
 }
 uint8_t chosen[MAXW];
@@ -1231,8 +1230,8 @@ int num_chosen= 0,done= 0;
 memset(chosen,0,num_choices);
 table_initialize(current,choice[num_choices-1]);
 while(!done){
-/*88:*/
-#line 2724 "diag180.w"
+/*87:*/
+#line 2734 "diag180.w"
 
 {
 int j= 0;
@@ -1251,14 +1250,14 @@ num_chosen++;
 }
 }
 
-/*:88*/
-#line 2702 "diag180.w"
+/*:87*/
+#line 2712 "diag180.w"
 
 if(done)
 break;
 if(TWIN==0){
-/*90:*/
-#line 2758 "diag180.w"
+/*89:*/
+#line 2768 "diag180.w"
 
 uint8_t label[MAXW],partner[MAXLAB];
 int num_cells= 0;
@@ -1278,12 +1277,12 @@ size_t target_state= table_find_or_create(current,&new_state);
 current->first_record[target_state]= new_record(current,num_cells,1,0);
 }
 
-/*:90*/
-#line 2706 "diag180.w"
+/*:89*/
+#line 2716 "diag180.w"
 
 }else{
-/*92:*/
-#line 2807 "diag180.w"
+/*91:*/
+#line 2817 "diag180.w"
 
 uint8_t band[MAXW+1];
 int is_twin[MAXW],run_label[MAXW],num_runs= 0,num_components= 0;
@@ -1317,40 +1316,40 @@ size_t target_state= table_find_or_create(current,&new_state);
 current->first_record[target_state]= new_record(current,2*num_chosen,1,0);
 }
 
-/*:92*/
-#line 2708 "diag180.w"
+/*:91*/
+#line 2718 "diag180.w"
 
 }
 }
 table_finish(current);
 
-/*:87*/
-#line 2615 "diag180.w"
+/*:86*/
+#line 2626 "diag180.w"
 
 int row_cells[MAXW];
 for(int k= 1+TWIN;current->num_states;k++){
 memset(ROW_RESULTS,0,NMAX_plus_1*sizeof(counter_t));
-/*93:*/
-#line 2843 "diag180.w"
+/*92:*/
+#line 2853 "diag180.w"
 
 int v= FIRST_ROW+k-1,num_row_cells= 0;
 for(int i= 0;i<W;i++)
 if(((umin+i-v)%2+2)%2==0)
 row_cells[num_row_cells++]= i;
 
-/*:93*/
-#line 2619 "diag180.w"
+/*:92*/
+#line 2630 "diag180.w"
 
 for(int cell_number= 0;cell_number<num_row_cells;cell_number++){
-/*94:*/
-#line 2849 "diag180.w"
+/*93:*/
+#line 2859 "diag180.w"
 
 int i= row_cells[cell_number];
 int last_in_row= cell_number==num_row_cells-1;
 table_initialize(next,i);
 for(size_t source_state= 0;source_state<current->num_states;source_state++){
-/*95:*/
-#line 2860 "diag180.w"
+/*94:*/
+#line 2870 "diag180.w"
 
 state_t old_state;
 unpack(current->keys+source_state*BYTES_PER_KEY,current->decided_position,&old_state);
@@ -1359,8 +1358,8 @@ int status= step(&old_state,i,occupied,last_in_row,&new_state);
 if(status==DEAD)
 continue;
 if(status==COMPLETE){
-/*79:*/
-#line 2519 "diag180.w"
+/*78:*/
+#line 2530 "diag180.w"
 
 if(old_state.touches&&vspan(k-1)>=W)
 for(uint32_t r= current->first_record[source_state];r;r= current->records[r-1].next){
@@ -1368,20 +1367,20 @@ int weight= current->records[r-1].weight;
 ROW_RESULTS[weight]= add_mod(ROW_RESULTS[weight],current->records[r-1].count);
 }
 
-/*:79*/
-#line 2868 "diag180.w"
+/*:78*/
+#line 2878 "diag180.w"
 
 continue;
 }
 int added_weight= occupied?2:0;
-/*96:*/
-#line 2885 "diag180.w"
+/*95:*/
+#line 2895 "diag180.w"
 
 uint8_t packed_key[MAX_BYTES_PER_KEY];
 pack_and_check(&new_state,next->decided_position,packed_key);
 if(last_in_row&&MERGE_MIRROR_STATES&&M_u==0){
-/*99:*/
-#line 2991 "diag180.w"
+/*98:*/
+#line 3001 "diag180.w"
 
 coded_t coded,mirror;
 encode(&new_state,&coded);
@@ -1389,8 +1388,8 @@ int comparison= 0;
 for(int a= 0,b= W-1;a<b&&comparison==0;a++,b--)
 comparison= (int)coded.code[a]-MIRRORED_CODE[coded.code[b]];
 if(comparison>=0){
-/*101:*/
-#line 3020 "diag180.w"
+/*100:*/
+#line 3031 "diag180.w"
 
 int mirror_label= 0;
 for(int b= W-1;b>=0;b--)
@@ -1399,20 +1398,21 @@ mirror.crossing[++mirror_label]= coded.crossing[new_state.label[b]];
 for(int j= 1;j<=coded.num_components&&comparison==0;j++)
 comparison= (int)coded.crossing[j]-(int)mirror.crossing[j];
 
-/*:101*/
-#line 2998 "diag180.w"
+/*:100*/
+#line 3008 "diag180.w"
 
 }
 if(comparison> 0){
 for(int a= 0;a<W;a++)
 mirror.code[a]= MIRRORED_CODE[coded.code[W-1-a]];
+mirror.crossing[0]= 0;
 mirror.num_components= coded.num_components;
 mirror.touches= coded.touches;
 compress(&mirror,next->decided_position,packed_key);
 }
 
-/*:99*/
-#line 2889 "diag180.w"
+/*:98*/
+#line 2899 "diag180.w"
 
 }
 size_t target_state= table_find(next,packed_key);
@@ -1423,8 +1423,8 @@ else{
 lowerbound= bound(&new_state,k,min_rows,i,last_in_row);
 if(lowerbound<0)
 continue;
-/*97:*/
-#line 2920 "diag180.w"
+/*96:*/
+#line 2930 "diag180.w"
 
 if(LOOKAHEAD&&!last_in_row&&(LOOKAHEAD==2||(!new_state.label[i]&&i+1<W&&new_state.label[i+1]))){
 
@@ -1450,8 +1450,8 @@ lookahead_bound= min(lookahead_bound,bound_this_way);
 lowerbound= max(lowerbound,lookahead_bound);
 }
 
-/*:97*/
-#line 2899 "diag180.w"
+/*:96*/
+#line 2909 "diag180.w"
 
 }
 int limit= NMAX-lowerbound-added_weight;
@@ -1463,17 +1463,17 @@ next->lowerbound[target_state]= lowerbound;
 }
 add_list(next,target_state,current,source_state,added_weight,limit);
 
-/*:96*/
-#line 2872 "diag180.w"
-
-}
-
 /*:95*/
-#line 2854 "diag180.w"
+#line 2882 "diag180.w"
 
 }
-/*98:*/
-#line 2945 "diag180.w"
+
+/*:94*/
+#line 2864 "diag180.w"
+
+}
+/*97:*/
+#line 2955 "diag180.w"
 
 table_t*swap= current;
 current= next;
@@ -1486,18 +1486,18 @@ table_finish(current);
 if(!last_in_row&&(VERBOSITY>=2||(VERBOSITY==1&&wall_time()-LAST_REPORT_TIME>=PROGRESS_SECONDS)))
 print_status_line("#cell",k,v,cell_number+1,num_row_cells,current,next);
 
-/*:98*/
-#line 2856 "diag180.w"
+/*:97*/
+#line 2866 "diag180.w"
 
 
-/*:94*/
-#line 2621 "diag180.w"
+/*:93*/
+#line 2632 "diag180.w"
 
 }
 if(VERBOSITY>=1)
 print_status_line("#row ",k,v,num_row_cells,num_row_cells,current,next);
-/*84:*/
-#line 2634 "diag180.w"
+/*83:*/
+#line 2645 "diag180.w"
 
 if(vspan(k-1)==W){
 for(int n= 0;n<=NMAX;n++)
@@ -1509,24 +1509,24 @@ PORTRAIT[n]= add_mod(PORTRAIT[n],ROW_RESULTS[n]);
 print_row_results(k-1);
 }
 
-/*:84*/
-#line 2625 "diag180.w"
+/*:83*/
+#line 2636 "diag180.w"
 
 }
 table_free(&A);
 table_free(&B);
 }
 
-/*:83*/
+/*:82*/
 #line 173 "diag180.w"
 
-/*103:*/
-#line 3048 "diag180.w"
+/*102:*/
+#line 3059 "diag180.w"
 
 int main(int argc,char**argv)
 {
-/*104:*/
-#line 3067 "diag180.w"
+/*103:*/
+#line 3078 "diag180.w"
 
 int arg= 1;
 while(arg<argc&&argv[arg][0]=='-'){
@@ -1567,24 +1567,24 @@ fprintf(stderr,"%s: N must be between 1 and %d\n",argv[0],MAXW);
 return 1;
 }
 NMAX_plus_1= NMAX+1;
-/*78:*/
-#line 2506 "diag180.w"
+/*77:*/
+#line 2517 "diag180.w"
 
 PORTRAIT= calloc(NMAX_plus_1,sizeof(counter_t));
 SQUARE= calloc(NMAX_plus_1,sizeof(counter_t));
 ROW_RESULTS= calloc(NMAX_plus_1,sizeof(counter_t));
 
-/*:78*/
-#line 3107 "diag180.w"
+/*:77*/
+#line 3118 "diag180.w"
 
 
-/*:104*/
-#line 3051 "diag180.w"
+/*:103*/
+#line 3062 "diag180.w"
 
 clock_t t0= clock();
 START_TIME= LAST_REPORT_TIME= wall_time();
-/*42:*/
-#line 1302 "diag180.w"
+/*41:*/
+#line 1313 "diag180.w"
 
 {
 uint64_t x= 0;
@@ -1597,11 +1597,11 @@ HASH_BITS[l][b]= (z^(z>>31))>>32;
 }
 }
 
-/*:42*/
-#line 3054 "diag180.w"
+/*:41*/
+#line 3065 "diag180.w"
 
-/*106:*/
-#line 3151 "diag180.w"
+/*105:*/
+#line 3161 "diag180.w"
 
 for(int stream_number= 0;stream_number<2;stream_number++){
 FILE*stream= stream_number?stdout:stderr;
@@ -1626,12 +1626,12 @@ sizeof(counter_t),sizeof(record_t));
 fflush(stream);
 }
 
-/*:106*/
-#line 3055 "diag180.w"
+/*:105*/
+#line 3066 "diag180.w"
 
 if(argc-arg==4){
-/*107:*/
-#line 3177 "diag180.w"
+/*106:*/
+#line 3187 "diag180.w"
 
 M_x= atoi(argv[arg+1]),M_y= atoi(argv[arg+2]),umax= atoi(argv[arg+3]);
 count_case();
@@ -1642,12 +1642,12 @@ printf("# modulus 2**"COUNTER_BITS"; n #(uspan<vspan) #(uspan=vspan)\n");
 for(int n= 1;n<=NMAX;n++)
 printf("%d %s %s\n",n,counter_to_string(PORTRAIT[n]),counter_to_string(SQUARE[n]));
 
-/*:107*/
-#line 3057 "diag180.w"
+/*:106*/
+#line 3068 "diag180.w"
 
 }else{
-/*108:*/
-#line 3190 "diag180.w"
+/*107:*/
+#line 3200 "diag180.w"
 
 
 counter_t*results= calloc(3*NMAX_plus_1,sizeof(counter_t));
@@ -1670,11 +1670,11 @@ if(twice){
 }
 }
 
-/*:108*/
-#line 3059 "diag180.w"
+/*:107*/
+#line 3070 "diag180.w"
 
-/*109:*/
-#line 3220 "diag180.w"
+/*108:*/
+#line 3230 "diag180.w"
 
 
 
@@ -1697,11 +1697,11 @@ counter_to_string(results[center_type*NMAX_plus_1+n]));
 fclose(result_file);
 printf("# modulus %s; results appended to %s\n",modulus_string,RESULT_FILE_NAME);
 
-/*:109*/
-#line 3060 "diag180.w"
+/*:108*/
+#line 3071 "diag180.w"
 
-/*110:*/
-#line 3244 "diag180.w"
+/*109:*/
+#line 3254 "diag180.w"
 
 printf("# n fix(r180) R180C(center in a cell) R180M(edge midpoint) R180V(vertex)\n");
 for(int n= 1;n<=NMAX;n++){
@@ -1710,25 +1710,25 @@ printf("%d %s %s %s %s\n",n,counter_to_string(total),counter_to_string(results[n
 counter_to_string(results[2*NMAX_plus_1+n]));
 }
 
-/*:110*/
-#line 3061 "diag180.w"
+/*:109*/
+#line 3072 "diag180.w"
 
 }
-/*111:*/
-#line 3252 "diag180.w"
+/*110:*/
+#line 3262 "diag180.w"
 
 fprintf(stderr,"# peak memory %.1f MB (both tables; %zu count records, key %zu bytes)\n",
 MAX_BYTES/1e6,MAX_RECORDS,MAX_KEY_BYTES);
 fprintf(stderr,"# max states %zu, %.2fs\n",MAX_STATES,
 (double)(clock()-t0)/CLOCKS_PER_SEC);
 
-/*:111*/
-#line 3063 "diag180.w"
+/*:110*/
+#line 3074 "diag180.w"
 
 return 0;
 }
 
-/*:103*/
+/*:102*/
 #line 174 "diag180.w"
 
 
