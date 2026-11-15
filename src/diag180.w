@@ -2,7 +2,7 @@
 \usepackage[a4paper,margin=2.2cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{tikz}
 \usepackage{hyperref}
@@ -21,6 +21,8 @@
             }
 }
 %\secpagedepth=-2
+
+\newtheorem{lemma}{Lemma}
 
 \newcommand{\dts}{\mathinner{\ldotp\ldotp}}
 \newcommand{\fix}{\mathrm{fix}}
@@ -401,6 +403,20 @@ $\le i$ and in row $v-1$ for the positions $>i$ (always only for the
 columns of the right parity).  These cells form the \emph{frontier}.
 The place where the frontier steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
+Formally, we define the kink position $k$ as the coordinate of the
+midpoint of the two consecutive red downstepping edges. The cell at
+column
+$k-1$ was that last cell that was decided,
+the frontier steps down when it proceeds to column $k$,
+and the next cell to be
+decided is at column $k+1$.
+
+[CLAUDE:  Adapt the arrow in Fig.2
+Adapt the wording and program variables names.
+(But if this is not straightforward, tell me beforehand about the issues.)
+]
+
+
 A frontier cell is dropped from the frontier as soon as both of its
 upper neighbors have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
@@ -425,23 +441,22 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
     --(5,6)--(6,7)--(7,6)--(8,5)--(9,6)--(10,5)--(11,6)--(12,5)--(13,6);
   \foreach \u/\l in {0/A,2/A,6/B} \node at (\u,6) {\color{white}$\l$};
   \foreach \u/\l in {7/B,11/C} \node at (\u,5) {\color{white}$\l$};
-  \node[above] at (6,7.1) {$i$};
-  \draw[<-] (7.6,5.9)--(9,8.2) node[above] {kink};
+%  \node[above] at (6,7.1) {$i$};
+  \draw[<-] (7.6,5.9)--(9,8.2) node[above] {kink at $k=7$};
   \foreach \u in {0,2,...,12} \node[below] at (\u,1.8) {$\u$};
   \node[left] at (-1.8,6) {row $v$};
   \node[left] at (-1.8,5) {row $v-1$};
 \end{tikzpicture}
-\caption{The situation after position $i=6$ of row $v$ has
-  been decided.
-  The kink is at position~7.
-  Blue cells belong to $P^+$, gray cells are decided and
+\caption{A kink at position~7, after
+  position $k-1=6$ of row $v$ has
+  been decided. Blue cells belong to $P^+$, gray cells are decided and
   empty, white cells are undecided.  The thick red curve separates the
   decided cells from the unprocessed cells, and the frontier consists of
   all cells that touch an edge of the red curve from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
   components $A$, $B$, $C$ with four runs.  The frontier steps down at the
-  kink, right of position~$i$.}
+  kink, from position~$k-1$ to position~$k$.}
 \label{fig:frontier}
 \end{figure}
 
@@ -1492,7 +1507,7 @@ static void add_list(table_t *target, size_t target_state, const table_t *source
     }
 }
 
-@* The lower bound on the number of cells necessary to reach the boundary.
+@* The lower bound on the number of cells necessary to make a full polyomino.
 \label{sec:bound}
 The key to the efficiency of the program is a good lower bound on the
 number of cells that must still be added to a state before it can
@@ -1501,6 +1516,126 @@ whose weight plus this bound exceeds $N$ is discarded.
 
 All bounds in this chapter count cells of $P^+$; each such cell has
 weight~2.
+
+@*1 Setup.
+
+[CLAUDE: This is a draft of a new setup for the lower-bound.
+For the moment, do not act on it, except for fixing typos and wording
+errors, and filling in question marks.]
+
+To turn the partial polyomino into a full polyomino that we want to
+count, we have to satisfy three conditions:
+\begin{enumerate}
+\item The components reaching the frontier must be connected to each
+  other.
+\item If the boundary has not been touched yet, it must be connected
+  to the boundary.
+\item Since we are counting only polyominoes whose height is at least
+  as large as the width, we may have to reach a higher row.
+\end{enumerate}
+We start by considering the first condition in isolation.
+
+@*2 Connecting the components to each other.
+
+
+\begin{lemma}\label{shortest}
+  Let $u<u'$ be two frontier cells (identifying cells with their
+  positions).
+  The shortest way to connect them via additional cells uses $u'-u-1$ cells,
+  with one exception:
+%
+  If $u'$ is at % the lower end of
+  the kink,  $u'-u+1$ cells are required.
+\end{lemma}
+\begin{proof}
+  A path between $u$ and $u'$ changes the column
+by $\pm1$ in every step, hence it needs at least one cell in each of the
+$g=u'-u-1$ columns strictly between $a$ and~$b$.
+
+If $u'$ is at % the bottom of the kink,
+the path must use the only cell
+adjacent to $u'$ above the frontier, at position $u'+1$, and to
+connect this cell to $u$ requires
+$(u'+1)-u-1$ cells, by the previous argument, in addition to the cell
+at $u'+1$.
+\end{proof}
+
+
+Two frontier cells $u,u'$ with $u'\ge u+1$ and no frontier cells in
+the interval between them form
+a \emph{gap}.
+
+\begin{lemma}
+  To connect the components to each other, it is sufficient to brigde
+  some
+  of the gaps, % between consecutive occupied frontier cells,
+  bridging each gap in the shortest possible way according to Lemma~\ref{shortest}
+\end{lemma}
+\begin{proof}
+  Take any set $C^+$ of additional cells above the frontier that, together with its mirror image
+  $C^-$, makes $P$ connected.
+Now, ``project'' $C^+$ downwards, moving each cell to the highest cell
+above the fontier in the same column.
+% It is easy to see that
+The 
+resulting set of cells $C^+_0$ remains connected, and it
+remains adjacent to the same frontier cells as before. (It may pick up
+additional frontier cells that it touches.)
+Its size does not increase (but the projection may collapse several
+cells to one.)
+
+Now it is easy to see that a cell in the same column $u$ as a frontier
+cell can be omitted, because
+any
+cells of $C^+_0$
+ adjacent to $u$ are already connected via the frontier cell
+(except when $u$ is at the kink position, a case
+that we treat afterwards).
+After omitting those useless cells, each cell lies in the interval
+between consecutive frontier cells $u$ and $u'$.
+If the cells in such an interval do not form a path
+between $u$ and $u'$, they serve no purpose and can be omitted without
+destroying any connectivity.
+What remains is a sequence of shortest paths between consecutive 
+frontier cells.
+
+If $u$ lies at the kink, the above argument must be modified:
+Lemma~\ref{shortest} tolerates 
+cells at column $u$ and $u+1$ % can be tolerated
+as
+part of a shortest path in $C^+_0$ connecting
+the frontier cell at $u$ to its predecessor.
+\end{proof}
+
+So the problem is reduced to deciding which gaps to fill.
+The nice feature of the diagonal lattice is that different gaps don't
+interfere with each other: The paths bridging the gaps lie in disjoint
+sets of columns, so their costs simply add up.
+
+Again there is the exception for the cell $u$
+at the lower end of the kink: The adjacent cell $u+1$
+above the frontier may be used to
+simultaneously bridge the gap to the previous and the successive
+occupied cell, thus saving one cell in this case.
+Since this is the only exception, we treat it by simply making a case
+distiction
+on the presence or absence of the cell $u+1$.
+
+The independence of the gaps is a great advantage of diagonal rows over horizontal rows:
+There, many cells can potentially serve such a dual purpose of
+connecting a frontier cell in both directions,
+and the evaluation of the optimal connection cost is tricky.
+In
+Knuth's program {\sc POLYNUM}~\cite[\S??]{polynum}, the discussion of
+the procedure for
+evaluating the connection cost takes ?? pages.
+
+
+
+
+.........
+[CLAUDE: End of draft]
+
 
 @ First, a state in which every component is floating can never be
 completed: whatever is attached to a component $X$ is attached in mirror
@@ -1587,7 +1722,7 @@ cycles are edge-disjoint, and it can be decomposed as follows.
 \item \emph{Pockets.}  Between two consecutive runs of the same component
   $X$ there may be components $C_1,\ldots,C_r$ (at the outermost level
   inside these two runs).  They can only be floating, and they
-  appear nowhere else.  The gaps $X$--$C_1$--$\cdots$--$C_r$--$X$
+  appear nowhere else.  The gaps $X$--$C_1$--$\,\cdots$--$C_r$--$X$
   form a cycle.  To connect everything, all gaps of the cycle except one
   must be bridged, and the cheapest way is to omit the largest gap.  The
   pockets inside each $C_j$ are independent of this.
