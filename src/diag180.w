@@ -403,25 +403,24 @@ $\le i$ and in row $v-1$ for the positions $>i$ (always only for the
 columns of the right parity).  These cells form the \emph{frontier}.
 The place where the frontier steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
-Formally, we define the kink position $k$ as the coordinate of the
+Formally, we define the \emph{kink position} $k$ as the coordinate of the
 midpoint of the two consecutive red downstepping edges. The cell at
 column
-$k-1$ was that last cell that was decided,
+$k-1$ was the last cell that was decided,
 the frontier steps down when it proceeds to column $k$,
 and the next cell to be
 decided is at column $k+1$.
-
-[CLAUDE:  Adapt the arrow in Fig.2
-Adapt the wording and program variables names.
-(But if this is not straightforward, tell me beforehand about the issues.)
-]
-
+Thus, the frontier cells at the positions $<k$ are in row~$v$, and the
+frontier cells at the positions $\ge k$ are in row $v-1$.
+When the last cell of a row has been decided, there is no kink: all
+frontier cells are in row~$v$.  In this case, $k$ is larger than the
+positions of all frontier cells.
 
 A frontier cell is dropped from the frontier as soon as both of its
 upper neighbors have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
 
-It is useful to imagine that we are simultanously building the
+It is useful to imagine that we are simultaneously building the
 polyomino downward from the center. Thus, there is a lower frontier,
 at the mirror position of the upper frontier, and if we decide to
 place a cell at the kink, its mirror will be placed below the lower frontier.
@@ -442,7 +441,7 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   \foreach \u/\l in {0/A,2/A,6/B} \node at (\u,6) {\color{white}$\l$};
   \foreach \u/\l in {7/B,11/C} \node at (\u,5) {\color{white}$\l$};
 %  \node[above] at (6,7.1) {$i$};
-  \draw[<-] (7.6,5.9)--(9,8.2) node[above] {kink at $k=7$};
+  \draw[<-] (7.15,6.3)--(8.6,8.2) node[above] {kink at $k=7$};
   \foreach \u in {0,2,...,12} \node[below] at (\u,1.8) {$\u$};
   \node[left] at (-1.8,6) {row $v$};
   \node[left] at (-1.8,5) {row $v-1$};
@@ -469,7 +468,7 @@ carry a common label.  A \emph{run} is a maximal block of
 consecutive positions that hold frontier cells.  Since the cells of a
 row occupy only every other position, and the cells in between have
 already left the frontier, most runs consist of a single cell; only at
-the kink, the positions $i$ and $i+1$ can both hold a frontier cell,
+the kink, the positions $k-1$ and $k$ can both hold a frontier cell,
 and these two cells are neighbors.  The frontier cells of a component form
 one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of component
 $A$ are two runs, and component $B$ has one run of two cells.)  Since the components are
@@ -884,8 +883,8 @@ For the state of Figure~\ref{fig:example}, the codes are shown above the
 picture.  Component~1 has two runs, at the positions 1 and~3
 (\texttt{F},~\texttt{L}).  Component~2 has three runs: at position~5
 (\texttt{F}), at position~7 (\texttt{M}), and at the positions 9 and~10
-(\texttt{L}, \texttt{C}), which are adjacent because the kink is between
-them.  The components 3 and~4 are single cells (\texttt{S}).
+(\texttt{L}, \texttt{C}), which are adjacent because the kink is at
+position~10.  The components 3 and~4 are single cells (\texttt{S}).
 Only 9 of the 17 positions can hold a frontier cell: the positions
 $1,3,5,7,9$ of the current row and the positions $10,12,14,16$ of the
 previous row.  Their codes \texttt{FLFMLCSES}
@@ -1519,16 +1518,12 @@ weight~2.
 
 @*1 Setup.
 
-[CLAUDE: This is a draft of a new setup for the lower-bound.
-For the moment, do not act on it, except for fixing typos and wording
-errors, and filling in question marks.]
-
 To turn the partial polyomino into a full polyomino that we want to
 count, we have to satisfy three conditions:
 \begin{enumerate}
 \item The components reaching the frontier must be connected to each
   other.
-\item If the boundary has not been touched yet, it must be connected
+\item If the boundary has not been touched yet, the polyomino must be connected
   to the boundary.
 \item Since we are counting only polyominoes whose height is at least
   as large as the width, we may have to reach a higher row.
@@ -1550,7 +1545,7 @@ We start by considering the first condition in isolation.
 \begin{proof}
   A path between $u$ and $u'$ changes the column
 by $\pm1$ in every step, hence it needs at least one cell in each of the
-$g=u'-u-1$ columns strictly between $a$ and~$b$.
+$g=u'-u-1$ columns strictly between $u$ and~$u'$.
 
 If $u'$ is at % the bottom of the kink,
 the path must use the only cell
@@ -1566,23 +1561,23 @@ the interval between them form
 a \emph{gap}.
 
 \begin{lemma}
-  To connect the components to each other, it is sufficient to brigde
+  To connect the components to each other, it is sufficient to bridge
   some
   of the gaps, % between consecutive occupied frontier cells,
-  bridging each gap in the shortest possible way according to Lemma~\ref{shortest}
+  bridging each gap in the shortest possible way according to Lemma~\ref{shortest}.
 \end{lemma}
 \begin{proof}
   Take any set $C^+$ of additional cells above the frontier that, together with its mirror image
   $C^-$, makes $P$ connected.
 Now, ``project'' $C^+$ downwards, moving each cell to the highest cell
-above the fontier in the same column.
+above the frontier in the same column.
 % It is easy to see that
 The 
 resulting set of cells $C^+_0$ remains connected, and it
 remains adjacent to the same frontier cells as before. (It may pick up
 additional frontier cells that it touches.)
 Its size does not increase (but the projection may collapse several
-cells to one.)
+cells to one).
 
 Now it is easy to see that a cell in the same column $u$ as a frontier
 cell can be omitted, because
@@ -1618,7 +1613,7 @@ above the frontier may be used to
 simultaneously bridge the gap to the previous and the successive
 occupied cell, thus saving one cell in this case.
 Since this is the only exception, we treat it by simply making a case
-distiction
+distinction
 on the presence or absence of the cell $u+1$.
 
 The independence of the gaps is a great advantage of diagonal rows over horizontal rows:
@@ -1626,15 +1621,13 @@ There, many cells can potentially serve such a dual purpose of
 connecting a frontier cell in both directions,
 and the evaluation of the optimal connection cost is tricky.
 In
-Knuth's program {\sc POLYNUM}~\cite[\S??]{polynum}, the discussion of
+Knuth's program {\sc POLYNUM}~\cite[\S\S19--52]{polynum}, the discussion of
 the procedure for
-evaluating the connection cost takes ?? pages.
+evaluating the connection cost takes 10 pages.
 
 
 
 
-.........
-[CLAUDE: End of draft]
 
 
 @ First, a state in which every component is floating can never be
@@ -1664,12 +1657,12 @@ rows: there, a single new cell can be adjacent to two frontier cells and
 to its successor in the row.
 
 There is one exception, \emph{at the kink} (Figure~\ref{fig:gap}).
-Suppose position $i$ has just been decided to be empty, and $b=i+1$ is a
-frontier cell in row $v-1$.  The upper neighbors of $b$ are the cell at
-position $i$ of row $v$, which is empty, and the cell at position $i+2$.
+Suppose $b$ is a frontier cell at the kink position, in row $v-1$, and
+the cell at position $b-1$ of row $v$ has just been decided to be empty.
+The upper neighbors of $b$ are this empty cell and the cell at position $b+1$.
 Hence a path from the left must pass over $b$ and come back to it from
 the right: it needs an additional cell in the column of $b$ itself
-(and one in column $i+2$, which we do not charge, because it might also
+(and one in column $b+1$, which we do not charge, because it might also
 be used for a connection to the right of~$b$).
 
 \begin{figure}[htb]
@@ -1698,12 +1691,11 @@ be used for a connection to the right of~$b$).
   \dc[new]{7}{7} \dc[new,fill=orange!30]{6}{8}
   \draw[very thick,red!80!black] (1,6)--(2,7)--(3,6)--(4,7)--(5,6)--(6,7)--(7,6)--(8,5)--(9,6);
   \node at (2,6) {$a$}; \node at (7,5) {$b$};
-  \node at (6,6) {$i$};
   \node[below] at (5,3) {(b) at the kink: one more cell};
 \end{scope}
 \end{tikzpicture}
 \caption{Connecting two frontier cells $a$ and $b$.  (a)~One cell per
-  column between them.  (b)~The cell $i$ left of $b$ has been decided
+  column between them.  (b)~The cell at the kink position is $b$: the cell left of $b$ has been decided
   empty, and $b$ is in the lower row: the path must cross the column of
   $b$ above it.  The last cell, drawn lighter, is not charged.}
 \label{fig:gap}
@@ -1841,18 +1833,17 @@ static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OP
 static int NUM_MIDDLE, MIDDLE_GAP[MAXW], MIDDLE_PEAK[MAXW], MIDDLE_SCORE[MAXW]; /* the middle cycle: largest gap, its peak and score */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
-static int CURRENT_POSITION; /* the position that was decided last */
+static int KINK_POSITION; /* the kink position: one more than the position that was decided last */
 
-@ The row of the frontier cell at position |j|:  The frontier cells up
-to the position that was decided last are in the current row, and
+@ The row of the frontier cell at position |j|:  The frontier cells
+left of the kink position are in the current row, and
 the others are in the row below.
 (This function is called only for positions that hold a frontier cell.)
 @<Sub...@>=
 static inline int frontier_row(int j)
 {
-    /* on entry: position |j| holds a frontier cell; |CURRENT_ROW| is the row that is being processed,
-       and |CURRENT_POSITION| is the position that was decided last */
-    return j <= CURRENT_POSITION ? CURRENT_ROW : CURRENT_ROW - 1;
+    /* on entry: position |j| holds a frontier cell; |CURRENT_ROW| is the row that is being processed */
+    return j < KINK_POSITION ? CURRENT_ROW : CURRENT_ROW - 1;
 }
 
 @ @<Sub...@>=
@@ -1883,7 +1874,7 @@ and at most $b-j$ rows above |row_b|, because a path changes the
 row by one when it moves to the next column.  We evaluate each of these cells at its
 highest possible row, which gives a lower bound on the cost.
 
-At the kink, where the path must cross the column of the right
+If $b$ is at the kink position, where the path must cross the column of the right
 frontier cell above this cell (Figure~\ref{fig:gap}b), the caller
 passes $b+2$ instead of~$b$.
 
@@ -2231,13 +2222,13 @@ calling the function |bound| of the program for these states.
 \end{figure}
 
 @*1 Putting the bound together.
-The parameter |kink| is the position of the frontier cell right of the
-kink, if the cell before it has been decided empty, and $-1$ otherwise.
+A gap whose right end $b$ is at the kink position needs one more cell.
+(In this case, the cell at position $b-1$ of the current row is empty,
+because otherwise it would form a run together with~$b$.)
 @<Sub...@>=
-static int cactus_bound(const state_t *state, int kink)
+static int cactus_bound(const state_t *state)
 {
-    /* on entry: |CURRENT_ROW| and |TARGET_ROW| have been set; |kink| is $-1$, or the position right of the kink
-       if that position holds a frontier cell and the position left of it does not */
+    /* on entry: |CURRENT_ROW|, |TARGET_ROW|, and |KINK_POSITION| have been set */
     const uint8_t *label = state->label;
     int touches = state->touches;
     @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
@@ -2295,10 +2286,10 @@ found, the pocket is closed and paid for.
         int component = run_label[j];
         if (j > 0) {
             int a = run_end[j - 1], b = run_start[j];
-            int gap = b - a - 1 + (b == kink);
-            /* at the kink the path ends one column beyond $b$: $g + 2$ cells */
-            int peak = (gap - 1 + (b == kink) + frontier_row(a) + frontier_row(b) + 2) / 2;
-            int score = touches ? 1 << 20 : gap_score(a, frontier_row(a), b == kink ? b + 2 : b, frontier_row(b));
+            int gap = b - a - 1 + (b == KINK_POSITION);
+            /* at the kink position the path ends one column beyond $b$: $g + 2$ cells */
+            int peak = (gap - 1 + (b == KINK_POSITION) + frontier_row(a) + frontier_row(b) + 2) / 2;
+            int score = touches ? 1 << 20 : gap_score(a, frontier_row(a), b == KINK_POSITION ? b + 2 : b, frontier_row(b));
             if (num_open_pockets) {
                 pocket_gap[num_pocket_gaps] = gap;
                 pocket_score[num_pocket_gaps] = score;
@@ -2487,15 +2478,14 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
         lowerbound = max(lowerbound, 2 * side_distance);
     }
     @<Return $-1$ if all components of |state| are floating@>@;
-    int kink = (!last_in_row && !label[i] && i + 1 < W && label[i + 1]) ? i + 1 : -1;
     CURRENT_ROW = FIRST_ROW + k - 1;
-    CURRENT_POSITION = i;
+    KINK_POSITION = i + 1; /* at the end of a row, no frontier cell is at this position or beyond */
     TARGET_ROW = FIRST_ROW + min_rows - 1;
     int connection_bound;
     if (USE_OLD_BOUND) {
         @<Set |connection_bound| to the old spanning tree bound@>@;
     } else
-        connection_bound = 2 * cactus_bound(state, kink);
+        connection_bound = 2 * cactus_bound(state);
     lowerbound = max(lowerbound, connection_bound);
     return lowerbound;
 }

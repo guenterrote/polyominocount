@@ -105,9 +105,9 @@ The code is part of the function |bound| below; the state is not empty.
     if (USE_OLD_BOUND) {
         @<Set |connection_bound| to the old spanning tree bound@>@;
     } else
-        connection_bound = 2 * cactus_bound(state, kink);
+        connection_bound = 2 * cactus_bound(state);
 @y
-    int connection_bound = 2 * cactus_bound(state, kink);
+    int connection_bound = 2 * cactus_bound(state);
 @z
 
 @x
