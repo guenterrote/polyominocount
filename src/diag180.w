@@ -1,4 +1,4 @@
-\documentclass[baseclass=article]{cweb-hy}
+\documentclass[baseclass=article]{cweb-hy-fix}
 \usepackage[a4paper,margin=2.2cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -6,7 +6,6 @@
 \usepackage{booktabs}
 \usepackage{tikz}
 \usepackage{hyperref}
-\usepackage{cweb-hyfix} % repairs links to changed sections; see cweb/cweb-hyfix.sty
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=magenta,urlcolor=blue}
 \pagestyle{myheadings}
 \renewcommand{\sectionmark}[1]{\markboth{}{#1}}

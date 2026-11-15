@@ -1,6 +1,9 @@
-% cweb-hyfix.sty: repairs the hyperlinks of the class cweb-hy
-% (cweb-hy.cls + cwbasehy.tex), without changing those files.
-% Load it after hyperref:  \usepackage{hyperref} \usepackage{cweb-hyfix}
+% cweb-hy-fix.cls: the class cweb-hy (cweb-hy.cls + cwbasehy.tex) with
+% repaired hyperlinks and commas in the index, without changing those
+% files. Use it instead of cweb-hy, with the same options:
+%   \documentclass[baseclass=article]{cweb-hy-fix}
+% hyperref may be loaded before or after; the link fixes are applied at
+% \begin{document}.
 %
 % Problems in cweb-hy:
 %
@@ -22,15 +25,21 @@
 % (3) The list of changed sections at the end ("\ch 60\*, 66\*, 74\*.")
 %     is typeset as ONE link whose name is the whole list.
 %
+% (4) In the index and in the section numbers after refinement names,
+%     the numbers are separated only by spaces ("argc: 102 103* 105*.");
+%     CWEB's plain macros (cwebmac) use commas.
+%
 % Fix: \hypertarget and \hyperlink delete \* and spaces from the names
 % (\cwebhyfix@strip@name); in addition, \hyperlink redirects
 % _hyperchunk_N to _hypersect_N (\cwebhyfix@normalize@name). So every
 % link to section N, changed or not, with or without C part, goes to the
 % start of section N. (The margin anchors _hyperchunk_N stay, but are no
 % longer used.) The list of changed sections gets one link per section.
+% \cweb@num@lnk is redefined to separate the numbers by commas.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{cweb-hyfix}[2026/11/15 hyperlink fixes for cweb-hy]
+\ProvidesClass{cweb-hy-fix}[2026/11/15 cweb-hy with repaired hyperlinks]
+\LoadClassWithOptions{cweb-hy}
 
 % cweb-hy names its macros with underscores (\cweb@changed_list), so _ is
 % a letter in this file; restored at the end.
@@ -115,6 +124,34 @@
                   {\ignorespaces\cwebhyfix@section@number}}.\par
     \endgroup}
 \fi
+
+% (4) Commas in number lists. \cweb@num@lnk{list, |} is called by
+% cweb-hy for the numbers of an index entry and of a refinement name; the
+% list has the form "n1, n2, ..., nk, |", where an item may be \[n]
+% (underlined: the identifier is defined in section n) and n may carry
+% the change flag \*. Same as the original \cweb@num@lnk in cwbasehy.tex,
+% but with ", " instead of a space between the items.
+\def\cweb@num@lnk #1, #2|{%
+    \begingroup
+    \def\[##1]{}%
+    \expandafter\def\expandafter\next\expandafter{#1}%
+    \ifx\next\empty   % #1 has the form \[n]
+        \global\@lbracket@true
+    \else
+        \global\@lbracket@false
+    \fi
+    \endgroup
+    \if@lbracket@
+        \hyper@i#1%
+    \else
+        \hyperlink{_hyperchunk_#1}{#1}%
+    \fi
+    \@lbracket@false
+    \edef\next{#2}%
+    \ifx\next\empty
+    \else
+        , \cweb@@num@lnk #2|%
+    \fi}
 
 \cwebhyfix@restore@underscore
 \endinput
