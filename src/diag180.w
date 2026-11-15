@@ -1,4 +1,4 @@
-\documentclass[baseclass=article]{cweb-hy}
+\documentclass[baseclass=article]{cweb-hy-fix}
 \usepackage[a4paper,margin=2.2cm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
