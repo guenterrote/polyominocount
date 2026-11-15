@@ -36,7 +36,8 @@ test: build/redelmeier build/diag180 build/diag180p
 # "make doc" produces doc/diag180.pdf and doc/diag180p.pdf (needs cweave,
 # pdflatex and bibtex with the style plainurl; the bibliography is
 # src/diag180.bib; the LaTeX class cweb-hy is in cweb/, together with
-# cweb-hy-fix.cls, which loads cweb-hy and repairs its hyperlinks).
+# cweb-hy-fix.cls, which loads cweb-hy and repairs its hyperlinks;
+# cweb-hy-fixed.cls is the same as one stand-alone modified copy of cweb-hy.cls).
 tangle:
 	cd src && ctangle diag180.w - diag180.c
 	cd src && ctangle diag180.w production.ch diag180p.c

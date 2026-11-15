@@ -29,6 +29,15 @@
 %     the numbers are separated only by spaces ("argc: 102 103* 105*.");
 %     CWEB's plain macros (cwebmac) use commas.
 %
+% (5) An underlined index number (section where the identifier is
+%     defined) is typeset in math mode, $\underline{103\*}$, so the change
+%     flag * of a changed section comes out as a centered math asterisk,
+%     not as the raised text asterisk of the other numbers.
+%
+% (6) In a refinement name <Parse the command line 103\*> the change
+%     flag is invisible: there \* has its LaTeX meaning (a discretionary
+%     multiplication sign), while cwebmac shows "103*".
+%
 % Fix: \hypertarget and \hyperlink delete \* and spaces from the names
 % (\cwebhyfix@strip@name); in addition, \hyperlink redirects
 % _hyperchunk_N to _hypersect_N (\cwebhyfix@normalize@name). So every
@@ -36,6 +45,8 @@
 % start of section N. (The margin anchors _hyperchunk_N stay, but are no
 % longer used.) The list of changed sections gets one link per section.
 % \cweb@num@lnk is redefined to separate the numbers by commas.
+% \CwebIndexDeclared underlines only the number and sets the change flag
+% after it in text mode. \CwebRefNumber shows \* as the change flag.
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{cweb-hy-fix}[2026/11/15 cweb-hy with repaired hyperlinks]
@@ -152,6 +163,21 @@
     \else
         , \cweb@@num@lnk #2|%
     \fi}
+
+% (6) The section numbers of a refinement name, with visible change flag.
+% Same as \CwebRefNumber in cwbasehy.tex, plus \let\* (local to the group).
+\def\CwebRefNumber#1{%
+    {\reset@font \footnotesize \kern .5em\let\*\cwbb@change_flag
+     \cweb@num@lnk#1, |}%
+    }
+
+% (5) \CwebIndexDeclared is \[ in the index: \[103\*] or \[102].
+% It is called as \cwebhyfix@underline@number<n>\*\cwebhyfix@end, so #2
+% is \* if <n> carries the change flag, and empty otherwise.
+\def\CwebIndexDeclared#1]{\cwebhyfix@underline@number#1\*\cwebhyfix@end}
+\def\cwebhyfix@underline@number#1\*#2\cwebhyfix@end{%
+  $\underline{\hbox{#1}}$%
+  \if\relax\detokenize{#2}\relax\else\*\fi}
 
 \cwebhyfix@restore@underscore
 \endinput
