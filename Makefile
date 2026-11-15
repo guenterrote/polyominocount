@@ -40,7 +40,7 @@ tangle:
 	cd src && ctangle diag180.w - diag180.c
 	cd src && ctangle diag180.w production.ch diag180p.c
 
-LATEX = TEXINPUTS=../cweb: pdflatex -interaction=nonstopmode -halt-on-error
+LATEX = TEXINPUTS=../src:../cweb: pdflatex -interaction=nonstopmode -halt-on-error
 
 doc:
 	mkdir -p doc

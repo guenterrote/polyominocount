@@ -5,6 +5,8 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=magenta,urlcolor=blue}
 \pagestyle{myheadings}
@@ -2978,6 +2980,52 @@ The counts of the two states then accumulate in the same list
 automatically.  The lower bound is computed for the state that arrives first;
 at the end of a row, there is no kink, and the bound makes no
 difference between left and right.
+
+Figure~\ref{fig:reflection} shows the effect for a typical strip.
+At the end of every row, the number of states drops to one half of the number
+without merging (to 50.2--50.7\,\%; the symmetric states have no partner
+to merge with).  Within the next row, the two curves do not meet again:
+the number of states rises only to about two thirds of the number
+without merging, because the states in the middle of a row are the successors of only half of the states.
+The first row starts from the initial states, which are not merged.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=14cm, height=6.5cm, xmin=0, xmax=68, ymin=0, ymax=62000,
+  xtick={10,19,29,38,48,57,67}, xticklabels={1,2,3,4,5,6,7}, xmajorgrids,
+  xlabel={end of row $k$}, ylabel={states},
+  scaled y ticks=false, yticklabel style={/pgf/number format/fixed,/pgf/number format/1000 sep={\,}},
+  legend pos=north east, legend cell align=left]
+  \addplot[thick, blue, mark=*, mark size=1pt] coordinates {
+      (1,62) (2,123) (3,243) (4,478) (5,933) (6,1603) (7,2693) (8,4417)
+      (9,7069) (10,5329) (11,7904) (12,10517) (13,13883) (14,17847) (15,22088) (16,24304)
+      (17,27066) (18,28702) (19,17151) (20,20807) (21,27492) (22,30146) (23,31074) (24,31958)
+      (25,32543) (26,31237) (27,30418) (28,29618) (29,19191) (30,23232) (31,27758) (32,27645)
+      (33,27589) (34,26667) (35,25646) (36,24473) (37,24387) (38,13472) (39,15567) (40,20457)
+      (41,23254) (42,24458) (43,23787) (44,22831) (45,21681) (46,21154) (47,21134) (48,14936)
+      (49,18271) (50,22286) (51,23753) (52,23685) (53,23052) (54,22234) (55,21385) (56,21354)
+      (57,12186) (58,14262) (59,19118) (60,21415) (61,21819) (62,21598) (63,20854) (64,19705)
+      (65,19250) (66,18684) (67,13957)};
+  \addlegendentry{with merging}
+  \addplot[thick, red!80!black, densely dashed, mark=o, mark size=1pt] coordinates {
+      (1,62) (2,123) (3,243) (4,478) (5,933) (6,1603) (7,2693) (8,4417)
+      (9,7069) (10,10505) (11,13742) (12,17237) (13,22301) (14,28823) (15,36084) (16,40123)
+      (17,44675) (18,46997) (19,34022) (20,44639) (21,45105) (22,45310) (23,45888) (24,46959)
+      (25,48754) (26,46632) (27,45832) (28,42169) (29,38223) (30,41166) (31,42462) (32,41107)
+      (33,40819) (34,39435) (35,37696) (36,36088) (37,35072) (38,26803) (39,33939) (40,35710)
+      (41,36381) (42,36810) (43,35633) (44,34285) (45,32985) (46,32738) (47,31256) (48,29775)
+      (49,32362) (50,34578) (51,35046) (52,34478) (53,33413) (54,32395) (55,31475) (56,31340)
+      (57,24272) (58,31161) (59,33388) (60,33963) (61,33319) (62,32554) (63,31740) (64,30461)
+      (65,30921) (66,28423) (67,27855)};
+  \addlegendentry{without merging (\texttt{-R})}
+\end{axis}
+\end{tikzpicture}
+\caption{The number of states after every cell in the first seven rows, for
+  $N=44$, center type~C, $W=19$, with and without the merging of mirror
+  states.  The vertical lines mark the ends of the rows.}
+\label{fig:reflection}
+\end{figure}
 
 It would not be correct to go through the finished table, keep the smaller state of each pair,
 and double its counts.  This would work at the first row where the
