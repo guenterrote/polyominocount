@@ -6,6 +6,7 @@
 \usepackage{booktabs}
 \usepackage{tikz}
 \usepackage{hyperref}
+\usepackage{cweb-hyfix} % repairs links to changed sections; see cweb/cweb-hyfix.sty
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=magenta,urlcolor=blue}
 \pagestyle{myheadings}
 \renewcommand{\sectionmark}[1]{\markboth{}{#1}}
