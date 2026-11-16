@@ -493,6 +493,23 @@ part, but it need not touch the upper frontier.  There are three possibilities:
   \emph{floating} component: it lives on the upper side only and does not
   reach the lower frontier, and its image touches only the lower frontier.
 \end{itemize}
+\label{sec:crossing}%
+Call a component \emph{crossing} if it is central or paired, that is, if
+it is not floating.  The union of the frontier and its image under $\rhoo$ is a
+closed curve around the known part of~$P$ (think of a disk), and a
+crossing component together with its partner connects the frontier with the
+image of the frontier across this disk.  Two such connections cannot
+cross each other, and $\rhoo$ reverses the order along the frontier.
+Consequently, the crossing components, read from left to right, form one
+nested chain
+$$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
+where the central component $Z$ is present in the middle if and only if the
+number of crossing components is odd.  In particular, there is at most one
+central component.  Thus the $j$-th crossing component from the left is the partner
+of the $j$-th crossing component from the right: the partner relation is
+determined by the set of crossing components.  In the packed key
+(Section~\ref{sec:packed}), it is therefore enough to mark which components are crossing.
+
 When two components $X$ and $Y$ are joined by a new cell, their images are
 joined as well, by the image of that cell.  This is why the type of
 each component and the partner relation must be part of the state: if $X$
@@ -683,12 +700,10 @@ there may be one label more than in a canonical key.
 All operations are simple sweeps over the positions.
 
 @d MAXLAB (MAXW + 2) /* bound on the labels in the working arrays */
+@d is_central(partner, a) ((partner)[a] == (a))
+@d is_floating(partner, a) ((partner)[a] == 0)
+@d is_paired(partner, a) ((partner)[a] != 0 && (partner)[a] != (a))
 @<Sub...@>=
-static inline int is_central(const uint8_t *partner, int a) { @+ return partner[a] == a; @+ }
-static inline int is_floating(const uint8_t *partner, int a) {  @+return partner[a] == 0; @+}
-static inline int is_paired(const uint8_t *partner, int a)
-{ @+ return partner[a] != 0 && partner[a] != a; @+}
-
 static inline void relabel(uint8_t *label, int from, int to)
 {
     for (int j = 0; j < W; j++)
@@ -741,7 +756,7 @@ static void join(uint8_t *label, uint8_t *partner, int a, int b)
 @ The canonical state is obtained by renumbering the components from
 left to right.
 @<Sub...@>=
-static void canonical_state(const uint8_t *label, const uint8_t *partner, int touches, state_t *result)
+static void make_state_canonical(const uint8_t *label, const uint8_t *partner, int touches, state_t *result)
 {
     /* on entry: the labels are arbitrary numbers below |MAXLAB|, not necessarily consecutive;
        |partner| is valid for the labels that occur, and the partner of such a label occurs, too */
@@ -841,7 +856,7 @@ static int step(const state_t *state, int i, int occupied, int last_in_row, stat
         status = retire(label, partner, i + 1);
     if (status != OK)
         return status;
-    canonical_state(label, partner, state->touches || (occupied && (i == 0 || i == W - 1)), result);
+    make_state_canonical(label, partner, state->touches || (occupied && (i == 0 || i == W - 1)), result);
     return OK;
 }
 
@@ -882,6 +897,11 @@ since only component~3
 is floating.  They are followed by the touched bit~1.
 These are $3\cdot9+1=28$ bits, or 4 bytes.
 
+@d CROSSING_OFFSET 4 /* added to |C_SINGLETON| and |C_FIRST| for a crossing component */
+@<Type...@>=
+enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST,
+       C_SINGLETON_CROSSING = C_SINGLETON + CROSSING_OFFSET, C_FIRST_CROSSING = C_FIRST + CROSSING_OFFSET };
+
 @*1 The length of a key.
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
 of valid sequences of the five codes other than |C_CONTINUE| for $m$
@@ -904,50 +924,6 @@ and not in larger units, in order to waste no space by rounding.
 
 @<Glob...@>=
 static int BYTES_PER_KEY; /* length of a packed key */
-
-@ @<Type...@>=
-enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST, C_SINGLETON_CROSSING, C_FIRST_CROSSING };
-
-@*1 Why it is enough to mark the crossing components.
-\label{sec:crossing}
-Call a component \emph{crossing} if it is central or paired, that is, if
-it is not floating.  The union of the frontier and its image under $\rhoo$ is a
-closed curve around the known part of~$P$ (think of a disk), and a
-crossing component together with its partner connects the frontier with the
-image of the frontier across this disk.  Two such connections cannot
-cross each other, and $\rhoo$ reverses the order along the frontier.
-Consequently, the crossing components, read from left to right, form one
-nested chain
-$$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
-where the central component $Z$ is present in the middle if and only if the
-number of crossing components is odd.  In particular, there is at most one
-central component.  Thus the $j$-th crossing component from the left is the partner
-of the $j$-th crossing component from the right, and it suffices to know
-\emph{which} components are crossing.
-
-@ Bit strings are written and read with two small routines.  No field
-has more than 3 bits, so that a field extends over at most two bytes.
-Each bytes is filled from right to left.
-@<Sub...@>=
-static inline void put_bits(uint8_t *bytes, int *bit_position, int value, int num_bits)
-{
-    /* on entry: the bytes have been cleared, and |value| has at most |num_bits| bits, |num_bits| $\le8$ */
-    int byte = *bit_position >> 3, offset = *bit_position & 7;
-    bytes[byte] |= value << offset;
-    if (offset + num_bits > 8)
-        bytes[byte + 1] |= value >> (8 - offset);
-    *bit_position += num_bits;
-}
-
-static inline int get_bits(const uint8_t *bytes, int *bit_position, int num_bits)
-{
-    int byte = *bit_position >> 3, offset = *bit_position & 7;
-    int value = bytes[byte] >> offset;
-    if (offset + num_bits > 8)
-        value |= bytes[byte + 1] << (8 - offset);
-    *bit_position += num_bits;
-    return value & ((1 << num_bits) - 1);
-}
 
 @*1 Encoding and decoding.
 Packing and unpacking are done in two steps.  The intermediate form
@@ -1040,49 +1016,90 @@ parity, to the right of |decided_position|.  (The cell at
 $|decided_position|-1$ has just been retired.)  All other positions are
 empty, and we don't store their codes.  At the end of a row, and for the first row,
 |decided_position| is the last position of the row.
-@d can_hold_frontier_cell(j, decided_position)
-   (((((j) ^ (decided_position)) & 1) != 0) == ((j) > (decided_position)))
+Thus the positions that can hold a frontier cell are obtained by two loops with step~2:
+from $|decided_position| \bmod 2$ up to |decided_position|, and from
+$|decided_position|+1$ up to $W-1$.  Together they go from left to right.
 
 @*1 Compaction into a bit string.
 This is the second step of packing, and its reverse.
 The flag of a crossing component is merged into the code at the position where the
-component appears for the first time, by adding~4 to the code.
+component appears for the first time, by adding |CROSSING_OFFSET| to the code.
 (An earlier version of the program stored one extra bit per component instead.)
+
+@ Bit strings are written and read with two small routines.  No field
+has more than 3 bits, so that a field extends over at most two bytes.
+Each bytes is filled from right to left.
 @<Sub...@>=
+static inline void put_bits(uint8_t *bytes, int *bit_position, int value, int num_bits)
+{
+    /* on entry: the bytes have been cleared, and |value| has at most |num_bits| bits, |num_bits| $\le8$ */
+    int byte = *bit_position >> 3, offset = *bit_position & 7;
+    bytes[byte] |= value << offset;
+    if (offset + num_bits > 8)
+        bytes[byte + 1] |= value >> (8 - offset);
+    *bit_position += num_bits;
+}
+
+static inline int get_bits(const uint8_t *bytes, int *bit_position, int num_bits)
+{
+    int byte = *bit_position >> 3, offset = *bit_position & 7;
+    int value = bytes[byte] >> offset;
+    if (offset + num_bits > 8)
+        value |= bytes[byte + 1] << (8 - offset);
+    *bit_position += num_bits;
+    return value & ((1 << num_bits) - 1);
+}
+
+@ @<Sub...@>=
 static void compact(const coded_t *coded, int decided_position, uint8_t *bytes)
 {
-    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY| */
     int pos = 0, num_components = 0;
     memset(bytes, 0, BYTES_PER_KEY);
-    for (int i = 0; i < W; i++)
-        if (can_hold_frontier_cell(i, decided_position)) {
-            int code = coded->code[i];
-            if (code == C_SINGLETON || code == C_FIRST) {
-                num_components += 1;
-                code += 4 * coded->crossing[num_components]; /* results in |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
-            }
-            put_bits(bytes, &pos, code, 3);
-        }
+    for (int i = decided_position & 1; i <= decided_position; i += 2) {
+        @<Compute the 3-bit |code| for position |i|@>@;
+        put_bits(bytes, &pos, code, 3);
+    }
+    for (int i = decided_position + 1; i < W; i += 2) {
+        @<Compute the 3-bit |code| for position |i|@>@;
+        put_bits(bytes, &pos, code, 3);
+    }
     put_bits(bytes, &pos, coded->touches, 1);
 }
 
+@ The components are counted from left to right, in the order of their
+first runs, like their labels.
+@<Compute the 3-bit |code| for position |i|@>=
+        int code = coded->code[i];
+        if (code == C_SINGLETON || code == C_FIRST) {
+            num_components++;
+            code += CROSSING_OFFSET * coded->crossing[num_components]; /* results in |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
+        }
+
+@ The positions that cannot hold a frontier cell are set to |C_EMPTY|
+first.  They are needed, because |decode| and the comparison with the mirror image
+(Section~\ref{sec:reflection}) look at all positions.
+@<Sub...@>=
 static void expand(const uint8_t *bytes, int decided_position, coded_t *coded)
 {
     int pos = 0, num_components = 0;
-    for (int i = 0; i < W; i++) {
-        if (can_hold_frontier_cell(i, decided_position)) {
-            int code = get_bits(bytes, &pos, 3);
-            int crossing = code >= C_SINGLETON_CROSSING;
-            code -= 4 * crossing;
-            if (code == C_SINGLETON || code == C_FIRST)
-                coded->crossing[++num_components] = crossing;
-            coded->code[i] = code;
-        } else
-            coded->code[i] = C_EMPTY;
+    memset(coded->code, C_EMPTY, W);
+    for (int i = decided_position & 1; i <= decided_position; i += 2) {
+        @<Decode the 3-bit code for position |i|@>@;
+    }
+    for (int i = decided_position + 1; i < W; i += 2) {
+        @<Decode the 3-bit code for position |i|@>@;
     }
     coded->num_components = num_components;
     coded->touches = get_bits(bytes, &pos, 1);
 }
+
+@ @<Decode the 3-bit code for position |i|@>=
+        int code = get_bits(bytes, &pos, 3);
+        int crossing = code >= C_SINGLETON_CROSSING;
+        code -= CROSSING_OFFSET * crossing;
+        if (code == C_SINGLETON || code == C_FIRST)
+            coded->crossing[++num_components] = crossing;
+        coded->code[i] = code;
 
 @ @<Sub...@>=
 static void pack(const state_t *s, int decided_position, uint8_t *bytes)
@@ -2928,7 +2945,7 @@ central component.  The weight is the number of cells.
                 if (label[i])
                     partner[label[i]] = label[W - 1 - i]; /* the cell itself at the center */
             if (num_cells + 2 * min_rows <= NMAX) {
-                canonical_state(label, partner, label[0] != 0, &new_state);
+                make_state_canonical(label, partner, label[0] != 0, &new_state);
                 size_t target_state = table_find_or_create(current, &new_state);
                 current->first_record[target_state] = new_record(current, num_cells, 1, 0);
             }
@@ -3114,6 +3131,7 @@ is switched off.
                 print_status_line("#cell", k, v, cell_number + 1, num_row_cells, current, next);
 
 @*1 Reflection.
+\label{sec:reflection}
 If $M_u=0$, the strip is symmetric under $u\to-u$, and at the end of a row
 the mirror image of a state is again a valid state with the same
 numbers of completions.  We merge each state with its mirror image by
