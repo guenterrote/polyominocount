@@ -923,6 +923,7 @@ number of crossing components is odd.  In particular, there is at most one
 central component.  Thus the $j$-th crossing component from the left is the partner
 of the $j$-th crossing component from the right, and it suffices to know
 \emph{which} components are crossing.
+ [CLAUDE: should be reworded, or removed from the production version:]
 With the option \texttt{-C}, the program checks for every state that
 unpacking the packed key gives back the original state.  We have run
 this check for $N\le 30$.
@@ -1692,8 +1693,6 @@ evaluating the connection cost takes 10 pages.
 
 
 
-
-
 @ First, a state in which every component is floating can never be
 completed: whatever is attached to a component $X$ is attached in mirror
 image to $\rhoo(X)$, which is out of reach, so $X$ and $\rhoo(X)$ can
@@ -1765,15 +1764,33 @@ be used for a connection to the right of~$b$).
 \label{fig:gap}
 \end{figure}
 
-@*1 The cactus of gaps.
-Which gaps between consecutive runs have to be bridged?  We must
+@*1 Deciding which gaps to bridge.
+We must
 eventually connect all components, where a component and its partner count as
 the same object (if $X$ is connected to $Y$ then $\rhoo X$ is connected
-to $\rhoo Y$).  Consider the graph whose nodes are the components, with
+to $\rhoo Y$).  Consider the graph $G$ whose nodes are the components, with
 partners identified, and with an edge for each gap between consecutive
-runs.  Because components do not cross and because of the nested chain
-structure of the crossing components, this graph is a \emph{cactus}: its
-cycles are edge-disjoint, and it can be decomposed as follows.
+runs.
+The edges represent the potential bridges over gaps, and we
+want so select a minimum-cost set of bridges connecting all
+components, i.e., a minimum spanning tree of $G$.
+Because components do not cross and because of the nested chain
+structure of the crossing components, we will see that $G$ has a special structure
+In graph-theoretic terms, it
+% this graph
+is a \emph{cactus} (multi-)graph, a graph where every edge
+belongs to at most one cycle.
+%its cycles are edge-disjoint, and
+A minimum spanning tree of $G$ is obtained by deleting the heaviest
+edge of each cycle.
+
+$G$ can be decomposed as follows.
+[CLAUDE: Recall from \S3.2 the notation for the crossing components,
+and the nested chain that they form. insert a copy of Fig.3 and label its components in accordance
+with the following discussion. What is the meaning of a ring? This term (jargon?)
+has not
+been introduced. What are alternative more descriptive terms? crossing pair (of components)? ]
+
 \begin{itemize}
 \item \emph{Pockets.}  Between two consecutive runs of the same component
   $X$ there may be components $C_1,\ldots,C_r$ (at the outermost level
@@ -3045,7 +3062,7 @@ The first row starts from the initial states, which are not merged.
 \begin{figure}[htb]
 \centering
 \begin{tikzpicture}
-\begin{axis}[width=16.5cm, height=7cm, xmin=0, xmax=166, ymin=0,
+\begin{axis}[width=16.3cm, height=7cm, xmin=0, xmax=166, ymin=0,
   xtick={8, 15, 23, 30, 38, 45, 53, 60, 68, 75, 83, 90, 98,
     105, 113, 120, 128, 135, 143, 150, 158, 165},
   xticklabels={1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
