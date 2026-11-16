@@ -29,10 +29,12 @@
 %     the numbers are separated only by spaces ("argc: 102 103* 105*.");
 %     CWEB's plain macros (cwebmac) use commas.
 %
-% (5) An underlined index number (section where the identifier is
-%     defined) is typeset in math mode, $\underline{103\*}$, so the change
-%     flag * of a changed section comes out as a centered math asterisk,
-%     not as the raised text asterisk of the other numbers.
+% (5) In the index, the change flag * takes space before the following
+%     comma or period, and at an underlined number (section where the
+%     identifier is defined), $\underline{103\*}$, it is a centered math
+%     asterisk. cwebmac lets \* be \lapstar = \rlap{*} in the index: the
+%     star overlaps the comma or period, and inside the \rlap box it is a
+%     raised text asterisk outside the underline.
 %
 % (6) In a refinement name <Parse the command line 103\*> the change
 %     flag is invisible: there \* has its LaTeX meaning (a discretionary
@@ -45,8 +47,8 @@
 % start of section N. (The margin anchors _hyperchunk_N stay, but are no
 % longer used.) The list of changed sections gets one link per section.
 % \cweb@num@lnk is redefined to separate the numbers by commas.
-% \CwebIndexDeclared underlines only the number and sets the change flag
-% after it in text mode. \CwebRefNumber shows \* as the change flag.
+% \CwebIndexEntry sets \* to \rlap{*} as in cwebmac. \CwebRefNumber
+% shows \* as the change flag.
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{cweb-hy-fix}[2026/11/15 cweb-hy with repaired hyperlinks]
@@ -171,13 +173,16 @@
      \cweb@num@lnk#1, |}%
     }
 
-% (5) \CwebIndexDeclared is \[ in the index: \[103\*] or \[102].
-% It is called as \cwebhyfix@underline@number<n>\*\cwebhyfix@end, so #2
-% is \* if <n> carries the change flag, and empty otherwise.
-\def\CwebIndexDeclared#1]{\cwebhyfix@underline@number#1\*\cwebhyfix@end}
-\def\cwebhyfix@underline@number#1\*#2\cwebhyfix@end{%
-  $\underline{\hbox{#1}}$%
-  \if\relax\detokenize{#2}\relax\else\*\fi}
+% (5) An index entry; same as \CwebIndexEntry in cweb-hy.cls, but with
+% the change flag in an \rlap (\cwbb@lap_change_flag, as cwebmac's
+% \lapstar). The \let is local to the index, which binds \* anyway.
+\def\CwebIndexEntry#1, #2.{%
+    \par
+    \hangindent\CwebNumberListHangindent
+    \leavevmode
+    \let\*\cwbb@lap_change_flag
+    \cwbb@check_dot{#1}:\quad\cweb@num@lnk#2, |.
+    }
 
 \cwebhyfix@restore@underscore
 \endinput
