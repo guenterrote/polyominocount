@@ -862,7 +862,7 @@ static int step(const state_t *state, int i, int occupied, int last_in_row, stat
 
 @* Packed keys.
 \label{sec:packed}
-The unpacked states are convenient but wasteful.  In the tables, a state is
+The unpacked states are convenient for processing, but wasteful.  In the tables, a state is
 stored as a bit string of |BYTES_PER_KEY| bytes:
 \begin{itemize}
 \item 3 bits for each position that can hold a frontier cell, with one of the following eight codes 0--7:
@@ -1009,7 +1009,7 @@ static void encode(const state_t *s, coded_t *coded)
         else
             coded->code[i] = last_run[lab] == i ? C_LAST : C_MIDDLE;
     }
-    coded->crossing[0] = 0; /* not used, but |compress| looks at it */
+    coded->crossing[0] = 0; /* not used, but |compact| looks at it [CLAUDE: Is this true] */
     for (int j = 1; j <= num_components; j++)
         coded->crossing[j] = s->partner[j] != 0;
     coded->num_components = num_components;
@@ -1058,11 +1058,12 @@ parity, to the right of |decided_position|.  (The cell at
 $|decided_position|-1$ has just been retired.)  All other positions are
 empty, and we don't store their codes.  At the end of a row, and for the first row,
 |decided_position| is the last position of the row.
+[Claude: Can this be converted to a (CWEB) macro?]
 @<Sub...@>=
 static inline int can_hold_frontier_cell(int j, int decided_position)
-{
+{ @+
     return (((j ^ decided_position) & 1) != 0) == (j > decided_position);
-}
+@+}
 
 @*1 Compaction into a bit string.
 This is the second step of packing, and its reverse.
@@ -1070,7 +1071,7 @@ The flag of a crossing component is merged into the code at the position where t
 component appears for the first time, by adding~4 to the code.
 (An earlier version of the program stored one extra bit per component instead.)
 @<Sub...@>=
-static void compress(const coded_t *coded, int decided_position, uint8_t *bytes)
+static void compact(const coded_t *coded, int decided_position, uint8_t *bytes)
 {
     /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY|; |coded->crossing[0]| is 0 */
     int pos = 0, num_components = 0;
@@ -1078,9 +1079,11 @@ static void compress(const coded_t *coded, int decided_position, uint8_t *bytes)
     for (int i = 0; i < W; i++)
         if (can_hold_frontier_cell(i, decided_position)) {
             int code = coded->code[i];
-            int is_first = (code == C_SINGLETON) | (code == C_FIRST);
-            num_components += is_first;
-            code += 4 * (is_first & coded->crossing[num_components]); /* |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
+            if (code == C_SINGLETON || code == C_FIRST) {
+            num_components += 1;
+            code += 4 * coded->crossing[num_components]; /*
+            results in |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
+            }
             put_bits(bytes, &pos, code, 3);
         }
     put_bits(bytes, &pos, coded->touches, 1);
@@ -1090,12 +1093,16 @@ static void expand(const uint8_t *bytes, int decided_position, coded_t *coded)
 {
     int pos = 0, num_components = 0;
     for (int i = 0; i < W; i++) {
-        int code = can_hold_frontier_cell(i, decided_position) ? get_bits(bytes, &pos, 3) : C_EMPTY;
-        int crossing = code >= C_SINGLETON_CROSSING;
-        code -= 4 * crossing;
+        if (can_hold_frontier_cell(i, decided_position)) {
+	  int code = get_bits(bytes, &pos, 3);
+	  int crossing = code >= C_SINGLETON_CROSSING;
+	  code -= 4 * crossing;
         if (code == C_SINGLETON || code == C_FIRST)
             coded->crossing[++num_components] = crossing;
         coded->code[i] = code;
+	}
+	else
+        coded->code[i] = C_EMPTY;
     }
     coded->num_components = num_components;
     coded->touches = get_bits(bytes, &pos, 1);
@@ -1106,7 +1113,7 @@ static void pack(const state_t *s, int decided_position, uint8_t *bytes)
 {
     coded_t coded;
     encode(s, &coded);
-    compress(&coded, decided_position, bytes);
+    compact(&coded, decided_position, bytes);
 }
 
 static void unpack(const uint8_t *bytes, int decided_position, state_t *s)
@@ -1398,7 +1405,7 @@ static size_t HASH_SLOT;
 
 static size_t table_find(const table_t *t, const uint8_t *packed_key)
 {
-    /* on entry: the table is being built; unused bits of |packed_key| are zero, so that equal states have equal keys */
+    /* the table is being built; unused bits of |packed_key| are zero, so that equal states have equal keys */
     size_t slot = hash_of_key(packed_key) & t->hash_mask;
     while (t->hash[slot]) {
         size_t i = t->hash[slot] - 1;
@@ -1412,7 +1419,7 @@ static size_t table_find(const table_t *t, const uint8_t *packed_key)
 
 static size_t table_create(table_t *t, const uint8_t *packed_key)
 {
-    /* on entry: the preceding operation on this table was an unsuccessful |table_find| for the same key */
+    /* the preceding operation on this table was an unsuccessful |table_find| for the same key */
     size_t slot = HASH_SLOT;
     if (t->num_states == t->state_capacity) {
         @<Double the capacity of table |t| and rehash all states@>@;
@@ -1430,6 +1437,7 @@ static size_t table_create(table_t *t, const uint8_t *packed_key)
 
 @ The function |pack_and_check| packs a state.  With the option \texttt{-C},
 it checks that unpacking gives the state back.
+  [CLAUDE: remove the -C option from the production version]
 @<Sub...@>=
 static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
 {
@@ -1541,6 +1549,20 @@ count, we have to satisfy three conditions:
 \item Since we are counting only polyominoes whose height is at least
   as large as the width, we may have to reach a higher row.
 \end{enumerate}
+In graph-theoretic terms, this is a \emph{Group Steiner Tree} problem.
+ The top row can be one of the groups to be connected;
+another one can be formed by the left and right side, taken together as
+one group.
+
+% https://cs.stackexchange.com/questions/51877/%
+%connecting-an-unconnected-forest-of-subtrees-in-a-graph
+% Misra, N., Philip, G., Raman, V., Saurabh, S., & Sikdar,
+% S. (2012). FPT algorithms for connected feedback vertex set. Journal
+% of combinatorial optimization, 24(2), 131-146.
+% DOI 10.1007/s10878-011-9394-2
+% https://arxiv.org/pdf/0909.3180
+% p 4-5
+
 We start by considering the first condition in isolation.
 
 @*2 Connecting the components to each other.
@@ -1567,6 +1589,43 @@ connect this cell to $u$ requires
 $(u'+1)-u-1$ cells, by the previous argument, in addition to the cell
 at $u'+1$.
 \end{proof}
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia]
+  \foreach \v in {4,...,8} \foreach \u in {1,...,9} {
+    \pgfmathparse{int(mod(\v+\u,2))}
+    \ifnum\pgfmathresult=0
+      \ifnum\v<6 \dc[emp]{\v}{\u} \else \dc[und]{\v}{\u}\fi
+    \fi }
+  \foreach \u in {2,4} {\dc[emp]{6}{\u}}
+  \dc[occ]{6}{2} \dc[occ]{5}{7}
+  \dc[new]{7}{3} \dc[new]{8}{4} \dc[new]{7}{5} \dc[new]{6}{6}
+  \draw[very thick,red!80!black] (1,6)--(2,7)--(3,6)--(4,7)--(5,6)--(6,5)--(7,6)--(8,5)--(9,6);
+  \node at (2,6) {$a$}; \node at (7,5) {$b$};
+  \node[below] at (4,3) {(a) $g=4$ columns, 4 cells};
+\begin{scope}[xshift=4.3cm]
+  \foreach \v in {4,...,8} \foreach \u in {1,...,9} {
+    \pgfmathparse{int(mod(\v+\u,2))}
+    \ifnum\pgfmathresult=0
+      \ifnum\v<6 \dc[emp]{\v}{\u} \else \dc[und]{\v}{\u}\fi
+    \fi }
+  \foreach \u in {2,4,6} {\dc[emp]{6}{\u}}
+  \dc[occ]{6}{2} \dc[occ]{5}{7}
+  \dc[new]{7}{3} \dc[new]{8}{4} \dc[new]{7}{5} \dc[new]{8}{6}
+  \dc[new]{7}{7} \dc[new,fill=orange!30]{6}{8}
+  \draw[very thick,red!80!black] (1,6)--(2,7)--(3,6)--(4,7)--(5,6)--(6,7)--(7,6)--(8,5)--(9,6);
+  \node at (2,6) {$a$}; \node at (7,5) {$b$};
+  \node[below] at (5,3) {(b) at the kink: one more cell};
+\end{scope}
+\end{tikzpicture}
+\caption{Connecting two frontier cells $u$ and $u'$.  (a)~One cell per
+  column between them.  (b)~The cell at the kink position is $u'$: the cell left of $u'$ has been decided
+to be  empty, and the path must move one step to the right from $u'$ before
+moving left.}
+\label{fig:gap2}
+\end{figure}
+
 
 
 Two frontier cells $u,u'$ with $u'\ge u+1$ and no frontier cells in
@@ -3091,7 +3150,7 @@ sequences agree there, they agree everywhere.
                             mirror.crossing[0] = 0;
                             mirror.num_components = coded.num_components;
                             mirror.touches = coded.touches;
-                            compress(&mirror, next->decided_position, packed_key);
+                            compact(&mirror, next->decided_position, packed_key);
                         }
 
 @ @<Glob...@>=
@@ -3518,7 +3577,7 @@ $n$ & center in a cell (C) & edge midpoint (M) & vertex (V) & $\fix_{\rhoo}(n)$\
 \label{tab:values}
 \end{table}
 
-@*1 Saving space in larger runs.
+@*1 Potential options for saving space in larger runs.
 \label{sec:space}
 For $N=71$, the memory requirement of 3 GB was no obstacle, and we have
 not tried to reduce it.  (That run was made with an earlier version of the program,
