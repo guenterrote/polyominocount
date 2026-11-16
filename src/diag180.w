@@ -672,21 +672,6 @@ typedef struct {
     uint8_t touches; /* the touched bit */
 } state_t;
 
-@ Two states are compared lexicographically.  (If the labels agree, the
-number of components is the same.)
-@<Sub...@>=
-static int compare_states(const state_t *a, const state_t *b)
-{
-    /* on entry: both states are canonical; only |label[0..W-1]| and |partner[1..num_components]| are defined */
-    int c = memcmp(a->label, b->label, W);
-    if (c)
-        return c;
-    c = memcmp(a->partner + 1, b->partner + 1, a->num_components);
-    if (c)
-        return c;
-    return a->touches - b->touches;
-}
-
 @*1 The working state.
 A transition changes only little: a new cell joins at most two components,
 and at most two cells leave the frontier.  We therefore work directly
@@ -1009,7 +994,6 @@ static void encode(const state_t *s, coded_t *coded)
         else
             coded->code[i] = last_run[lab] == i ? C_LAST : C_MIDDLE;
     }
-    coded->crossing[0] = 0; /* not used, but |compact| looks at it [CLAUDE: Is this true] */
     for (int j = 1; j <= num_components; j++)
         coded->crossing[j] = s->partner[j] != 0;
     coded->num_components = num_components;
@@ -1058,12 +1042,8 @@ parity, to the right of |decided_position|.  (The cell at
 $|decided_position|-1$ has just been retired.)  All other positions are
 empty, and we don't store their codes.  At the end of a row, and for the first row,
 |decided_position| is the last position of the row.
-[Claude: Can this be converted to a (CWEB) macro?]
-@<Sub...@>=
-static inline int can_hold_frontier_cell(int j, int decided_position)
-{ @+
-    return (((j ^ decided_position) & 1) != 0) == (j > decided_position);
-@+}
+@d can_hold_frontier_cell(j, decided_position)
+   (((((j) ^ (decided_position)) & 1) != 0) == ((j) > (decided_position)))
 
 @*1 Compaction into a bit string.
 This is the second step of packing, and its reverse.
@@ -1073,16 +1053,15 @@ component appears for the first time, by adding~4 to the code.
 @<Sub...@>=
 static void compact(const coded_t *coded, int decided_position, uint8_t *bytes)
 {
-    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY|; |coded->crossing[0]| is 0 */
+    /* on entry: the positions that cannot hold a frontier cell have the code |C_EMPTY| */
     int pos = 0, num_components = 0;
     memset(bytes, 0, BYTES_PER_KEY);
     for (int i = 0; i < W; i++)
         if (can_hold_frontier_cell(i, decided_position)) {
             int code = coded->code[i];
             if (code == C_SINGLETON || code == C_FIRST) {
-            num_components += 1;
-            code += 4 * coded->crossing[num_components]; /*
-            results in |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
+                num_components += 1;
+                code += 4 * coded->crossing[num_components]; /* results in |C_SINGLETON_CROSSING| or |C_FIRST_CROSSING| */
             }
             put_bits(bytes, &pos, code, 3);
         }
@@ -1094,15 +1073,14 @@ static void expand(const uint8_t *bytes, int decided_position, coded_t *coded)
     int pos = 0, num_components = 0;
     for (int i = 0; i < W; i++) {
         if (can_hold_frontier_cell(i, decided_position)) {
-	  int code = get_bits(bytes, &pos, 3);
-	  int crossing = code >= C_SINGLETON_CROSSING;
-	  code -= 4 * crossing;
-        if (code == C_SINGLETON || code == C_FIRST)
-            coded->crossing[++num_components] = crossing;
-        coded->code[i] = code;
-	}
-	else
-        coded->code[i] = C_EMPTY;
+            int code = get_bits(bytes, &pos, 3);
+            int crossing = code >= C_SINGLETON_CROSSING;
+            code -= 4 * crossing;
+            if (code == C_SINGLETON || code == C_FIRST)
+                coded->crossing[++num_components] = crossing;
+            coded->code[i] = code;
+        } else
+            coded->code[i] = C_EMPTY;
     }
     coded->num_components = num_components;
     coded->touches = get_bits(bytes, &pos, 1);
@@ -1435,9 +1413,23 @@ static size_t table_create(table_t *t, const uint8_t *packed_key)
     return i;
 }
 
+@ Two states are compared lexicographically.  (If the labels agree, the
+number of components is the same.)  This is needed only for the check below.
+@<Sub...@>=
+static int compare_states(const state_t *a, const state_t *b)
+{
+    /* on entry: both states are canonical; only |label[0..W-1]| and |partner[1..num_components]| are defined */
+    int c = memcmp(a->label, b->label, W);
+    if (c)
+        return c;
+    c = memcmp(a->partner + 1, b->partner + 1, a->num_components);
+    if (c)
+        return c;
+    return a->touches - b->touches;
+}
+
 @ The function |pack_and_check| packs a state.  With the option \texttt{-C},
 it checks that unpacking gives the state back.
-  [CLAUDE: remove the -C option from the production version]
 @<Sub...@>=
 static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
 {
@@ -3147,7 +3139,6 @@ sequences agree there, they agree everywhere.
                         if (comparison > 0) {
                             for (int a = 0; a < W; a++)
                                 mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
-                            mirror.crossing[0] = 0;
                             mirror.num_components = coded.num_components;
                             mirror.touches = coded.touches;
                             compact(&mirror, next->decided_position, packed_key);

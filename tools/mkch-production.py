@@ -6,7 +6,8 @@ def find(prefix, start=0):
     raise SystemExit("not found: "+prefix)
 out=["""This is a CWEB change file for diag180.w.  It produces the production
 version of the program, without the experimental options -K (old bound),
--A and -N (variants of the lookahead), and -H (no height terms).
+-A and -N (variants of the lookahead), -H (no height terms), and -C
+(check of packing and unpacking).
 
     ctangle diag180.w production.ch diag180p.c      (make tangle)
     cweave  diag180.w production.ch diag180p.tex    (make doc)
@@ -27,6 +28,10 @@ def ch(i,j,new):
 i=find(r"\title{\textbf{diag180}"); 
 ch(i,i+2, L[i]+"\n"+L[i+1].replace("diagonals}","diagonals\\\\ \\large (production version)}"))
 assert "diagonals}" in L[i+1]
+h=find("@ Two states are compared lexicographically.")
+i=find("@ The function |pack_and_check| packs a state.  With the option"); assert L[i+5]=="    pack(s, decided_position, packed_key);" and L[i+14]=="}"
+ch(h,i+15,"@ The function |pack_and_check| packs a state.  (In the full version of the program,\n"
+   "the option \\texttt{-C} checks that unpacking gives the state back.)\n"+"\n".join(L[i+2:i+6])+"\n}")
 i=find("static int USE_HEIGHT_TERMS = 1;"); ch(i,i+1,"")
 i=find("        return USE_HEIGHT_TERMS ? missing_rows : 0;"); assert L[i+1]=="    if (!USE_HEIGHT_TERMS)" and L[i+2]=="        return SIDE_DISTANCE;"
 ch(i,i+3,"        return missing_rows;")
@@ -37,15 +42,15 @@ i=find("the lookahead counts only if it would be a valid polyomino.  With the")
 assert L[i+2]=="is switched off." and L[i+3].startswith("@<Sharpen") and L[i+4].lstrip().startswith("if (LOOKAHEAD &&")
 ch(i,i+5,"the lookahead counts only if it would be a valid polyomino.\n"+L[i+3]+"\n"
    "                    if (!last_in_row && !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {")
-i=find("  -N     no lookahead;"); assert L[i+2].startswith("  -K")
-ch(i,i+3,"")
+i=find("  -N     no lookahead;"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C")
+ch(i,i+4,"")
 i=find("static int USE_OLD_BOUND = 0;"); ch(i,i+1,"")
-i=find("static int LOOKAHEAD = 1;"); ch(i,i+1,"")
-i=find('        else if (!strcmp(argv[arg], "-A"))'); assert L[i+7]=="            USE_OLD_BOUND = 1, arg++;"
-ch(i,i+8,"")
+i=find("static int LOOKAHEAD = 1;"); assert L[i+1].startswith("static int CHECK_PACKING"); ch(i,i+2,"")
+i=find('        else if (!strcmp(argv[arg], "-A"))'); assert L[i+7]=="            USE_OLD_BOUND = 1, arg++;" and L[i+9]=="            CHECK_PACKING = 1, arg++;"
+ch(i,i+10,"")
 i=find('        fprintf(stream, "# bound: %s, height term'); assert "MERGE_MIRROR_STATES" in L[i+3]
-ch(i,i+4,'        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s; pack check %s\\n",\n'
-   '                MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");')
+ch(i,i+4,'        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\\n",\n'
+   '                MERGE_MIRROR_STATES ? "on" : "off (-R)");')
 i=find("separately.  Different variants of the bound"); assert L[i+2].startswith("invalid bound would lose")
 ch(i,i+3,"separately.  In the full version of the program, different variants of\nthe bound and of the lookahead can be selected, and they lead to the same\ncounts; this is a strong test, since an\ninvalid bound would lose polyominoes.")
 open('src/production.ch','w').write("\n".join(out))

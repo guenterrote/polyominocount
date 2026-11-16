@@ -1,6 +1,7 @@
 This is a CWEB change file for diag180.w.  It produces the production
 version of the program, without the experimental options -K (old bound),
--A and -N (variants of the lookahead), and -H (no height terms).
+-A and -N (variants of the lookahead), -H (no height terms), and -C
+(check of packing and unpacking).
 
     ctangle diag180.w production.ch diag180p.c      (make tangle)
     cweave  diag180.w production.ch diag180p.tex    (make doc)
@@ -18,6 +19,47 @@ updated here.
 @y
 \title{\textbf{diag180}: Counting polyominoes with $180^\circ$ rotational
   symmetry\\ by a transfer matrix along diagonals\\ \large (production version)}
+@z
+
+@x
+@ Two states are compared lexicographically.  (If the labels agree, the
+number of components is the same.)  This is needed only for the check below.
+@<Sub...@>=
+static int compare_states(const state_t *a, const state_t *b)
+{
+    /* on entry: both states are canonical; only |label[0..W-1]| and |partner[1..num_components]| are defined */
+    int c = memcmp(a->label, b->label, W);
+    if (c)
+        return c;
+    c = memcmp(a->partner + 1, b->partner + 1, a->num_components);
+    if (c)
+        return c;
+    return a->touches - b->touches;
+}
+
+@ The function |pack_and_check| packs a state.  With the option \texttt{-C},
+it checks that unpacking gives the state back.
+@<Sub...@>=
+static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
+{
+    pack(s, decided_position, packed_key);
+    if (CHECK_PACKING) {
+        state_t unpacked;
+        unpack(packed_key, decided_position, &unpacked);
+        if (unpacked.num_components != s->num_components || compare_states(&unpacked, s)) {
+            fprintf(stderr, "pack/unpack mismatch\n");
+            exit(2);
+        }
+    }
+}
+@y
+@ The function |pack_and_check| packs a state.  (In the full version of the program,
+the option \texttt{-C} checks that unpacking gives the state back.)
+@<Sub...@>=
+static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
+{
+    pack(s, decided_position, packed_key);
+}
 @z
 
 @x
@@ -126,6 +168,7 @@ the lookahead counts only if it would be a valid polyomino.
   -N     no lookahead;   -A  lookahead after every cell
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
+  -C     check that packing and unpacking of every key are consistent
 @y
 @z
 
@@ -136,6 +179,7 @@ static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 
 @x
 static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int CHECK_PACKING = 0; /* \texttt{-C} */
 @y
 @z
 
@@ -148,6 +192,8 @@ static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
             USE_HEIGHT_TERMS = 0, arg++;
         else if (!strcmp(argv[arg], "-K"))
             USE_OLD_BOUND = 1, arg++;
+        else if (!strcmp(argv[arg], "-C"))
+            CHECK_PACKING = 1, arg++;
 @y
 @z
 
@@ -157,8 +203,8 @@ static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
                 LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
 @y
-        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s; pack check %s\n",
-                MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
+        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\n",
+                MERGE_MIRROR_STATES ? "on" : "off (-R)");
 @z
 
 @x
