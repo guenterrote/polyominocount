@@ -38,7 +38,7 @@ static int compare_states(const state_t *a, const state_t *b)
 }
 
 @ The function |pack_and_check| packs a state.  With the option \texttt{-C},
-it checks that unpacking gives the state back.
+it checks that unpacking gives the state back (we have run this check for $N\le 30$).
 @<Sub...@>=
 static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
 {

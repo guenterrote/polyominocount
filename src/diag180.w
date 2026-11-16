@@ -909,6 +909,7 @@ static int BYTES_PER_KEY; /* length of a packed key */
 enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST, C_SINGLETON_CROSSING, C_FIRST_CROSSING };
 
 @*1 Why it is enough to mark the crossing components.
+\label{sec:crossing}
 Call a component \emph{crossing} if it is central or paired, that is, if
 it is not floating.  The union of the frontier and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
@@ -923,10 +924,6 @@ number of crossing components is odd.  In particular, there is at most one
 central component.  Thus the $j$-th crossing component from the left is the partner
 of the $j$-th crossing component from the right, and it suffices to know
 \emph{which} components are crossing.
- [CLAUDE: should be reworded, or removed from the production version:]
-With the option \texttt{-C}, the program checks for every state that
-unpacking the packed key gives back the original state.  We have run
-this check for $N\le 30$.
 
 @ Bit strings are written and read with two small routines.  No field
 has more than 3 bits, so that a field extends over at most two bytes.
@@ -1430,7 +1427,7 @@ static int compare_states(const state_t *a, const state_t *b)
 }
 
 @ The function |pack_and_check| packs a state.  With the option \texttt{-C},
-it checks that unpacking gives the state back.
+it checks that unpacking gives the state back (we have run this check for $N\le 30$).
 @<Sub...@>=
 static void pack_and_check(const state_t *s, int decided_position, uint8_t *packed_key)
 {
@@ -1772,10 +1769,10 @@ to $\rhoo Y$).  Consider the graph $G$ whose nodes are the components, with
 partners identified, and with an edge for each gap between consecutive
 runs.
 The edges represent the potential bridges over gaps, and we
-want so select a minimum-cost set of bridges connecting all
+want to select a minimum-cost set of bridges connecting all
 components, i.e., a minimum spanning tree of $G$.
 Because components do not cross and because of the nested chain
-structure of the crossing components, we will see that $G$ has a special structure
+structure of the crossing components, we will see that $G$ has a special structure.
 In graph-theoretic terms, it
 % this graph
 is a \emph{cactus} (multi-)graph, a graph where every edge
@@ -1784,12 +1781,93 @@ belongs to at most one cycle.
 A minimum spanning tree of $G$ is obtained by deleting the heaviest
 edge of each cycle.
 
+Recall from Section~\ref{sec:crossing} that the crossing components,
+read from left to right, form the nested chain
+$$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
+where $A_j$ and $\rhoo A_j$ are partners, and the central component $Z$ may be
+absent.  We call $\{A_j,\rhoo A_j\}$ the $j$-th \emph{crossing pair};
+in $G$, it is a single node.  Two consecutive crossing pairs, together
+with their images, cut the disk of
+Section~\ref{sec:crossing} into a
+\emph{band} between them.
+Figure~\ref{fig:cactus} shows the state of
+Figure~\ref{fig:types} with these names.
 $G$ can be decomposed as follows.
-[CLAUDE: Recall from \S3.2 the notation for the crossing components,
-and the nested chain that they form. insert a copy of Fig.3 and label its components in accordance
-with the following discussion. What is the meaning of a ring? This term (jargon?)
-has not
-been introduced. What are alternative more descriptive terms? crossing pair (of components)? ]
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}[dia,x=2.6mm,y=2.6mm]
+  \foreach \v in {-9,...,9} \foreach \u in {-26,...,26} {
+    \ifodd\numexpr\v+\u+36\relax \else
+      \def\sty{emp}
+      \ifnum\v>8 \def\sty{und}\fi
+      \ifnum\v<-8 \def\sty{und}\fi
+      \ifnum\v=8 \ifnum\u>12 \def\sty{und}\fi\fi
+      \ifnum\v=-8 \ifnum\u<-12 \def\sty{und}\fi\fi
+      \dc[\sty]{\v}{\u}
+    \fi }
+  \foreach \v/\u in {0/-18,0/-6,0/6,0/18,1/-19,1/-17,1/-7,1/7,1/19,
+    2/-20,2/-16,2/-6,2/6,2/18,3/-21,3/-15,3/-7,3/7,
+    3/19,4/-22,4/-14,4/-6,4/6,4/18,5/-23,5/-13,5/-7,
+    5/7,5/19,6/-24,6/-12,6/-6,6/6,6/18,7/-25,7/-11,
+    7/-7,7/7,7/19,8/-26,8/-10,8/-6,8/6} {\dc[occ]{\v}{\u}}
+  \foreach \v/\u in {-8/-6,-8/6,-8/10,-8/26,-7/-19,-7/-7,-7/7,-7/11,-7/25,
+    -6/-18,-6/-6,-6/6,-6/12,-6/24,-5/-19,-5/-7,-5/7,-5/13,
+    -5/23,-4/-18,-4/-6,-4/6,-4/14,-4/22,-3/-19,-3/-7,-3/7,
+    -3/15,-3/21,-2/-18,-2/-6,-2/6,-2/16,-2/20,-1/-19,-1/-7,
+    -1/7,-1/17,-1/19} {\dc[img]{\v}{\u}}
+  \foreach \v/\u in {0/0,1/1,2/0,3/1,4/0,5/-1,5/1,6/-2,6/2,
+    7/-3,7/3,8/-4,8/4} {\dc[mid]{\v}{\u}}
+  \foreach \v/\u in {-8/-4,-8/4,-7/-3,-7/3,-6/-2,-6/2,-5/-1,-5/1,-4/0,
+    -3/-1,-2/0,-1/-1} {\dc[cei]{\v}{\u}}
+  \foreach \v/\u in {4/-18,5/-19,5/-17,6/-20,6/-16,7/-21,7/-15,7/23,8/-22,
+    6/24,5/25,4/24,3/25,2/24,1/25,0/24,-1/25,-2/24,-3/25,
+    8/-18,8/-14,8/0,8/10} {\dc[gho]{\v}{\u}}
+  \foreach \v/\u in {-8/-10,-8/0,-8/14,-8/18,-8/22,-7/-23,-7/15,-7/21,-6/16,
+    -6/20,-5/17,-5/19,-4/18,
+    -6/-24,-5/-25,-4/-24,-3/-25,-2/-24,-1/-25,0/-24,1/-25,2/-24,3/-25} {\dc[ghi]{\v}{\u}}
+  \fill[red] (0,0) circle (1.2pt);
+  \draw[thick,red!80!black] (-27,8)--(-26,9)--(-25,8)--(-24,9)--(-23,8)--(-22,9)
+    --(-21,8)--(-20,9)--(-19,8)--(-18,9)--(-17,8)--(-16,9)
+    --(-15,8)--(-14,9)--(-13,8)--(-12,9)--(-11,8)--(-10,9)
+    --(-9,8)--(-8,9)--(-7,8)--(-6,9)--(-5,8)--(-4,9)
+    --(-3,8)--(-2,9)--(-1,8)--(0,9)--(1,8)--(2,9)
+    --(3,8)--(4,9)--(5,8)--(6,9)--(7,8)--(8,9)
+    --(9,8)--(10,9)--(11,8)--(12,9)--(13,8)--(14,7)
+    --(15,8)--(16,7)--(17,8)--(18,7)--(19,8)--(20,7)
+    --(21,8)--(22,7)--(23,8)--(24,7)--(25,8)--(26,7);
+  \draw[thick,red!80!black,densely dotted] (27,-8)--(26,-9)--(25,-8)--(24,-9)--(23,-8)--(22,-9)
+    --(21,-8)--(20,-9)--(19,-8)--(18,-9)--(17,-8)--(16,-9)
+    --(15,-8)--(14,-9)--(13,-8)--(12,-9)--(11,-8)--(10,-9)
+    --(9,-8)--(8,-9)--(7,-8)--(6,-9)--(5,-8)--(4,-9)
+    --(3,-8)--(2,-9)--(1,-8)--(0,-9)--(-1,-8)--(-2,-9)
+    --(-3,-8)--(-4,-9)--(-5,-8)--(-6,-9)--(-7,-8)--(-8,-9)
+    --(-9,-8)--(-10,-9)--(-11,-8)--(-12,-9)--(-13,-8)--(-14,-7)
+    --(-15,-8)--(-16,-7)--(-17,-8)--(-18,-7)--(-19,-8)--(-20,-7)
+    --(-21,-8)--(-22,-7)--(-23,-8)--(-24,-7)--(-25,-8)--(-26,-7);
+  \foreach \v/\u/\l in {8/-26/1,8/-22/2,8/-18/3,8/-14/2,8/-10/1,8/-6/4,8/-4/5,8/0/6,
+    8/4/5,8/6/7,8/10/8,7/19/9,7/23/10}
+    \node at (\u,\v) {\tiny\color{white}\l};
+  \foreach \i/\l in {0/A_1,4/F_1,8/F_2,12/F_1,16/A_1,20/A_2,26/F_3,32/\rhoo A_2,
+    36/F_4,45/\rhoo A_1,49/F_5}
+    \node at (\i-26,11) {\footnotesize$\l$};
+  \foreach \i/\l in {22/Z,30/Z}
+    \node at (\i-26,13) {\footnotesize$\l$};
+  \foreach \v in {-8,-4,0,4,8} \node[left] at (-27.5,\v) {\scriptsize$v=\v$};
+\end{tikzpicture}
+\caption{The state of Figure~\ref{fig:types} (the numbers in the cells are
+  the labels used there), with the names of the components in the
+  discussion of the cactus: the crossing components form the chain
+  $A_1$, $A_2$, $Z$, $\rhoo A_2$, $\rhoo A_1$;
+  $F_1,\ldots,F_5$ are floating.
+  The gaps between the runs of $A_1$, $F_1$, and $F_2$ form two nested
+  pockets, and the gaps between the two runs of $Z$ form a pocket
+  around~$F_3$.  The band between the crossing pairs $\{A_1,\rhoo A_1\}$ and
+  $\{A_2,\rhoo A_2\}$ consists of the gaps
+  $A_1$--$A_2$ on the left and $\rhoo A_2$--$F_4$--$\rhoo A_1$ on the right.  The middle
+  consists of the gaps $A_2$--$Z$--$\rhoo A_2$, and $F_5$ hangs on the outer path behind $\rhoo A_1$.}
+\label{fig:cactus}
+\end{figure}
 
 \begin{itemize}
 \item \emph{Pockets.}  Between two consecutive runs of the same component
@@ -1802,9 +1880,10 @@ been introduced. What are alternative more descriptive terms? crossing pair (of 
 \item \emph{Outer paths.}  At the top level, the components to the left of
   $A_1$ and to the right of $\rhoo A_1$ hang on a path, and all their
   gaps must be bridged.
-\item \emph{Rings.}  The gaps from $A_j$ to $A_{j+1}$ on the left
+\item \emph{Bands.}  The gaps from $A_j$ to $A_{j+1}$ on the left
   together with the gaps from $\rhoo A_{j+1}$ to $\rhoo A_j$ on the
-  right form a cycle, since $A_j$ and $\rhoo A_j$ are the same node.
+  right form a cycle, since $A_j$ and $\rhoo A_j$ are the same node, and so are
+  $A_{j+1}$ and $\rhoo A_{j+1}$.
   Again the largest gap can be omitted.
 \item \emph{The middle.}  The gaps from $A_k$ over $Z$ (if present) to
   $\rhoo A_k$ form the innermost cycle.
@@ -1815,8 +1894,8 @@ connecting the cactus.
 @ {\bf The central term.}
 Connecting the quotient is not enough: in the end, there must be a
 central component.  If there is none yet, some component $X$ must be joined
-to its own image.  Closing a ring completely does not achieve this,
-because the right half of a ring is just the image of its left half.
+to its own image.  Closing the cycle of a band completely does not achieve this,
+because the right half of a band is just the image of its left half.
 Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a central
 component.  Therefore, if there is no central component, the middle cycle must be
 closed completely, and its largest gap is paid as well.
@@ -2180,7 +2259,7 @@ cells, so the bound is tight.
 
 For the large state of Figure~\ref{fig:types}, the bound is 35 cells.
 The pockets of the components 1, 2, and~5 have two gaps of 3 columns each,
-of which one must be bridged ($3+3+3$ cells).  The ring formed by the
+of which one must be bridged ($3+3+3$ cells).  The band formed by the
 components 1 and~4 on the left and 7, 8, and~9 on the right has gaps of 3,
 3, and 8 columns; the largest is omitted (6 cells).  The middle cycle
 through the components 4, 5, and~7 has two gaps of one column (1 cell).
@@ -2316,7 +2395,7 @@ static int cactus_bound(const state_t *state)
     @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
-    @<Pay for the outer paths, the rings and the middle@>@;
+    @<Pay for the outer paths, the bands and the middle@>@;
     @<Add the central term and the terms for the side and the top@>@;
     return cost;
 }
@@ -2398,9 +2477,9 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |crossing| lists the |m| crossing components.  Ring number |i|
+@ At the top level, |crossing| lists the |num_crossing| crossing components.  Band number |i|
 consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
-counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
+counterparts on the right; the last ``band'', $i=k-1$, is the middle.
 @<Pay for the outer paths...@>=
     /* top level */
     int crossing[MAXW], num_crossing = 0;
@@ -2437,7 +2516,7 @@ counterparts on the right; the last ``ring'', $i=k-1$, is the middle.
             cost += cycle_cost(gap, peak, score, num_gaps, &max1, &peak_of_max, &score_of_max);
             if (i == num_pairs - 1) {
                 /* only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
-                   some $X$ to $\rhoo X$: the right side of a ring is just the image
+                   some $X$ to $\rhoo X$: the right side of a band is just the image
                    of its left side */
                 MIDDLE_GAP[NUM_MIDDLE] = max1;
                 MIDDLE_SCORE[NUM_MIDDLE] = score_of_max;
