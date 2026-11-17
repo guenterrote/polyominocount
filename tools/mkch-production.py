@@ -44,15 +44,17 @@ assert L[i+2].startswith("is switched off.  In the most frequent case")
 ch(i,i+3,"the lookahead counts only if it would be a valid polyomino.\n"+L[i+2][len("is switched off.  "):])
 i=find("                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&")
 ch(i,i+1,"                        if (cell_number + 1 < num_row_cells - 1 &&")
+i=find("                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {")
+ch(i,i+1,"                        } else if (kink_cell_optional) {")
 i=find("                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&")
 assert L[i+1].lstrip().startswith("(LOOKAHEAD == 2 ||")
 ch(i,i+2,"                            if (lowerbound >= 0 && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {")
-i=find("  -N     no lookahead;"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C")
-ch(i,i+4,"")
+i=find("  -N     no lookahead;"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C") and L[i+4].startswith("  -B")
+ch(i,i+5,"")
 i=find("static int USE_OLD_BOUND = 0;"); ch(i,i+1,"")
-i=find("static int LOOKAHEAD = 1;"); assert L[i+1].startswith("static int CHECK_PACKING"); ch(i,i+2,"")
-i=find('        else if (!strcmp(argv[arg], "-A"))'); assert L[i+7]=="            USE_OLD_BOUND = 1, arg++;" and L[i+9]=="            CHECK_PACKING = 1, arg++;"
-ch(i,i+10,"")
+i=find("static int LOOKAHEAD = 1;"); assert L[i+1].startswith("static int BLOCKED_LOOKAHEAD") and L[i+2].startswith("static int CHECK_PACKING"); ch(i,i+3,"")
+i=find('        else if (!strcmp(argv[arg], "-A"))'); assert L[i+7]=="            USE_OLD_BOUND = 1, arg++;" and L[i+9]=="            CHECK_PACKING = 1, arg++;" and L[i+11]=="            BLOCKED_LOOKAHEAD = 0, arg++;"
+ch(i,i+12,"")
 i=find('        fprintf(stream, "# bound: %s, height term'); assert "MERGE_MIRROR_STATES" in L[i+3]
 ch(i,i+4,'        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\\n",\n'
    '                MERGE_MIRROR_STATES ? "on" : "off (-R)");')

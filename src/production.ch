@@ -174,6 +174,12 @@ In the most frequent case, only one of the two possibilities
 @z
 
 @x
+                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {
+@y
+                        } else if (kink_cell_optional) {
+@z
+
+@x
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
                                 (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
 @y
@@ -185,6 +191,7 @@ In the most frequent case, only one of the two possibilities
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
+  -B     at the kink, try both choices instead of blocking the gaps
 @y
 @z
 
@@ -195,6 +202,7 @@ static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 
 @x
 static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 @y
 @z
@@ -210,6 +218,8 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
             USE_OLD_BOUND = 1, arg++;
         else if (!strcmp(argv[arg], "-C"))
             CHECK_PACKING = 1, arg++;
+        else if (!strcmp(argv[arg], "-B"))
+            BLOCKED_LOOKAHEAD = 0, arg++;
 @y
 @z
 
