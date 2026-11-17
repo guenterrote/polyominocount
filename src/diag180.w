@@ -1919,7 +1919,7 @@ closed completely, and its largest gap is paid as well.
 
 @ The function |cycle_cost| handles one cycle with |num_gaps| gaps of sizes |gap|.
 It returns the sum minus the maximum.  The remaining parameters and
-the calls of |reach_height| and |reach_score| have to do with the height, which
+the calls of |update_best_height| and |update_best_score| have to do with the height, which
 is discussed next.
 
 @*1 Reaching the sides and the top.
@@ -2006,6 +2006,8 @@ parameter lists short.
 static int CURRENT_ROW, TARGET_ROW, FIRST_ROW; /* current row $v$, target row $\Vstar$, first row $v_0$ */
 static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int FREE_HEIGHT, FREE_SCORE; /* best height and best score reached for free */
+static int MIDDLE_EXISTS; /* is there a middle cycle that must be closed (no central component)? */
+static int MIDDLE_GAP, MIDDLE_PEAK, MIDDLE_SCORE; /* its largest gap, with peak and score */
 static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* options */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
@@ -2022,16 +2024,9 @@ static inline int frontier_row(int j)
     return j < KINK_POSITION ? CURRENT_ROW : CURRENT_ROW - 1;
 }
 
-@ @<Sub...@>=
-static inline void reach_height(int h) @+
-{ @+
-    FREE_HEIGHT = max(FREE_HEIGHT, h);
-@+}
-
-static inline void reach_score(int sc) @+
-{ @+
-    FREE_SCORE = min(FREE_SCORE, sc);
-@+}
+@ The best height and the best score reached so far are updated by two macros.
+@d update_best_height(h) (FREE_HEIGHT = max(FREE_HEIGHT, (h)))
+@d update_best_score(sc) (FREE_SCORE = min(FREE_SCORE, (sc)))
 
 @ The cost of reaching both the top row and a side from row |h| and
 column |j|.
@@ -2102,8 +2097,8 @@ static int cycle_cost(const int *gap, const int *peak, const int *score, int num
     }
     for (int t = 0; t < num_gaps; t++)
         if (num_max >= 2 || gap[t] != max1) {
-            reach_height(peak[t]);
-            reach_score(score[t]);
+            update_best_height(peak[t]);
+            update_best_score(score[t]);
         }
     if (num_max == 1) {
         OPTION_COST[NUM_OPTIONS] = max1 - max2;
@@ -2438,13 +2433,12 @@ static int cactus_bound(const state_t *state)
     FREE_HEIGHT = -1000;
     FREE_SCORE = 1 << 20;
     NUM_OPTIONS = 0;
-    int middle_must_be_closed = 0; /* no central component, and the middle cycle exists */
-    int middle_gap = 0, middle_peak = 0, middle_score = 0; /* its largest gap, with peak and score */
+    MIDDLE_EXISTS = 0;
     CURRENT_TOUCHES = touches;
     for (int i = 0; i < W; i++)
         if (label[i]) {
-            reach_height(frontier_row(i));
-            reach_score(side_and_top_cost(frontier_row(i), i));
+            update_best_height(frontier_row(i));
+            update_best_score(side_and_top_cost(frontier_row(i), i));
         }
 
 @ The pockets are processed with a stack, like nested parentheses.
@@ -2506,13 +2500,13 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
     if (num_crossing) {
         for (int t = 0; t < crossing[0]; t++) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
         for (int t = crossing[num_crossing - 1]; t < num_top - 1; t++) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
         int num_pairs = num_crossing / 2;
         for (int i = 0; i < num_pairs; i++) {
@@ -2535,17 +2529,17 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
                    only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
                    some $X$ to $\rhoo X$: the right side of a band is just the image
                    of its left side */
-                middle_must_be_closed = 1;
-                middle_gap = max1;
-                middle_score = score_of_max;
-                middle_peak = peak_of_max;
+                MIDDLE_EXISTS = 1;
+                MIDDLE_GAP = max1;
+                MIDDLE_SCORE = score_of_max;
+                MIDDLE_PEAK = peak_of_max;
             }
         }
     } else {
         for (int t = 0; t < num_top - 1; t++) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
     }
 
@@ -2558,8 +2552,8 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
       @/
     /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
-    if (middle_must_be_closed)
-        cost += middle_gap + height_term(max(middle_peak, FREE_HEIGHT), min(middle_score, FREE_SCORE));
+    if (MIDDLE_EXISTS)
+        cost += MIDDLE_GAP + height_term(max(MIDDLE_PEAK, FREE_HEIGHT), min(MIDDLE_SCORE, FREE_SCORE));
     else
         cost += height_term(FREE_HEIGHT, FREE_SCORE);
 
