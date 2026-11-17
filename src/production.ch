@@ -85,11 +85,11 @@ The code is part of the function |bound| below; the state is not empty.
 @<Set |connection_bound| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
-        for (int j = 1; j <= state->num_components; j++) {
+        for_int_from_to(j, 1, state->num_components) {
             int q = state->partner[j];
             representative[j] = (q != 0 && q < j) ? q : j;
         }
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j])
                 occupied[num_occupied++] = j;
         /* Kruskal over gaps between consecutive occupied positions */
@@ -97,7 +97,7 @@ The code is part of the function |bound| below; the state is not empty.
         int num_sets = 0;
         int seen[MAXW + 1];
         memset(seen, 0, sizeof(seen));
-        for (int a = 0; a < num_occupied; a++) {
+        for_int_from_to(a, 0, num_occupied - 1) {
             int rep = representative[label[occupied[a]]];
             if (!seen[rep]) {
                 seen[rep] = 1;
@@ -111,11 +111,11 @@ The code is part of the function |bound| below; the state is not empty.
             int num_gaps = num_occupied - 1;
             int gap[MAXW], order[MAXW], bucket[MAXW + 1];
             memset(bucket, 0, sizeof(bucket));
-            for (int a = 0; a < num_gaps; a++) {
+            for_int_from_to(a, 0, num_gaps - 1) {
                 gap[a] = occupied[a + 1] - occupied[a] - 1;
                 bucket[gap[a]]++;
             }
-            for (int g = 1; g <= W; g++)
+            for_int_from_to(g, 1, W)
                 bucket[g] += bucket[g - 1];
             for (int a = num_gaps - 1; a >= 0; a--)
                 order[--bucket[gap[a]]] = a;

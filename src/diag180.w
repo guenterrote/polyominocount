@@ -187,6 +187,11 @@ are evaluated twice, so they must not have side effects.
 @d max(a,b) ((a) > (b) ? (a) : (b))
 @d min(a,b) ((a) < (b) ? (a) : (b))
 
+@ Most loops run over a range of integers.  The macro |for_int_from_to|
+names the loop variable only once.
+@d for_int_from_to(x,first,last) for (int x = (first); x <= (last); x++)
+@f for_int_from_to for
+
 @q Some format declarations for the typesetting of this document. @>
 @s uint8_t int
 @s uint32_t int
@@ -706,7 +711,7 @@ All operations are simple sweeps over the positions.
 @<Sub...@>=
 static inline void relabel(uint8_t *label, int from, int to)
 {
-    for (int j = 0; j < W; j++)
+    for_int_from_to(j, 0, W - 1)
         if (label[j] == from)
             label[j] = to;
 }
@@ -763,14 +768,14 @@ static void make_state_canonical(const uint8_t *label, const uint8_t *partner, i
     uint8_t new_label[MAXLAB], old_label[MAXLAB];
     int num_components = 0;
     memset(new_label, 0, sizeof(new_label));
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         if (label[i] && !new_label[label[i]]) {
             new_label[label[i]] = ++num_components;
             old_label[num_components] = label[i];
         }
         result->label[i] = new_label[label[i]];
     }
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         result->partner[j] = new_label[partner[old_label[j]]];
     result->num_components = num_components;
     result->touches = touches;
@@ -803,7 +808,7 @@ static int retire(uint8_t *label, uint8_t *partner, int i)
         return OK;
     label[i] = 0;
     int others_remain = 0;
-    for (int j = 0; j < W; j++)
+    for_int_from_to(j, 0, W - 1)
         if (label[j]) {
             others_remain = 1;
             if (label[j] == retired_label)
@@ -948,7 +953,7 @@ static void encode(const state_t *s, coded_t *coded)
     /* on entry: the state is canonical: the first run of component $j$ comes before the first run of component $j+1$ */
     int first_run[MAXLAB], last_run[MAXLAB];
     int num_components = 0;
-    for (int i = 0; i < W; i++)
+    for_int_from_to(i, 0, W - 1)
         if (s->label[i] && (i == 0 || !s->label[i - 1])) {
             int lab = s->label[i];
             if (lab > num_components) {
@@ -957,7 +962,7 @@ static void encode(const state_t *s, coded_t *coded)
             }
             last_run[lab] = i;
         }
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         int lab = s->label[i];
         if (!lab)
             coded->code[i] = C_EMPTY;
@@ -968,7 +973,7 @@ static void encode(const state_t *s, coded_t *coded)
         else
             coded->code[i] = last_run[lab] == i ? C_LAST : C_MIDDLE;
     }
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         coded->crossing[j] = s->partner[j] != 0;
     coded->num_components = num_components;
     coded->touches = s->touches;
@@ -983,7 +988,7 @@ static void decode(const coded_t *coded, state_t *s)
 {
     /* on entry: the codes are properly nested, as produced by |encode| */
     int stack[MAXLAB], stack_size = 0, num_components = 0;
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         switch (coded->code[i]) {
         case C_EMPTY: s->label[i] = 0; break;
         case C_CONTINUE: s->label[i] = s->label[i - 1]; break;
@@ -994,7 +999,7 @@ static void decode(const coded_t *coded, state_t *s)
         }
     }
     stack_size = 0;                       /* crossing components, left to right */
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         if (coded->crossing[j])
             stack[stack_size++] = j;
         else
@@ -1306,7 +1311,7 @@ static uint32_t HASH_BITS[MAX_BYTES_PER_KEY][256]; /* random bits for universal 
 static inline uint32_t hash_of_key(const uint8_t *key)
 {
     uint32_t h = HASH_BITS[0][key[0]];
-    for (int l = 1; l < BYTES_PER_KEY; l++)
+    for_int_from_to(l, 1, BYTES_PER_KEY - 1)
         h += HASH_BITS[l][key[l]];
     return h;
 }
@@ -1315,8 +1320,8 @@ static inline uint32_t hash_of_key(const uint8_t *key)
 @<Initialize the random bits for hashing@>=
     {
         uint64_t x = 0; /* the state (``seed'') of the generator */
-        for (int l = 0; l < MAX_BYTES_PER_KEY; l++)
-            for (int b = 1; b < 256; b++) {
+        for_int_from_to(l, 0, MAX_BYTES_PER_KEY - 1)
+            for_int_from_to(b, 1, 255) {
                 uint64_t z = (x += 0x9E3779B97F4A7C15ull); /* {\tt nextSeed} with {\tt GOLDEN\_GAMMA} */
                 z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull; /* {\tt mix64variant13} */
                 z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
@@ -1714,7 +1719,7 @@ never meet.
 @<Return $-1$ if all components of |state| are floating@>=
     {
         int some_component_is_crossing = 0;
-        for (int j = 1; j <= state->num_components; j++)
+        for_int_from_to(j, 1, state->num_components)
             if (state->partner[j] != 0)
                 some_component_is_crossing = 1;
         if (!some_component_is_crossing)
@@ -2060,7 +2065,7 @@ static int gap_score(int a, int row_a, int b, int row_b)
 {
     /* on entry: $a<b$ */
     int best = 1 << 20;
-    for (int j = a + 1; j < b; j++) {
+    for_int_from_to(j, a + 1, b - 1) {
         int row_from_left = row_a + (j - a), row_from_right = row_b + (b - j);
         int c = side_and_top_cost(min(row_from_left, row_from_right), j);
         best = min(best, c);
@@ -2079,7 +2084,7 @@ static int cycle_cost(const int *gap, const int *peak, const int *score, int num
 {
     /* on entry: |num_gaps| $\ge1$ */
     int sum = 0, max1 = -1, num_max = 0, max2 = 0, peak_of_max = -1000, score_of_max = 1 << 20;
-    for (int t = 0; t < num_gaps; t++) {
+    for_int_from_to(t, 0, num_gaps - 1) {
         sum += gap[t];
         if (gap[t] > max1) {
             if (max1 >= 0)
@@ -2095,7 +2100,7 @@ static int cycle_cost(const int *gap, const int *peak, const int *score, int num
         } else if (gap[t] > max2)
             max2 = gap[t];
     }
-    for (int t = 0; t < num_gaps; t++)
+    for_int_from_to(t, 0, num_gaps - 1)
         if (num_max >= 2 || gap[t] != max1) {
             update_best_height(peak[t]);
             update_best_score(score[t]);
@@ -2416,7 +2421,7 @@ static int cactus_bound(const state_t *state)
 @<Find the runs...@>=
     int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
     int last_run[MAXW + 2];
-    for (int i = 0; i < W; i++)
+    for_int_from_to(i, 0, W - 1)
         if (label[i]) {
             if (i == 0 || !label[i - 1]) {
                 run_start[num_runs] = i;
@@ -2435,7 +2440,7 @@ static int cactus_bound(const state_t *state)
     NUM_OPTIONS = 0;
     MIDDLE_EXISTS = 0;
     CURRENT_TOUCHES = touches;
-    for (int i = 0; i < W; i++)
+    for_int_from_to(i, 0, W - 1)
         if (label[i]) {
             update_best_height(frontier_row(i));
             update_best_score(side_and_top_cost(frontier_row(i), i));
@@ -2453,7 +2458,7 @@ found, the pocket is closed and paid for.
     int pocket_label[MAXW], pocket_first_gap[MAXW], num_open_pockets = 0;
     int pocket_gap[MAXW], pocket_peak[MAXW], pocket_score[MAXW], num_pocket_gaps = 0;
     int top_label[MAXW], top_gap[MAXW], top_peak[MAXW], top_score[MAXW], num_top = 0;
-    for (int j = 0; j < num_runs; j++) {
+    for_int_from_to(j, 0, num_runs - 1) {
         int component = run_label[j];
         if (j > 0) {
             int a = run_end[j - 1], b = run_start[j];
@@ -2494,31 +2499,31 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
 @<Pay for the outer paths...@>=
     /* top level */
     int crossing[MAXW], num_crossing = 0;
-    for (int t = 0; t < num_top; t++)
+    for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
     if (num_crossing) {
-        for (int t = 0; t < crossing[0]; t++) {
+        for_int_from_to(t, 0, crossing[0] - 1) {
             cost += top_gap[t];
             update_best_height(top_peak[t]);
             update_best_score(top_score[t]);
         }
-        for (int t = crossing[num_crossing - 1]; t < num_top - 1; t++) {
+        for_int_from_to(t, crossing[num_crossing - 1], num_top - 2) {
             cost += top_gap[t];
             update_best_height(top_peak[t]);
             update_best_score(top_score[t]);
         }
         int num_pairs = num_crossing / 2;
-        for (int i = 0; i < num_pairs; i++) {
+        for_int_from_to(i, 0, num_pairs - 1) {
             int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0, max1, peak_of_max, score_of_max;
             int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
-            for (int t = a; t < b; t++) {
+            for_int_from_to(t, a, b - 1) {
                 gap[num_gaps] = top_gap[t];
                 score[num_gaps] = top_score[t];
                 peak[num_gaps++] = top_peak[t];
             }
             if (i < num_pairs - 1)
-                for (int t = crossing[num_crossing - 2 - i]; t < crossing[num_crossing - 1 - i]; t++) {
+                for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1) {
                     gap[num_gaps] = top_gap[t];
                     score[num_gaps] = top_score[t];
                     peak[num_gaps++] = top_peak[t];
@@ -2536,7 +2541,7 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
             }
         }
     } else {
-        for (int t = 0; t < num_top - 1; t++) {
+        for_int_from_to(t, 0, num_top - 2) {
             cost += top_gap[t];
             update_best_height(top_peak[t]);
             update_best_score(top_score[t]);
@@ -2566,11 +2571,11 @@ The code is part of the function |bound| below; the state is not empty.
 @<Set |connection_bound| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
-        for (int j = 1; j <= state->num_components; j++) {
+        for_int_from_to(j, 1, state->num_components) {
             int q = state->partner[j];
             representative[j] = (q != 0 && q < j) ? q : j;
         }
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j])
                 occupied[num_occupied++] = j;
         /* Kruskal over gaps between consecutive occupied positions */
@@ -2578,7 +2583,7 @@ The code is part of the function |bound| below; the state is not empty.
         int num_sets = 0;
         int seen[MAXW + 1];
         memset(seen, 0, sizeof(seen));
-        for (int a = 0; a < num_occupied; a++) {
+        for_int_from_to(a, 0, num_occupied - 1) {
             int rep = representative[label[occupied[a]]];
             if (!seen[rep]) {
                 seen[rep] = 1;
@@ -2592,11 +2597,11 @@ The code is part of the function |bound| below; the state is not empty.
             int num_gaps = num_occupied - 1;
             int gap[MAXW], order[MAXW], bucket[MAXW + 1];
             memset(bucket, 0, sizeof(bucket));
-            for (int a = 0; a < num_gaps; a++) {
+            for_int_from_to(a, 0, num_gaps - 1) {
                 gap[a] = occupied[a + 1] - occupied[a] - 1;
                 bucket[gap[a]]++;
             }
-            for (int g = 1; g <= W; g++)
+            for_int_from_to(g, 1, W)
                 bucket[g] += bucket[g - 1];
             for (int a = num_gaps - 1; a >= 0; a--)
                 order[--bucket[gap[a]]] = a;
@@ -2635,7 +2640,7 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     int lowerbound = max(2 * (min_rows - k), 0);
     if (!state->touches) {
         int side_distance = W;
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j]) {
                 int distance = min(j, W - 1 - j);
                 side_distance = min(side_distance, distance);
@@ -2727,7 +2732,7 @@ static void print_row_results(int top_row_number)
     if (VERBOSITY >= 1) {
         fprintf(stderr, "#rect %s (Mx=%d My=%d): width %d (u=%d..%d) x height %d (v=%d..%d):",
                 type_name[M_x + M_y], M_x, M_y, W, umin, umin + W - 1, height, M_v - top_row, top_row);
-        for (int n = 0; n <= NMAX; n++)
+        for_int_from_to(n, 0, NMAX)
             if (ROW_RESULTS[n])
                 fprintf(stderr, " n=%d:%s", n, counter_to_string(ROW_RESULTS[n]));
         fprintf(stderr, "\n");
@@ -2759,7 +2764,7 @@ static void print_status_line(const char *tag, int k, int v, int cell_number, in
     double now = wall_time();
     LAST_REPORT_TIME = now;
     counter_t done = 0;
-    for (int n = 0; n <= NMAX; n++)
+    for_int_from_to(n, 0, NMAX)
         done = add_mod(done, add_mod(add_mod(PORTRAIT[n], SQUARE[n]), ROW_RESULTS[n]));
     fprintf(stderr, "%s Mx=%d My=%d umax=%d W=%d row k=%d v=%d cell %d/%d: "
             "%zu states, %zu records, %.1f MB, done %s, %.1fs wall, %.1fs cpu\n",
@@ -2782,7 +2787,7 @@ static void count_case(void)
     for (int k = 1 + TWIN; current->num_states; k++) {
         memset(ROW_RESULTS, 0, NMAX_plus_1 * sizeof(counter_t));
         @<Determine the cells of row |k|@>@;
-        for (int cell_number = 0; cell_number < num_row_cells; cell_number++) {
+        for_int_from_to(cell_number, 0, num_row_cells - 1) {
             @<Decide cell |cell_number| of the row for all states@>@;
         }
         if (VERBOSITY >= 1)
@@ -2798,11 +2803,11 @@ $k-1$ rows.  They have been collected in |ROW_RESULTS|, provided that they are a
 least as high as wide; lower rectangles are not counted in this case.
 @<Add the results of this row to the totals and report them@>=
         if (vspan(k - 1) == W) {
-            for (int n = 0; n <= NMAX; n++)
+            for_int_from_to(n, 0, NMAX)
                 SQUARE[n] = add_mod(SQUARE[n], ROW_RESULTS[n]);
             print_row_results(k - 1);
         } else if (vspan(k - 1) > W) {
-            for (int n = 0; n <= NMAX; n++)
+            for_int_from_to(n, 0, NMAX)
                 PORTRAIT[n] = add_mod(PORTRAIT[n], ROW_RESULTS[n]);
             print_row_results(k - 1);
         }
@@ -2910,7 +2915,7 @@ half, including the center.  A chosen position stands for two cells,
 except the center.  The first row to be built is $v_0=v_m+1$.
 @<Prepare the choices for the middle row@>=
         int vm = M_v / 2;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * min_rows + 1) / 2;
@@ -2923,13 +2928,13 @@ central component.  The weight is the number of cells.
             uint8_t label[MAXW], partner[MAXLAB];
             int num_cells = 0;
             memset(label, 0, W);
-            for (int b = 0; b < num_choices; b++)
+            for_int_from_to(b, 0, num_choices - 1)
                 if (chosen[b])
                     label[choice[b]] = label[W - 1 - choice[b]] = 1;
-            for (int i = 0; i < W; i++)
+            for_int_from_to(i, 0, W - 1)
                 if (label[i])
                     label[i] = ++num_cells;
-            for (int i = 0; i < W; i++)
+            for_int_from_to(i, 0, W - 1)
                 if (label[i])
                     partner[label[i]] = label[W - 1 - i]; /* the cell itself at the center */
             if (num_cells + 2 * min_rows <= NMAX) {
@@ -2944,7 +2949,7 @@ Its image is the row $v_0-1$ directly below it.  We choose an arbitrary
 nonempty subset of the twin row, and the row-by-row construction starts with the next row.
 @<Prepare the choices for the twin row@>=
         FIRST_ROW = (M_v + 1) / 2;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - FIRST_ROW) % 2 + 2) % 2 == 0)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * (min_rows - 1)) / 2;
@@ -2973,12 +2978,12 @@ is 2 for each cell.
             int is_twin[MAXW], run_label[MAXW], num_runs = 0, num_components = 0;
             memset(band, 0, W + 1);
             memset(is_twin, 0, W * sizeof(int));
-            for (int b = 0; b < num_choices; b++) {
+            for_int_from_to(b, 0, num_choices - 1) {
                 is_twin[choice[b]] = 1;
                 if (chosen[b])
                     band[choice[b]] = band[W - 1 - choice[b]] = 1;
             }
-            for (int q = 0; q < W; q++) {
+            for_int_from_to(q, 0, W - 1) {
                 new_state.label[q] = 0;
                 if (!band[q])
                     continue;
@@ -2990,7 +2995,7 @@ is 2 for each cell.
                     new_state.label[q] = run_label[num_runs - 1];
                 }
             }
-            for (int r = 0; r < num_runs; r++)
+            for_int_from_to(r, 0, num_runs - 1)
                 if (run_label[r])
                     new_state.partner[run_label[r]] = run_label[num_runs - 1 - r];
             new_state.num_components = num_components;
@@ -3006,7 +3011,7 @@ The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
 @<Determine the cells of row |k|@>=
         int v = FIRST_ROW + k - 1, num_row_cells = 0;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - v) % 2 + 2) % 2 == 0)
                 row_cells[num_row_cells++] = i;
 
@@ -3024,7 +3029,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |source_state|...@>=
                 state_t old_state;
                 unpack(current->keys + source_state * BYTES_PER_KEY, current->decided_position, &old_state);
-                for (int occupied = 0; occupied <= 1; occupied++) {
+                for_int_from_to(occupied, 0, 1) {
                     int status = step(&old_state, i, occupied, last_in_row, &new_state);
                     if (status == DEAD)
                         continue;
@@ -3239,7 +3244,7 @@ sequences agree there, they agree everywhere.
                             @<Compute the flags of the mirror image and compare them with the flags of the state if |comparison == 0|@>@;
                         }
                         if (comparison > 0) {
-                            for (int a = 0; a < W; a++)
+                            for_int_from_to(a, 0, W - 1)
                                 mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
                             mirror.num_components = coded.num_components;
                             mirror.touches = coded.touches;
@@ -3389,10 +3394,10 @@ with the complete command line (including the name |argv[0]| of the
 program), so that every log file and every result file is
 self-describing.
 @<Print the program parameters@>=
-    for (int stream_number = 0; stream_number < 2; stream_number++) {
+    for_int_from_to(stream_number, 0, 1) {
         FILE *stream = stream_number ? stdout : stderr;
         fprintf(stream, "# command:");
-        for (int word = 0; word < argc; word++)
+        for_int_from_to(word, 0, argc - 1)
             fprintf(stream, " %s", argv[word]);
         fprintf(stream, "\n# diag180 built %s %s; N=%d", __DATE__, __TIME__, NMAX);
         if (argc - arg == 4)
@@ -3421,7 +3426,7 @@ cases over the nodes of a cluster.
             printf("# modulus %llu; n #(uspan<vspan) #(uspan=vspan)\n", (unsigned long long)MODULUS);
         else
             printf("# modulus 2**" COUNTER_BITS "; n #(uspan<vspan) #(uspan=vspan)\n");
-        for (int n = 1; n <= NMAX; n++)
+        for_int_from_to(n, 1, NMAX)
             printf("%d %s %s\n", n, counter_to_string(PORTRAIT[n]), counter_to_string(SQUARE[n]));
 
 @ The cases are $(M_x,M_y)\in\{(0,0),(1,0),(1,1)\}$ and all $u_{\max}$ for
@@ -3437,7 +3442,7 @@ it stands also for its mirror image $(0,1)$.
                 int t = M_x - M_y, center_type = M_x + M_y, twice = M_x != M_y;
                 for (umax = t; 2 * umax - t + 1 <= NMAX; umax++) {
                     count_case();
-                    for (int n = 1; n <= NMAX; n++) {
+                    for_int_from_to(n, 1, NMAX) {
                         counter_t *entry = &results[center_type * NMAX_plus_1 + n];
                         *entry = add_mod(*entry, add_mod(PORTRAIT[n], PORTRAIT[n]));
                         *entry = add_mod(*entry, SQUARE[n]);
@@ -3472,8 +3477,8 @@ lemma) can be done in Python with integers of unlimited size.
             snprintf(modulus_string, sizeof modulus_string, "2**" COUNTER_BITS);
         fprintf(result_file, "# diag180 N=%d modulus %s\ntry:\n    Results\nexcept NameError:\n    Results = {}\n", NMAX, modulus_string);
         static const char *type_name[3] = {"R180C", "R180M", "R180V"};
-        for (int n = 1; n <= NMAX; n++)
-            for (int center_type = 0; center_type < 3; center_type++)
+        for_int_from_to(n, 1, NMAX)
+            for_int_from_to(center_type, 0, 2)
                 fprintf(result_file, "Results[%d, %s, '%s'] = %s\n", n, modulus_string, type_name[center_type],
                         counter_to_string(results[center_type * NMAX_plus_1 + n]));
         fclose(result_file);
@@ -3483,7 +3488,7 @@ lemma) can be done in Python with integers of unlimited size.
 $\fix_{\rhoo}(n)$ and its three parts for the three types of centers.
 @<Print the table of results@>=
         printf("# n fix(r180) R180C(center in a cell) R180M(edge midpoint) R180V(vertex)\n");
-        for (int n = 1; n <= NMAX; n++) {
+        for_int_from_to(n, 1, NMAX) {
             counter_t total = add_mod(add_mod(results[n], results[NMAX_plus_1 + n]), results[2 * NMAX_plus_1 + n]);
             printf("%d %s %s %s %s\n", n, counter_to_string(total), counter_to_string(results[n]), counter_to_string(results[NMAX_plus_1 + n]),
                    counter_to_string(results[2 * NMAX_plus_1 + n]));
