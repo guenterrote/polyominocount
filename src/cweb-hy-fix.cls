@@ -23,16 +23,23 @@
 %     section always exists.
 %
 % (3) The list of changed sections at the end ("\ch 60\*, 66\*, 74\*.")
-%     is typeset as ONE link whose name is the whole list.
+%     is typeset as ONE link whose name is the whole list. Also, cweb-hy
+%     sets it as a section "Changed Chunks" of its own, and since the
+%     index starts with \twocolumn (new page), the list stands alone on a
+%     page. cwebmac sets it as a small note; in POLYNUM it appears at the
+%     top of the index page because the last section there is "@* Index."
+%     and \inx puts the page-so-far on top of the two-column index.
 %
 % (4) In the index and in the section numbers after refinement names,
 %     the numbers are separated only by spaces ("argc: 102 103* 105*.");
 %     CWEB's plain macros (cwebmac) use commas.
 %
-% (5) An underlined index number (section where the identifier is
-%     defined) is typeset in math mode, $\underline{103\*}$, so the change
-%     flag * of a changed section comes out as a centered math asterisk,
-%     not as the raised text asterisk of the other numbers.
+% (5) In the index, the change flag * takes space before the following
+%     comma or period, and at an underlined number (section where the
+%     identifier is defined), $\underline{103\*}$, it is a centered math
+%     asterisk. cwebmac lets \* be \lapstar = \rlap{*} in the index: the
+%     star overlaps the comma or period, and inside the \rlap box it is a
+%     raised text asterisk outside the underline.
 %
 % (6) In a refinement name <Parse the command line 103\*> the change
 %     flag is invisible: there \* has its LaTeX meaning (a discretionary
@@ -43,10 +50,11 @@
 % _hyperchunk_N to _hypersect_N (\cwebhyfix@normalize@name). So every
 % link to section N, changed or not, with or without C part, goes to the
 % start of section N. (The margin anchors _hyperchunk_N stay, but are no
-% longer used.) The list of changed sections gets one link per section.
+% longer used.) The list of changed sections gets one link per section
+% and becomes a line under the heading of the index (\cwebIndexIntro).
 % \cweb@num@lnk is redefined to separate the numbers by commas.
-% \CwebIndexDeclared underlines only the number and sets the change flag
-% after it in text mode. \CwebRefNumber shows \* as the change flag.
+% \CwebIndexEntry sets \* to \rlap{*} as in cwebmac. \CwebRefNumber
+% shows \* as the change flag.
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{cweb-hy-fix}[2026/11/15 cweb-hy with repaired hyperlinks]
@@ -114,27 +122,29 @@
     \expandafter\cwebhyfix@original@hypertarget\expandafter{\cwebhyfix@name}}%
 }
 
-% (3) The list of changed sections. cweave writes "\ch 60\*, 66\*." at the
-% end; cweb-hy lets \ch be \cweb@changed_list when the document ends, so
-% redefining \cweb@changed_list here takes effect.
+% (3) The list of changed sections. cweave writes "\ch 60\*, 66\*." just
+% before the index; cweb-hy lets \ch be \cweb@changed_list when the
+% document ends, so redefining \cweb@changed_list here takes effect. It
+% only appends the line to \cwebIndexIntro, which \CwebIdIndex typesets
+% full width under the heading "Index" (in the optional argument of
+% \twocolumn). Hence the list appears only if there is an index.
+\def\CwebChangedListText{The following chunks were changed by the change file:}
 \if@cweb@suppress@changehints@
 \else
   \def\cweb@changed_list#1.{%
-    \CwebListSection{\CwebChangedListName}%
-    \@mkboth{\uppercase{\CwebChangedListName}}%
-            {\uppercase{\CwebChangedListName}}%
-    \message{\CwebChangedListName}%
-    \par\smallskip\noindent
-    The following chunks were changed by the change file:
-    \begingroup
-      \let\*\cwbb@change_flag
-      \let\cwebhyfix@separator\@empty
-      \@for\cwebhyfix@section@number:=#1\do{%
-        \cwebhyfix@separator\def\cwebhyfix@separator{, }%
-        \hyperlink{_hypersect_\cwebhyfix@section@number}%
-                  {\ignorespaces\cwebhyfix@section@number}}.\par
-    \endgroup}
+    \global\cwebIndexIntro\expandafter{\the\cwebIndexIntro
+      \cwebhyfix@changed@line{#1}}}
 \fi
+% \cwebhyfix@changed@line{60\*, 66\*} links each number separately.
+\def\cwebhyfix@changed@line#1{%
+  \par\noindent
+  {\reset@font\CwebCRSize \CwebChangedListText\space
+    \let\*\@empty   % every number here is changed; cwebmac shows no flags
+    \let\cwebhyfix@separator\@empty
+    \@for\cwebhyfix@section@number:=#1\do{%
+      \cwebhyfix@separator\def\cwebhyfix@separator{, }%
+      \hyperlink{_hypersect_\cwebhyfix@section@number}%
+                {\ignorespaces\cwebhyfix@section@number}}.\par}}
 
 % (4) Commas in number lists. \cweb@num@lnk{list, |} is called by
 % cweb-hy for the numbers of an index entry and of a refinement name; the
@@ -171,13 +181,16 @@
      \cweb@num@lnk#1, |}%
     }
 
-% (5) \CwebIndexDeclared is \[ in the index: \[103\*] or \[102].
-% It is called as \cwebhyfix@underline@number<n>\*\cwebhyfix@end, so #2
-% is \* if <n> carries the change flag, and empty otherwise.
-\def\CwebIndexDeclared#1]{\cwebhyfix@underline@number#1\*\cwebhyfix@end}
-\def\cwebhyfix@underline@number#1\*#2\cwebhyfix@end{%
-  $\underline{\hbox{#1}}$%
-  \if\relax\detokenize{#2}\relax\else\*\fi}
+% (5) An index entry; same as \CwebIndexEntry in cweb-hy.cls, but with
+% the change flag in an \rlap (\cwbb@lap_change_flag, as cwebmac's
+% \lapstar). The \let is local to the index, which binds \* anyway.
+\def\CwebIndexEntry#1, #2.{%
+    \par
+    \hangindent\CwebNumberListHangindent
+    \leavevmode
+    \let\*\cwbb@lap_change_flag
+    \cwbb@check_dot{#1}:\quad\cweb@num@lnk#2, |.
+    }
 
 \cwebhyfix@restore@underscore
 \endinput

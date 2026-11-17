@@ -792,7 +792,7 @@ the frontier, and there are several cases:
   $Y$ is floating.
 \end{itemize}
 @<Type...@>=
-enum { OK, DEAD, COMPLETE };
+enum { @!OK, @!DEAD, @!COMPLETE };
 
 @ @<Sub...@>=
 static int retire(uint8_t *label, uint8_t *partner, int i)
@@ -899,8 +899,8 @@ These are $3\cdot9+1=28$ bits, or 4 bytes.
 
 @d CROSSING_OFFSET 4 /* added to |C_SINGLETON| and |C_FIRST| for a crossing component */
 @<Type...@>=
-enum { C_EMPTY, C_CONTINUE, C_SINGLETON, C_FIRST, C_MIDDLE, C_LAST,
-       C_SINGLETON_CROSSING = C_SINGLETON + CROSSING_OFFSET, C_FIRST_CROSSING = C_FIRST + CROSSING_OFFSET };
+enum { @!C_EMPTY, @!C_CONTINUE, @!C_SINGLETON, @!C_FIRST, @!C_MIDDLE, @!C_LAST,
+       @!C_SINGLETON_CROSSING = C_SINGLETON + CROSSING_OFFSET, @!C_FIRST_CROSSING = C_FIRST + CROSSING_OFFSET };
 
 @*1 The length of a key.
 Barequet and Ben-Shachar~\cite{BB,BBcorr} have shown that the number
