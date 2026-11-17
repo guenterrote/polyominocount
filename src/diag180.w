@@ -782,6 +782,7 @@ static void make_state_canonical(const uint8_t *label, const uint8_t *partner, i
 }
 
 @*1 Removing a cell from the frontier.
+\label{sec:retire}
 When the frontier cell at position~|i| can no longer get new
 neighbors, it is \emph{retired}.  If other frontier cells of the same
 component remain, nothing happens.  Otherwise the component $X$ disappears from
@@ -1922,10 +1923,134 @@ Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a central
 component.  Therefore, if there is no central component, the middle cycle must be
 closed completely, and its largest gap is paid as well.
 
-@ The function |cycle_cost| handles one cycle with |num_gaps| gaps of sizes |gap|.
-It returns the sum minus the maximum.  The remaining parameters and
-the calls of |update_best_height| and |update_best_score| have to do with the height, which
-is discussed next.
+@*1 The connection bound.
+If the state already touches a side and the frontier already reaches the
+target row $\Vstar$, nothing is needed for the side and the top, and the
+bound is just the cost for connecting the cactus, including the central
+term.  This simple case is treated first, by the function
+|connection_bound|.  The general case (Section~\ref{sec:height}) adds the
+height and the side, and it repeats the same scan with more bookkeeping.
+At $N=30$, 40, and 44, the simple case covers 31\%, 23\%, and 12\% of the
+calls of the bound.
+
+The function |sum_minus_max| handles one cycle with |num_gaps| gaps of sizes |gap|.
+@<Sub...@>=
+static int sum_minus_max(const int *gap, int num_gaps)
+{
+    /* on entry: |num_gaps| $\ge1$ */
+    int sum = 0, largest = 0;
+    for_int_from_to(t, 0, num_gaps - 1) {
+        sum += gap[t];
+        largest = max(largest, gap[t]);
+    }
+    return sum - largest;
+}
+
+@ The frontier is divided into maximal \emph{runs} of consecutive
+occupied positions; all cells of a run belong to the same component.
+Run |j| extends from position |run_start[j]| to |run_end[j]| and belongs to component
+|run_label[j]|, and |last_run[c]| is the last run of component~|c|.
+@<Find the runs of the frontier; if the frontier is empty, return 0@>=
+    int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
+    int last_run[MAXW + 2];
+    for_int_from_to(i, 0, W - 1)
+        if (label[i]) {
+            if (i == 0 || !label[i - 1]) {
+                run_start[num_runs] = i;
+                run_label[num_runs] = label[i];
+                num_runs++;
+            }
+            run_end[num_runs - 1] = i;
+            last_run[label[i]] = num_runs - 1;
+        }
+    if (!num_runs)
+        return 0;
+
+@ The function |connection_bound| scans the runs from left to right.
+A gap whose right end $b$ is at the kink position needs one more cell
+(Figure~\ref{fig:gap}).
+(In this case, the cell at position $b-1$ of the current row is empty,
+because otherwise it would form a run together with~$b$.)
+@<Sub...@>=
+static int connection_bound(const state_t *state)
+{
+    /* on entry: |KINK_POSITION| has been set */
+    const uint8_t *label = state->label;
+    @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
+    int cost = 0;
+    @<Scan the runs and pay for the pockets, without heights@>@;
+    @<Pay for the outer paths and the bands, and close the middle@>@;
+    return cost;
+}
+
+@ The pockets are processed with a stack, like nested parentheses.
+The gaps of the open pockets are collected in the buffer |pocket_gap|;
+|pocket_label| and |pocket_first_gap| give the component of each open
+pocket and the start of its gaps in the buffer.  Gaps at the top level
+are stored separately: |top_gap[t]| is the gap after the |t|-th top-level
+component |top_label[t]|.  When a run of the component on top of the stack is
+found, the pocket is closed and paid for.
+@<Scan the runs and pay for the pockets, without heights@>=
+    int pocket_label[MAXW], pocket_first_gap[MAXW], num_open_pockets = 0;
+    int pocket_gap[MAXW], num_pocket_gaps = 0;
+    int top_label[MAXW], top_gap[MAXW], num_top = 0;
+    for_int_from_to(j, 0, num_runs - 1) {
+        int component = run_label[j];
+        if (j > 0) {
+            int a = run_end[j - 1], b = run_start[j];
+            int gap = b - a - 1 + (b == KINK_POSITION);
+            if (num_open_pockets)
+                pocket_gap[num_pocket_gaps++] = gap;
+            else
+                top_gap[num_top - 1] = gap;
+        }
+        if (num_open_pockets && pocket_label[num_open_pockets - 1] == component) {
+            num_open_pockets--;
+            int first = pocket_first_gap[num_open_pockets];
+            cost += sum_minus_max(pocket_gap + first, num_pocket_gaps - first);
+            num_pocket_gaps = first;
+        } else if (!num_open_pockets)
+            top_label[num_top++] = component;
+        if (j < last_run[component]) {
+            pocket_label[num_open_pockets] = component;
+            pocket_first_gap[num_open_pockets] = num_pocket_gaps;
+            num_open_pockets++;
+        }
+    }
+
+@ At the top level, |crossing| lists the |num_crossing| crossing components.  Band number |i|
+consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
+counterparts on the right; the last ``band'', $i=k-1$, is the middle.
+If there is no central component (|num_crossing| is even), the middle
+cycle is closed completely: its largest gap is paid as well.
+@<Pay for the outer paths and the bands, and close the middle@>=
+    int crossing[MAXW], num_crossing = 0;
+    for_int_from_to(t, 0, num_top - 1)
+        if (state->partner[top_label[t]] != 0) /* crossing */
+            crossing[num_crossing++] = t;
+    if (num_crossing) {
+        for_int_from_to(t, 0, crossing[0] - 1)
+            cost += top_gap[t];
+        for_int_from_to(t, crossing[num_crossing - 1], num_top - 2)
+            cost += top_gap[t];
+        int num_pairs = num_crossing / 2;
+        for_int_from_to(i, 0, num_pairs - 1) {
+            int gap[2 * MAXW], num_gaps = 0;
+            int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
+            for_int_from_to(t, a, b - 1)
+                gap[num_gaps++] = top_gap[t];
+            if (i < num_pairs - 1)
+                for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1)
+                    gap[num_gaps++] = top_gap[t];
+            if (i == num_pairs - 1 && num_crossing % 2 == 0)
+                for_int_from_to(t, 0, num_gaps - 1)
+                    cost += gap[t]; /* the middle without central component */
+            else
+                cost += sum_minus_max(gap, num_gaps);
+        }
+    } else
+        for_int_from_to(t, 0, num_top - 2)
+            cost += top_gap[t];
 
 @*1 Reaching the sides and the top.
 \label{sec:height}
@@ -2073,7 +2198,8 @@ static int gap_score(int a, int row_a, int b, int row_b)
     return best;
 }
 
-@ Now we can give the function |cycle_cost|.  Besides returning the sum minus
+@ Now we can give the function |cycle_cost|, the extension of
+|sum_minus_max| for the general case.  Besides returning the sum minus
 the maximum, it registers the peaks and scores of all gaps that are
 certainly bridged.  If the largest gap |max1| is unique, bridging it
 instead of the second largest gap |max2| is recorded as an option with
@@ -2334,7 +2460,7 @@ calling the function |bound| of the program for these states.
   \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
   \node[below] at (0,-4.6) {(b) $1+5=6$ cells};
 \end{scope}
-\begin{scope}[xshift=7.6cm,yshift=-6.75cm]
+\begin{scope}[xshift=7.6cm,yshift=-7.1cm]
   \foreach \v in {-2,...,9} \foreach \u in {-9,...,9} {
     \ifodd\numexpr\v+\u+16\relax \else
       \def\sty{emp}
@@ -2357,7 +2483,7 @@ calling the function |bound| of the program for these states.
   \draw[dashed] (-10,-3)--(-10,9.3+1) (10,-3)--(10,9.3+1);
   \foreach \v in {-2,0,...,9} \node[left] at (-10.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,18} \node at (\i-9,-3.9) {\scriptsize\i};
-  \node[below] at (0,-6.6) {(d) $4+5=9$ cells};
+  \node[below] at (0,-5.6) {(d) $4+5=9$ cells};
 \end{scope}
 \begin{scope}[xshift=0cm,yshift=-6.75cm]
   \foreach \v in {-4,...,8} \foreach \u in {-8,...,8} {
@@ -2398,9 +2524,9 @@ calling the function |bound| of the program for these states.
 \end{figure}
 
 @*1 Putting the bound together.
-A gap whose right end $b$ is at the kink position needs one more cell.
-(In this case, the cell at position $b-1$ of the current row is empty,
-because otherwise it would form a run together with~$b$.)
+The function |cactus_bound| extends |connection_bound|: the scan of the
+runs is the same, but every gap also carries its peak and its score, and
+the options for the height are collected on the way.
 @<Sub...@>=
 static int cactus_bound(const state_t *state)
 {
@@ -2416,24 +2542,6 @@ static int cactus_bound(const state_t *state)
     return cost;
 }
 
-@ Run |j| extends from position |run_start[j]| to |run_end[j]| and belongs to component
-|run_label[j]|.
-@<Find the runs...@>=
-    int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
-    int last_run[MAXW + 2];
-    for_int_from_to(i, 0, W - 1)
-        if (label[i]) {
-            if (i == 0 || !label[i - 1]) {
-                run_start[num_runs] = i;
-                run_label[num_runs] = label[i];
-                num_runs++;
-            }
-            run_end[num_runs - 1] = i;
-            last_run[label[i]] = num_runs - 1;
-        }
-    if (!num_runs)
-        return 0;
-
 @ @<Initialize the height...@>=
     FREE_HEIGHT = -1000;
     FREE_SCORE = 1 << 20;
@@ -2446,14 +2554,9 @@ static int cactus_bound(const state_t *state)
             update_best_score(side_and_top_cost(frontier_row(i), i));
         }
 
-@ The pockets are processed with a stack, like nested parentheses.
-The gaps of the open pockets are collected in a buffer (|pocket_gap|, with
-peaks |pocket_peak| and scores |pocket_score|); |pocket_label| and |pocket_first_gap| give the component of each open
-pocket and the start of its gaps in the buffer.  Gaps at the top level
-are stored separately: |top_gap[t]| is the gap after the |t|-th top-level
-component |top_label[t]|.  When a run of the component on top of the stack is
-found, the pocket is closed and paid for.
-@<Scan the runs...@>=
+@ This is the scan of |connection_bound|, with the peaks
+(|pocket_peak|, |top_peak|) and scores (|pocket_score|, |top_score|) of the gaps.
+@<Scan the runs from left to right and pay for the pockets@>=
     /* open pockets: component and start of its gaps in the gap buffer */
     int pocket_label[MAXW], pocket_first_gap[MAXW], num_open_pockets = 0;
     int pocket_gap[MAXW], pocket_peak[MAXW], pocket_score[MAXW], num_pocket_gaps = 0;
@@ -2493,10 +2596,9 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |crossing| lists the |num_crossing| crossing components.  Band number |i|
-consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
-counterparts on the right; the last ``band'', $i=k-1$, is the middle.
-@<Pay for the outer paths...@>=
+@ Again as in |connection_bound|, but the largest gap of the middle is
+remembered for the central term, which also enters the height term.
+@<Pay for the outer paths, the bands and the middle@>=
     /* top level */
     int crossing[MAXW], num_crossing = 0;
     for_int_from_to(t, 0, num_top - 1)
@@ -2568,7 +2670,7 @@ An older and weaker bound is retained for comparison (option
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 The code is part of the function |bound| below; the state is not empty.
-@<Set |connection_bound| to the old spanning tree bound@>=
+@<Set |connection_term| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
         for_int_from_to(j, 1, state->num_components) {
@@ -2623,14 +2725,15 @@ The code is part of the function |bound| below; the state is not empty.
             int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
             cost += min(left_distance, right_distance);
         }
-        connection_bound = 2 * cost;
+        connection_term = 2 * cost;
 
 @*1 The complete bound.
 The function |bound| returns a lower bound on the \emph{weight} that
 must still be added to a nonempty state, or $-1$ if the state can never
 be completed.  Here |k| is the number of the current row, counted from
 the first row of $P^+$, and |min_rows| is the smallest number of rows for
-which the height reaches $W$.
+which the height reaches $W$.  If the state touches a side and the
+frontier reaches the target row, the simple |connection_bound| suffices.
 @<Sub...@>=
 static int bound(const state_t *state, int k, int min_rows, int i, int last_in_row)
 {
@@ -2651,12 +2754,18 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     CURRENT_ROW = FIRST_ROW + k - 1;
     KINK_POSITION = i + 1; /* at the end of a row, no frontier cell is at this position or beyond */
     TARGET_ROW = FIRST_ROW + min_rows - 1;
-    int connection_bound;
+    int frontier_height = CURRENT_ROW - 1; /* the highest row of a frontier cell */
+    for_int_from_to(j, 0, KINK_POSITION - 1)
+        if (label[j])
+            frontier_height = CURRENT_ROW;
+    int connection_term;
     if (USE_OLD_BOUND) {
-        @<Set |connection_bound| to the old spanning tree bound@>@;
-    } else
-        connection_bound = 2 * cactus_bound(state);
-    lowerbound = max(lowerbound, connection_bound);
+        @<Set |connection_term| to the old spanning tree bound@>@;
+    } else if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
+    lowerbound = max(lowerbound, connection_term);
     return lowerbound;
 }
 
@@ -3062,10 +3171,9 @@ they cannot be completed or because all weights were too large.
                     if (target_state != NO_STATE)
                         lowerbound = next->lowerbound[target_state];
                     else {
-                        lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+@<Compute |lowerbound| for |new_state|, looking one cell ahead@>@;
                         if (lowerbound < 0)
                             continue;
-@<Sharpen |lowerbound| by looking one cell ahead@>@;
                     }
                     int limit = NMAX - lowerbound - added_weight;
                     if (current->records[current->first_record[source_state] - 1].weight > limit)
@@ -3085,31 +3193,91 @@ therefore try both possibilities for the next cell and take the smaller
 of the two bounds, including the weight of the cell.  A completion in
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.
-@<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last_in_row && (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
-                        /* one step ahead: the next cell is present or not */
-                        int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
-                        int lookahead_bound = 1 << 20;
-                        state_t state_ahead;
-                        for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
-                            int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
-                            if (status_ahead == DEAD)
-                                continue;
-                            /* a completion only counts if it is a valid polyomino */
-                            if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
-                                continue;
-                            int bound_this_way = 2 * next_occupied;
-                            if (status_ahead == OK) {
-                                int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
-                                if (lowerbound_ahead < 0)
-                                    continue;
-                                bound_this_way += lowerbound_ahead;
-                            }
-                            lookahead_bound = min(lookahead_bound, bound_this_way);
+is switched off.  In the most frequent case, only one of the two possibilities
+is possible, and a light version of the lookahead is used (see below).
+@<Compute |lowerbound| for |new_state|, looking one cell ahead@>=
+                        int kink_cell_forced = 0;
+                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+                            !new_state.label[i] && new_state.label[i + 1]) {
+                            @<Set |kink_cell_forced| if only the kink cell can continue the component at the kink@>@;
                         }
-                        lowerbound = max(lowerbound, lookahead_bound);
-                    }
+                        if (kink_cell_forced) {
+                            @<Place the kink cell directly and set |lowerbound|@>@;
+                        } else {
+                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+                                @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
+                            }
+                        }
+
+@ (The condition |cell_number + 1 < num_row_cells - 1| says that the
+next cell exists and is not the last cell of the row; then $i+1<W$.)
+@<Sharpen |lowerbound| by trying both...@>=
+int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
+int lookahead_bound = 1 << 20;
+state_t state_ahead;
+for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
+    int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
+    if (status_ahead == DEAD)
+        continue;
+    /* a completion only counts if it is a valid polyomino */
+    if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
+        continue;
+    int bound_this_way = 2 * next_occupied;
+    if (status_ahead == OK) {
+        int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
+        if (lowerbound_ahead < 0)
+            continue;
+        bound_this_way += lowerbound_ahead;
+    }
+    lookahead_bound = min(lookahead_bound, bound_this_way);
+}
+lowerbound = max(lowerbound, lookahead_bound);
+
+@ {\bf The light lookahead.}
+Let $b=i+1$ be the kink position, with the frontier cell of component~$X$.
+Its upper neighbors are the empty cell~$i$ and the kink cell |next_i|${}=b+1$.
+If $b$ is the only frontier cell of $X$, and $X$ is floating or central, and
+there are other components, then leaving the kink cell empty would make the
+state |DEAD| when $b$ is retired (Section~\ref{sec:retire}).  So the kink cell
+must be occupied, and the lookahead has only one branch.  We carry it out
+directly, without |step|, and we do not even compute the bound for
+|new_state| itself (in runs up to $N=40$, it was never larger than
+the bound after the kink cell): the kink cell takes over the label of~$b$, and
+it is joined with the frontier cell at position $b+2$, if there is one.
+The kink cell is not the last cell of the row, so nothing else is retired.
+The resulting state need not be canonical; the bound does not care.
+
+In terms of the gaps, the gap from $b$ to the right shrinks by one, the gap
+to the left keeps its cost ($b-a$, now without the extra cell at the
+kink), and the kink cell itself costs one cell, or a weight of~2.
+If the right neighbor is at $b+2$, the gap becomes zero and the
+components are joined.
+@<Set |kink_cell_forced|...@>=
+int kink_label = new_state.label[i + 1];
+if (!is_paired(new_state.partner, kink_label)) {
+    int alone = 1, others_exist = 0;
+    for_int_from_to(j, 0, W - 1)
+        if (new_state.label[j] && j != i + 1) {
+            if (new_state.label[j] == kink_label)
+                alone = 0;
+            else
+                others_exist = 1;
+        }
+    kink_cell_forced = alone && others_exist;
+}
+
+@ @<Place the kink cell directly...@>=
+int next_i = row_cells[cell_number + 1];
+state_t state_ahead = new_state;
+state_ahead.label[next_i] = new_state.label[i + 1];
+state_ahead.label[i + 1] = 0;
+if (next_i + 1 < W && state_ahead.label[next_i + 1])
+    join(state_ahead.label, state_ahead.partner, state_ahead.label[next_i], state_ahead.label[next_i + 1]);
+state_ahead.touches = new_state.touches || next_i == W - 1;
+int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, 0);
+lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
 
 @ @<Swap the tables...@>=
             table_t *swap = current;

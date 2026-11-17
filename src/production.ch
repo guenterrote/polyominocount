@@ -82,7 +82,7 @@ An older and weaker bound is retained for comparison (option
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 The code is part of the function |bound| below; the state is not empty.
-@<Set |connection_bound| to the old spanning tree bound@>=
+@<Set |connection_term| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
         for_int_from_to(j, 1, state->num_components) {
@@ -137,31 +137,47 @@ The code is part of the function |bound| below; the state is not empty.
             int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
             cost += min(left_distance, right_distance);
         }
-        connection_bound = 2 * cost;
+        connection_term = 2 * cost;
 
 @y
 @z
 
 @x
-    int connection_bound;
+    int connection_term;
     if (USE_OLD_BOUND) {
-        @<Set |connection_bound| to the old spanning tree bound@>@;
-    } else
-        connection_bound = 2 * cactus_bound(state);
+        @<Set |connection_term| to the old spanning tree bound@>@;
+    } else if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
 @y
-    int connection_bound = 2 * cactus_bound(state);
+    int connection_term;
+    if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
 @z
 
 @x
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.
-@<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last_in_row && (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+is switched off.  In the most frequent case, only one of the two possibilities
 @y
 the lookahead counts only if it would be a valid polyomino.
-@<Sharpen |lowerbound|...@>=
-                    if (!last_in_row && !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
+In the most frequent case, only one of the two possibilities
+@z
+
+@x
+                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+@y
+                        if (cell_number + 1 < num_row_cells - 1 &&
+@z
+
+@x
+                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+@y
+                            if (lowerbound >= 0 && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
 @z
 
 @x
