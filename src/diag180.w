@@ -411,6 +411,8 @@ columns of the right parity).  The boundary is the \emph{frontier line}
 (the red line in the figures), and the decided cells that touch it from
 below are the \emph{frontier cells}.  (Without a qualifier, a frontier cell
 is usually an occupied one, a cell of $P^+$.)
+@^frontier line@>
+@^frontier cell@>
 The place where the frontier line steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
 Formally, we define the \emph{kink position} $k$ as the coordinate of the
@@ -2023,35 +2025,42 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |crossing| lists the |num_crossing| crossing components.  Band number |i|
-consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
-counterparts on the right; the last ``band'', $i=k-1$, is the middle.
-If there is no central component (|num_crossing| is even), the middle
-cycle is closed completely: its largest gap is paid as well.
+@ At the top level, |crossing| lists the |num_crossing| crossing components;
+there are $k=|num_crossing|/2$ crossing pairs.  Band number $i$, for $0\le i<k-1$,
+consists of the gaps from |crossing[i]| to |crossing[i+1]| and their
+counterparts on the right, from |crossing[num_crossing-2-i]| to |crossing[num_crossing-1-i]|.
+The middle consists of the gaps from $A_k$, which is |crossing[k-1]|, to
+$\rhoo A_k$, which is |crossing[num_crossing-k]|.
+The flag |MIDDLE_EXISTS| is set if there is no central component
+(|num_crossing| is even and positive); then the middle
+cycle must be closed completely: its largest gap is paid as well.
 @<Pay for the outer paths and the bands, and close the middle@>=
     int crossing[MAXW], num_crossing = 0;
     for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
+    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
     if (num_crossing) {
         for_int_from_to(t, 0, crossing[0] - 1)
             cost += top_gap[t];
         for_int_from_to(t, crossing[num_crossing - 1], num_top - 2)
             cost += top_gap[t];
         int num_pairs = num_crossing / 2;
-        for_int_from_to(i, 0, num_pairs - 1) {
+        for_int_from_to(i, 0, num_pairs - 2) { /* the band between pair $i$ and pair $i+1$ */
             int gap[2 * MAXW], num_gaps = 0;
-            int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
-            for_int_from_to(t, a, b - 1)
+            for_int_from_to(t, crossing[i], crossing[i + 1] - 1)
                 gap[num_gaps++] = top_gap[t];
-            if (i < num_pairs - 1)
-                for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1)
-                    gap[num_gaps++] = top_gap[t];
-            if (i == num_pairs - 1 && num_crossing % 2 == 0)
-                for_int_from_to(t, 0, num_gaps - 1)
-                    cost += gap[t]; /* the middle without central component */
+            for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1)
+                gap[num_gaps++] = top_gap[t];
+            cost += sum_minus_max(gap, num_gaps);
+        }
+        if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
+            int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
+            if (MIDDLE_EXISTS)
+                for_int_from_to(t, first, last - 1)
+                    cost += top_gap[t]; /* no central component: close the middle completely */
             else
-                cost += sum_minus_max(gap, num_gaps);
+                cost += sum_minus_max(top_gap + first, last - first);
         }
     } else
         for_int_from_to(t, 0, num_top - 2)
@@ -2555,7 +2564,6 @@ static int cactus_bound(const state_t *state)
     FREE_HEIGHT = -1000;
     FREE_SCORE = 1 << 20;
     NUM_OPTIONS = 0;
-    MIDDLE_EXISTS = 0;
     CURRENT_TOUCHES = touches;
     for_int_from_to(i, 0, W - 1)
         if (label[i]) {
@@ -2615,6 +2623,9 @@ remembered for the central term, which also enters the height term.
     for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
+    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
+        /* without a central component, only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
+           some $X$ to $\rhoo X$: the right side of a band is just the image of its left side */
     if (num_crossing) {
         for_int_from_to(t, 0, crossing[0] - 1) {
             cost += top_gap[t];
@@ -2627,31 +2638,27 @@ remembered for the central term, which also enters the height term.
             update_best_score(top_score[t]);
         }
         int num_pairs = num_crossing / 2;
-        for_int_from_to(i, 0, num_pairs - 1) {
-            int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0, max1, peak_of_max, score_of_max;
-            int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
-            for_int_from_to(t, a, b - 1) {
+        for_int_from_to(i, 0, num_pairs - 2) { /* the band between pair $i$ and pair $i+1$ */
+            int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0;
+            for_int_from_to(t, crossing[i], crossing[i + 1] - 1) {
                 gap[num_gaps] = top_gap[t];
                 score[num_gaps] = top_score[t];
                 peak[num_gaps++] = top_peak[t];
             }
-            if (i < num_pairs - 1)
-                for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1) {
-                    gap[num_gaps] = top_gap[t];
-                    score[num_gaps] = top_score[t];
-                    peak[num_gaps++] = top_peak[t];
-                }
-            cost += cycle_cost(gap, peak, score, num_gaps, &max1, &peak_of_max, &score_of_max);
-            if (i == num_pairs - 1 && num_crossing % 2 == 0) {
-                /* there is no central component, and
-                   only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
-                   some $X$ to $\rhoo X$: the right side of a band is just the image
-                   of its left side */
-                MIDDLE_EXISTS = 1;
-                MIDDLE_GAP = max1;
-                MIDDLE_SCORE = score_of_max;
-                MIDDLE_PEAK = peak_of_max;
+            for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1) {
+                gap[num_gaps] = top_gap[t];
+                score[num_gaps] = top_score[t];
+                peak[num_gaps++] = top_peak[t];
             }
+            cost += cycle_cost(gap, peak, score, num_gaps, 0, 0, 0);
+        }
+        if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
+            int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
+            if (MIDDLE_EXISTS)
+                cost += cycle_cost(top_gap + first, top_peak + first, top_score + first, last - first,
+                    &MIDDLE_GAP, &MIDDLE_PEAK, &MIDDLE_SCORE);
+            else
+                cost += cycle_cost(top_gap + first, top_peak + first, top_score + first, last - first, 0, 0, 0);
         }
     } else {
         for_int_from_to(t, 0, num_top - 2) {
