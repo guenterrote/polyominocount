@@ -226,10 +226,21 @@
     \@ifundefined{cwebhyfix@without@program@\the\c@chunk}%
       {\global\cwebhyfix@number@at@paragraph@startfalse}%
       {\global\cwebhyfix@number@at@paragraph@starttrue}}
+  % The margin number is built like \cwbb@marginal_chunkno of cwbasehy,
+  % with two differences: \normalfont, because the paragraph may start
+  % inside the bold run-in heading; and \everypar{} for the \noindent in
+  % the zero-width \vbox, because \everypar may still hold the run-in
+  % heading (the pilcrow) of \@startsection, which would otherwise be typeset there
+  % (above the line) instead of in the paragraph.
   \AddToHook{para/begin}{%
     \ifcwebhyfix@number@at@paragraph@start
       \global\cwebhyfix@number@at@paragraph@startfalse
-      \cwbb@marginal_chunkno
+      \vadjust{%
+        \setbox\z@\hbox to\z@{%
+          \hss\vphantom{g}\normalfont\small\thechunk\hskip\marginparsep}%
+        \vbox to\z@{%
+          \hsize\z@ \vss \everypar{}%
+          \noindent\raise\dp\z@\box\z@}}%
     \fi}
   \AtEndDocument{\cwebhyfix@close@previous@chunk}
 \fi
