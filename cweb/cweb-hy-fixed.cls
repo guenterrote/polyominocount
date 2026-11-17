@@ -52,6 +52,11 @@
 %     flag is invisible: there \* has its LaTeX meaning (a discretionary
 %     multiplication sign), while cwebmac shows "103*".
 %
+% (7) In the hierarchic structure, the chunk number is printed only in
+%     the margin of the first C part of the chunk (by \B). A chunk with no
+%     C part (only commentary and maybe @d definitions) shows its number
+%     nowhere, although the index and the links refer to it.
+%
 % Fix: \hypertarget and \hyperlink delete \* and spaces from the names
 % (\cwebhyfix@strip@name); in addition, \hyperlink redirects
 % _hyperchunk_N to _hypersect_N (\cwebhyfix@normalize@name). So every
@@ -61,7 +66,8 @@
 % and becomes a line under the heading of the index (\cwebIndexIntro).
 % \cweb@num@lnk is redefined to separate the numbers by commas.
 % \CwebIndexEntry sets \* to \rlap{*} as in cwebmac. \CwebRefNumber
-% shows \* as the change flag.
+% shows \* as the change flag. A chunk without C part gets its number in
+% the margin at its first line (needs a second LaTeX run, via the .aux).
 %
 
 %
@@ -690,6 +696,53 @@ by LaTeX.%
     {\reset@font \footnotesize \kern .5em\let\*\cwbb@change_flag
      \cweb@num@lnk#1, |}%
     }
+
+% (7) Chunk numbers for chunks without C part (hierarchic structure).
+% The original \CwebNumberProgramPart (set up by \cwbb@init_print_chunk
+% at each chunk start, called by the first \B of the chunk) puts the
+% number in the margin. We record whether it was called; when the next
+% chunk starts or the document ends, a chunk where it was not called is
+% written to the .aux file as \cwebhyfix@chunk@without@program{N}. In
+% the next run, such a chunk puts its number in the margin of its first
+% paragraph: the run-in heading line of an unstarred chunk, the heading
+% line of a starred one (LaTeX hook para/begin).
+% Invariant: \cwebhyfix@previous@chunk is the number of the chunk being
+% typeset (empty before the first one), and \ifcwebhyfix@program@part@seen
+% says whether this chunk has printed its number at a C part so far.
+\ifcase\cweb@structure  % hierarchic
+  \newif\ifcwebhyfix@program@part@seen
+  \newif\ifcwebhyfix@number@at@paragraph@start
+  \def\cwebhyfix@previous@chunk{}
+  \def\cwebhyfix@chunk@without@program#1{%
+    \global\@namedef{cwebhyfix@without@program@#1}{}}
+  \def\cwebhyfix@close@previous@chunk{%
+    \ifx\cwebhyfix@previous@chunk\@empty\else
+      \ifcwebhyfix@program@part@seen\else
+        \immediate\write\@auxout{\string\cwebhyfix@chunk@without@program
+          {\cwebhyfix@previous@chunk}}%
+      \fi
+    \fi}
+  \let\cwebhyfix@original@init@print@chunk\cwbb@init_print_chunk
+  \def\cwbb@init_print_chunk{%
+    \cwebhyfix@close@previous@chunk
+    \xdef\cwebhyfix@previous@chunk{\the\c@chunk}%
+    \global\cwebhyfix@program@part@seenfalse
+    \cwebhyfix@original@init@print@chunk
+    % the original defined \CwebNumberProgramPart; record its first call
+    \let\cwebhyfix@original@number@program@part\CwebNumberProgramPart
+    \def\CwebNumberProgramPart{%
+      \global\cwebhyfix@program@part@seentrue
+      \cwebhyfix@original@number@program@part}%
+    \@ifundefined{cwebhyfix@without@program@\the\c@chunk}%
+      {\global\cwebhyfix@number@at@paragraph@startfalse}%
+      {\global\cwebhyfix@number@at@paragraph@starttrue}}
+  \AddToHook{para/begin}{%
+    \ifcwebhyfix@number@at@paragraph@start
+      \global\cwebhyfix@number@at@paragraph@startfalse
+      \cwbb@marginal_chunkno
+    \fi}
+  \AtEndDocument{\cwebhyfix@close@previous@chunk}
+\fi
 
 %%% \endprog
 
