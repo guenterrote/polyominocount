@@ -1570,7 +1570,7 @@ count, we have to satisfy three conditions:
 In graph-theoretic terms, this is a \emph{Group Steiner Tree} problem.
  The top row can be one of the groups to be connected;
 another one can be formed by the left and right side, taken together as
-one group.
+one group. Due to the planarity of the grid graph on which the polyomino lives, the problem can be solved efficiently.
 
 % https://cs.stackexchange.com/questions/51877/%
 %connecting-an-unconnected-forest-of-subtrees-in-a-graph
@@ -2032,7 +2032,9 @@ counterparts on the right, from |crossing[num_crossing-2-i]| to |crossing[num_cr
 The middle consists of the gaps from $A_k$, which is |crossing[k-1]|, to
 $\rhoo A_k$, which is |crossing[num_crossing-k]|.
 The flag |MIDDLE_EXISTS| is set if there is no central component
-(|num_crossing| is even and positive); then the middle
+(|num_crossing| is even and positive);
+[CLAUDE: replace BY |CENTRAL_COMPONENT_EXISTS|, with opposite meaning.]
+then the middle
 cycle must be closed completely: its largest gap is paid as well.
 @<Pay for the outer paths and the bands, and close the middle@>=
     int crossing[MAXW], num_crossing = 0;
@@ -2041,6 +2043,7 @@ cycle must be closed completely: its largest gap is paid as well.
             crossing[num_crossing++] = t;
     MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
     if (num_crossing) {
+@/@,    /* Connect the cells left of the first crossing component, and right of the last crossing component: */
         for_int_from_to(t, 0, crossing[0] - 1)
             cost += top_gap[t];
         for_int_from_to(t, crossing[num_crossing - 1], num_top - 2)
@@ -2048,6 +2051,7 @@ cycle must be closed completely: its largest gap is paid as well.
         int num_pairs = num_crossing / 2;
         for_int_from_to(i, 0, num_pairs - 2) { /* the band between pair $i$ and pair $i+1$ */
             int gap[2 * MAXW], num_gaps = 0;
+	    /* start to set up the list of gaps in |gap| */
             for_int_from_to(t, crossing[i], crossing[i + 1] - 1)
                 gap[num_gaps++] = top_gap[t];
             for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1)
@@ -2153,7 +2157,7 @@ static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} tu
 static int FREE_HEIGHT, FREE_SCORE; /* best height and best score reached for free */
 static int MIDDLE_EXISTS; /* is there a middle cycle that must be closed (no central component)? */
 static int MIDDLE_GAP, MIDDLE_PEAK, MIDDLE_SCORE; /* its largest gap, with peak and score */
-static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* options */
+static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* alternative options instead of merely optimizing the gap */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
 static int KINK_POSITION; /* the kink position: one more than the position that was decided last */
@@ -2224,7 +2228,17 @@ the maximum, it registers the peaks and scores of all gaps that are
 certainly bridged.  If the largest gap |max1| is unique, bridging it
 instead of the second largest gap |max2| is recorded as an option with
 extra cost |max1-max2|.  If the pointers are nonnull, the largest gap and
-its peak and score are returned (this is used for the central term).
+its peak and score are returned. (This is used for the central term.)
+
+[TO BE INSERTED SOMEWHERE: The treatment of nested components is quite similar to the case of horizontal rows. The treatment of top-level components is more complicated due to the symmetry.]
+
+[TO BE INSERTED SOMEWHERE: In contrast to the case of horizontal rows, the treatment of the connection costs is more tricky, because the requirements of reaching the sides and of reaching the target row are not independent of each other.]
+
+[TO BE INSERTED SOMEWHERE: A certain peak may be missing, because it was eliminated, being the highest-cost peak in some cycle.
+However, such a peak might be advantageous from the point of view of the connection cost.
+Therefore, in each cycle, we also consider removing the second-largest peak.
+In this way, we give a chance to every peak of being in the solution.]
+
 @<Sub...@>=
 static int cycle_cost(const int *gap, const int *peak, const int *score, int num_gaps, int *max1_out, int *peak_out, int *score_out)
 {
