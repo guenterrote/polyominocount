@@ -1,6 +1,6 @@
 This is a CWEB change file for diag180.w.  It produces the production
 version of the program, without the experimental options -K (old bound),
--A and -N (variants of the lookahead), -H (no height terms), and -C
+-N and -B (variants of the lookahead), -H (no height terms), and -C
 (check of packing and unpacking).
 
     ctangle diag180.w production.ch diag180p.c      (make tangle)
@@ -160,15 +160,13 @@ The code is part of the function |bound| below; the state is not empty.
 
 @x
 the lookahead counts only if it would be a valid polyomino.  With the
-option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.  In the most frequent case, only one of the two possibilities
+option \texttt{-N} the lookahead is switched off.
 @y
 the lookahead counts only if it would be a valid polyomino.
-In the most frequent case, only one of the two possibilities
 @z
 
 @x
-                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+                        if (LOOKAHEAD && cell_number + 1 < num_row_cells - 1 &&
 @y
                         if (cell_number + 1 < num_row_cells - 1 &&
 @z
@@ -181,13 +179,13 @@ In the most frequent case, only one of the two possibilities
 
 @x
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+                                !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
 @y
                             if (lowerbound >= 0 && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
 @z
 
 @x
-  -N     no lookahead;   -A  lookahead after every cell
+  -N     no lookahead
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
@@ -201,15 +199,13 @@ static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 @z
 
 @x
-static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int LOOKAHEAD = 1; /* lookahead at the kink? (option \texttt{-N} turns it off) */
 static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 @y
 @z
 
 @x
-        else if (!strcmp(argv[arg], "-A"))
-            LOOKAHEAD = 2, arg++;
         else if (!strcmp(argv[arg], "-N"))
             LOOKAHEAD = 0, arg++;
         else if (!strcmp(argv[arg], "-H"))
@@ -226,7 +222,7 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
 @x
         fprintf(stream, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 USE_OLD_BOUND ? "old Kruskal (-K)" : "cactus", USE_HEIGHT_TERMS ? "on" : "off (-H)",
-                LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
+                !LOOKAHEAD ? "off (-N)" : BLOCKED_LOOKAHEAD ? "at the kink, blocked gaps" : "at the kink, both choices (-B)",
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
 @y
         fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\n",
@@ -235,7 +231,7 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
 
 @x
 separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
-\texttt{-N}, \texttt{-A}) lead to the same counts; this is a strong test, since an
+\texttt{-N}, \texttt{-B}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 @y
 separately.  In the full version of the program, different variants of

@@ -30,7 +30,7 @@ test: build/redelmeier build/diag180 build/diag180p
 
 # diag180 is a CWEB program: src/diag180.w is the source.
 # src/production.ch is a CWEB change file that turns it into the production
-# version diag180p (without the experimental options -K, -A, -N, -H).
+# version diag180p (without the experimental options -K, -N, -B, -H).
 # "make tangle" regenerates src/diag180.c and src/diag180p.c (which are kept
 # in the repository, so that ctangle is not needed for compiling);
 # "make doc" produces doc/diag180.pdf and doc/diag180p.pdf (needs cweave,

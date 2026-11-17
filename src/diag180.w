@@ -252,9 +252,9 @@ are $(u\pm1,v\pm1)$.
 In our drawings,
 the point with coordinates $(u,v)$ lies at the center of its %respective
 cell.
-The set of cells with a fixed $v$ is a \emph{row}
+The set of cells with a fixed $v$ is a \emph{row} @^row@>
 (a diagonal of the original grid); the set of cells with fixed~$u$ is a
-\emph{column}.  A neighbor of a cell is always in an adjacent row
+\emph{column}.  A neighbor of a cell is always in an adjacent row @^column@>
 \emph{and} in an adjacent column.
 
 In these coordinates,
@@ -265,13 +265,13 @@ $(M_x,M_y)=(0,0)$, $(1,0)$, $(1,1)$ are
 $(M_u,M_v)=(0,0)$, $(1,1)$, $(0,2)$, see Figure~\ref{fig:coords}.
 
 Let $u_{\max}$ be the largest $u$-coordinate of~$P$.  By symmetry the
-smallest is $u_{\min}=M_u-u_{\max}$.  A \emph{case} is a triple
+smallest is $u_{\min}=M_u-u_{\max}$.  A \emph{case} is a triple @^case@>
 $(M_x,M_y,u_{\max})$: we count the symmetric polyominoes that live in the
 strip $u_{\min}\le u\le u_{\max}$ of
 $$ W=u_{\max}-u_{\min}+1=2u_{\max}-M_u+1 $$
 columns and touch its two sides.  (By symmetry, touching one side implies touching
 the other.)  Inside the program the columns are numbered by their
-\emph{position} $i=u-u_{\min}$, $0\le i<W$, and the image of position
+\emph{position} $i=u-u_{\min}$, $0\le i<W$, and the image of position @^position@>
 $i$ is position $W-1-i$.
 
 \begin{figure}[htb]
@@ -380,19 +380,19 @@ static int NMAX_plus_1; /* length of a vector of counters, |NMAX+1| */
 
 @*1 The half polyomino.
 \label{sec:half}
-Let the \emph{upper half} $P^+$ be the set of cells of $P$ with $v>M_v/2$, together with the cells
-of the \emph{middle row} $v=M_v/2$ if $M_v$ is even.  Then $P=P^+\cup\rhoo(P^+)$.
+Let the \emph{upper half} $P^+$ be the set of cells of $P$ with $v>M_v/2$, together with the cells @^upper half@>
+of the \emph{middle row} $v=M_v/2$ if $M_v$ is even.  Then $P=P^+\cup\rhoo(P^+)$. @^middle row@>
 The program constructs $P^+$ row by row, with increasing~$v$, starting
 at the middle, and within each row from left to right, deciding for each
 cell whether it belongs to $P^+$ or not.
 
 Every cell of $P^+$ outside the middle row stands for two cells of $P$ and
 contributes 2 to the size~$n$.  We call the contribution to $n$ the
-\emph{weight}.  If $M_v$ is even, the middle row is mapped to itself.
+\emph{weight}.  If $M_v$ is even, the middle row is mapped to itself. @^weight@>
 We do not build it cell by cell; we start with all possible symmetric
 subsets of the middle row.  If $M_v$ is odd, there is no middle row,
 but the first row $v_0=(M_v+1)/2$ of $P^+$ is adjacent to its own image, the
-row $v_0-1$.  We call it the \emph{twin row}.  It is not built cell by cell either:
+row $v_0-1$.  We call it the \emph{twin row}.  It is not built cell by cell either: @^twin row@>
 we start with all possible subsets of the twin row.
 
 After $k$ rows beyond the middle have been built, the polyomino extends
@@ -414,8 +414,8 @@ is usually an occupied one, a cell of $P^+$.)
 @^frontier line@>
 @^frontier cell@>
 The place where the frontier line steps down from row $v$ to row $v-1$ is
-called the \emph{kink}.
-Formally, we define the \emph{kink position} $k$ as the coordinate of the
+called the \emph{kink}. @^kink@>
+Formally, we define the \emph{kink position} $k$ as the coordinate of the @^kink position@>
 midpoint of the two consecutive red downstepping edges. The cell at
 column
 $k-1$ was the last cell that was decided,
@@ -473,10 +473,10 @@ place a cell at the kink, its mirror will be placed below the lower frontier lin
 
 @*1 Components: central, paired, and floating.
 Consider the part of $P$ that is known so far: the decided cells of $P^+$
-and their images.  From now on, the word \emph{component} denotes a connected component of this known part
+and their images.  From now on, the word \emph{component} denotes a connected component of this known part @^component@>
 that contains a frontier cell.
 In the state, a component is represented by its frontier cells, which
-carry a common label.  A \emph{run} is a maximal block of
+carry a common label.  A \emph{run} is a maximal block of @^run@>
 consecutive positions that hold frontier cells.  Since the cells of a
 row occupy only every other position, and the cells in between are
 no frontier cells any more, most runs consist of a single cell; only at
@@ -491,27 +491,27 @@ occur.
 The image $\rhoo(X)$ of a component $X$ is again a connected component of the known
 part, but it need not contain a frontier cell.  There are three possibilities:
 \begin{itemize}
-\item $\rhoo(X)=X$.  We call $X$ the \emph{central} component.  It is
+\item $\rhoo(X)=X$.  We call $X$ the \emph{central} component.  It is @^central component@>
   point-symmetric around the center, and it
   reaches the lower frontier line.
   %already connects $P^+$ to its image.
   There is at most one such component.
-\item $\rhoo(X)=Y$ is another component.  Then $X$ and $Y$ are \emph{paired}
-  components, and each is the \emph{partner} of the other.  A paired
+\item $\rhoo(X)=Y$ is another component.  Then $X$ and $Y$ are \emph{paired} @^paired component@>
+  components, and each is the \emph{partner} of the other.  A paired @^partner@>
   component reaches through the known part to the opposite (lower) frontier line.
 \item $\rhoo(X)$ has no frontier cell.  Then $X$ is a
-  \emph{floating} component: it lives on the upper side only and does not
+  \emph{floating} component: it lives on the upper side only and does not @^floating component@>
   reach the lower frontier line, and its image touches only the lower frontier line.
 \end{itemize}
 \label{sec:crossing}%
-Call a component \emph{crossing} if it is central or paired, that is, if
+Call a component \emph{crossing} if it is central or paired, that is, if @^crossing component@>
 it is not floating.  The union of the frontier line and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
 crossing component together with its partner connects the frontier line with its
 image across this disk.  Two such connections cannot
 cross each other, and $\rhoo$ reverses the order along the frontier line.
 Consequently, the crossing components, read from left to right, form one
-nested chain
+nested chain, the \emph{crossing chain}@^crossing chain@>
 $$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
 where the central component $Z$ is present in the middle if and only if the
 number of crossing components is odd.  In particular, there is at most one
@@ -619,7 +619,7 @@ types of components.
 \end{figure}
 
 @ In addition, the state contains one bit that tells whether a side of
-the strip has already been \emph{touched}, i.e., whether the leftmost or
+the strip has already been \emph{touched}, i.e., whether the leftmost or @^touched bit@>
 rightmost column contains a cell.
 
 For each state we store how many different sets of decided cells lead to
@@ -789,7 +789,7 @@ static void make_state_canonical(const uint8_t *label, const uint8_t *partner, i
 @*1 Retiring a frontier cell.
 \label{sec:retire}
 When the frontier cell at position~|i| can no longer get new
-neighbors, it is \emph{retired}.  If other frontier cells of the same
+neighbors, it is \emph{retired}.  If other frontier cells of the same @^retired@>
 component remain, nothing happens.  Otherwise the component $X$ has no frontier
 cells any more, and there are several cases:
 \begin{itemize}
@@ -874,7 +874,7 @@ static int step(const state_t *state, int i, int occupied, int last_in_row, stat
 @* Packed keys.
 \label{sec:packed}
 The unpacked states are convenient for processing, but wasteful.  In the tables, a state is
-stored as a bit string of |BYTES_PER_KEY| bytes:
+stored as a bit string of |BYTES_PER_KEY| bytes, the \emph{packed key}@^packed key@>:
 \begin{itemize}
 \item 3 bits for each position that can hold a frontier cell, with one of the following eight codes 0--7:
   |C_EMPTY| for an empty position;
@@ -938,7 +938,7 @@ static int BYTES_PER_KEY; /* length of a packed key */
 
 @*1 Encoding and decoding.
 Packing and unpacking are done in two steps.  The intermediate form
-is a \emph{coded state}: the sequence of codes for the |W| positions, as
+is a \emph{coded state}: the sequence of codes for the |W| positions, as @^coded state@>
 a byte array, and one flag per component that tells whether the component is
 crossing.  The first step translates between the labels and the codes;
 the second step is merely the compaction of the coded state into a bit
@@ -1032,7 +1032,7 @@ from $|decided_position| \bmod 2$ up to |decided_position|, and from
 $|decided_position|+1$ up to $W-1$.  Together they go from left to right.
 
 @*1 Compaction into a bit string.
-This is the second step of packing, and its reverse.
+This is the second step of packing, \emph{compaction}@^compaction@>, and its reverse.
 The flag of a crossing component is merged into the code at the position where the
 component appears for the first time, by adding |CROSSING_OFFSET| to the code.
 (An earlier version of the program stored one extra bit per component instead.)
@@ -1193,7 +1193,7 @@ with open addressing (linear probing).  The states are numbered
 $0,1,\ldots,|num_states|-1$ in the order of their creation; |keys| contains their
 packed keys, and the hash table |hash| contains the state numbers plus~1.
 
-The counters of a state form a linked list of \emph{records}, one record
+The counters of a state form a linked list of \emph{records}, one record @^count record@>
 per weight for which the count is nonzero.  This is much more compact
 than a full vector of $N+1$ counters, because the weights of a state
 are confined to a narrow range: the pruning removes all weights that are
@@ -1276,7 +1276,7 @@ static size_t table_bytes(const table_t *t)
 }
 
 @*1 The hash function.
-We use \emph{universal hashing},
+We use \emph{universal hashing}, @^universal hashing@>
 following
 Knuth's program {\sc POLYNUM}~\cite{polynum}, from which the function
 |hash_of_key| is taken  (cf.\ {\sl The Art of Computer Programming}, exercise 6.4--72):
@@ -1648,7 +1648,7 @@ moving left.}
 
 Two frontier cells $u,u'$ with $u'\ge u+1$ and no frontier cells in
 the interval between them form
-a \emph{gap}.
+a \emph{gap}. @^gap@>
 
 \begin{lemma}
   To connect the components to each other, it is sufficient to bridge
@@ -1803,7 +1803,7 @@ Because components do not cross and because of the nested chain
 structure of the crossing components, we will see that $G$ has a special structure.
 In graph-theoretic terms, it
 % this graph
-is a \emph{cactus} (multi-)graph, a graph where every edge
+is a \emph{cactus} (multi-)graph, a graph where every edge @^cactus@>
 belongs to at most one cycle.
 %its cycles are edge-disjoint, and
 A minimum spanning tree of $G$ is obtained by deleting the heaviest
@@ -1813,11 +1813,11 @@ Recall from Section~\ref{sec:crossing} that the crossing components,
 read from left to right, form the nested chain
 $$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
 where $A_j$ and $\rhoo A_j$ are partners, and the central component $Z$ may be
-absent.  We call $\{A_j,\rhoo A_j\}$ the $j$-th \emph{crossing pair};
+absent.  We call $\{A_j,\rhoo A_j\}$ the $j$-th \emph{crossing pair}; @^crossing pair@>
 in $G$, it is a single node.  Two consecutive crossing pairs, together
 with their images, cut the disk of
 Section~\ref{sec:crossing} into a
-\emph{band} between them.
+\emph{band} between them. @^band@>
 Figure~\ref{fig:cactus} shows the state of
 Figure~\ref{fig:types} with these names.
 $G$ can be decomposed as follows.
@@ -1898,14 +1898,14 @@ $G$ can be decomposed as follows.
 \end{figure}
 
 \begin{itemize}
-\item \emph{Pockets.}  Between two consecutive runs of the same component
+\item \emph{Pockets.}  Between two consecutive runs of the same component @^pocket@>
   $X$ there may be components $C_1,\ldots,C_r$ (at the outermost level
   inside these two runs).  They can only be floating, and they
   appear nowhere else.  The gaps $X$--$C_1$--$\,\cdots$--$C_r$--$X$
   form a cycle.  To connect everything, all gaps of the cycle except one
   must be bridged, and the cheapest way is to omit the largest gap.  The
   pockets inside each $C_j$ are independent of this.
-\item \emph{Outer paths.}  At the top level, the components to the left of
+\item \emph{Outer paths.}  At the top level, the components to the left of @^outer path@>
   $A_1$ and to the right of $\rhoo A_1$ hang on a path, and all their
   gaps must be bridged.
 \item \emph{Bands.}  The gaps from $A_j$ to $A_{j+1}$ on the left
@@ -1913,13 +1913,13 @@ $G$ can be decomposed as follows.
   right form a cycle, since $A_j$ and $\rhoo A_j$ are the same node, and so are
   $A_{j+1}$ and $\rhoo A_{j+1}$.
   Again the largest gap can be omitted.
-\item \emph{The middle.}  The gaps from $A_k$ over $Z$ (if present) to
+\item \emph{The middle.}  The gaps from $A_k$ over $Z$ (if present) to @^middle@>
   $\rhoo A_k$ form the innermost cycle.
 \end{itemize}
 The sum of all gaps minus the largest gap of each cycle is the cost for
 connecting the cactus.
 
-@ {\bf The central term.}
+@ {\bf The central term.}@^central term@>
 Connecting the quotient is not enough: in the end, there must be a
 central component.  If there is none yet, some component $X$ must be joined
 to its own image.  Closing the cycle of a band completely does not achieve this,
@@ -1933,7 +1933,7 @@ If the state already touches a side and a frontier cell already reaches the
 target row $\Vstar$, nothing is needed for the side and the top, and the
 bound is just the cost for connecting the cactus, including the central
 term.  This simple case is treated first, by the function
-|connection_bound|.  The general case (Section~\ref{sec:height}) adds the
+|connection_bound|, the \emph{connection bound}@^connection bound@>.  The general case (Section~\ref{sec:height}) adds the
 height and the side, and it repeats the same scan with more bookkeeping.
 At $N=30$, 40, and 44, the simple case covers 31\%, 23\%, and 12\% of the
 calls of the bound.
@@ -2069,7 +2069,7 @@ cycle must be closed completely: its largest gap is paid as well.
 @*1 Reaching the sides and the top.
 \label{sec:height}
 The finished polyomino must touch the sides of the strip, and it must
-extend to row $\Vstar$, the last row for which the height reaches
+extend to row $\Vstar$, the \emph{target row}@^target row@>, the last row for which the height reaches
 the width~$W$.  If no side has been touched yet, the frontier cell
 closest to a side needs a path of at least as many cells as there are
 columns between it and the side.  In addition, each row above the
@@ -2080,17 +2080,18 @@ the connecting paths between runs also reach some height.
 
 A path of $c$ cells that connects frontier cells in rows $r_a$ and
 $r_b$ has its highest point at most in row
-$\lfloor (c+r_a+r_b+1)/2\rfloor$: it forms a ``tent''.  The bound adds up
+$\lfloor (c+r_a+r_b+1)/2\rfloor$, its \emph{peak}@^peak@>: it forms a \emph{tent}@^tent@>.  The bound adds up
 the connection costs, determines the largest height $h$ that the
 connecting paths (or the frontier cells themselves) can reach, and charges
 one cell for each of the $\Vstar-h$ rows that are still missing.
+Together with the cost for reaching the side, this is the \emph{height term}@^height term@>.
 
 There are choices.  In a cycle, omitting the largest gap is
 cheapest, but bridging the largest gap and omitting the second largest
 one costs only the difference and may reach higher.  If several gaps are
 tied for the largest, we may keep the higher ones for free.  The bound
 takes the minimum over these alternatives.  They are collected as
-\emph{options} $(\hbox{extra cost},\hbox{peak},\hbox{score})$ in the
+\emph{options} $(\hbox{extra cost},\hbox{peak},\hbox{score})$ in the @^option@>
 arrays |OPTION_COST|, |OPTION_PEAK|, |OPTION_SCORE|.
 
 @ When no side has been touched yet, the situation is more delicate,
@@ -2100,7 +2101,7 @@ From a cell in row $h$ and column $j$, a staircase that reaches both a
 side and row $\Vstar$ needs
 $$ \max\bigl(\Vstar-h,\ \min(j,\,W-1-j)\bigr) $$
 cells (Figure~\ref{fig:stair}).  We call the minimum of this quantity
-over all cells of the structure the \emph{score}; the cells of the
+over all cells of the structure the \emph{score}; the cells of the @^score@>
 structure are the frontier cells and the cells of the connecting paths
 at their highest possible positions.  The alternative is to reach the
 side and the top separately, at a cost of (distance to the side) $+$
@@ -2568,7 +2569,8 @@ static int cactus_bound(const state_t *state)
     for_int_from_to(i, 0, W - 1)
         if (label[i]) {
             update_best_height(frontier_row(i));
-            update_best_score(side_and_top_cost(frontier_row(i), i));
+            if (i != BLOCKED_POSITION) /* a blocked cell gets no new neighbors */
+                update_best_score(side_and_top_cost(frontier_row(i), i));
         }
 
 @ This is the scan of |connection_bound|, with the peaks
@@ -2671,8 +2673,12 @@ remembered for the central term, which also enters the height term.
 @ @<Add the central term...@>=
     SIDE_DISTANCE = 0;
     if (!touches) {
-        int left_distance = run_start[0], right_distance = W - 1 - run_end[num_runs - 1];
-        SIDE_DISTANCE = min(left_distance, right_distance);
+        int first = 0, last = num_runs - 1; /* the outermost runs that are not blocked */
+        if (run_start[first] == BLOCKED_POSITION)
+            first++;
+        if (run_start[last] == BLOCKED_POSITION)
+            last--;
+        SIDE_DISTANCE = min(run_start[first], W - 1 - run_end[last]);
       }
       @/
     /* without a central component the middle cycle must be closed completely:
@@ -2762,7 +2768,7 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     if (!state->touches) {
         int side_distance = W;
         for_int_from_to(j, 0, W - 1)
-            if (label[j]) {
+            if (label[j] && j != BLOCKED_POSITION) {
                 int distance = min(j, W - 1 - j);
                 side_distance = min(side_distance, distance);
             }
@@ -3208,15 +3214,15 @@ The bound does not know which cells of the current row are already
 decided to be empty (Figure~\ref{fig:stair}).  This matters most at the
 kink: if the cell |i| is empty and there is a frontier cell right of it,
 that cell depends entirely on the next cell |next_i| of the row.  We
-therefore try both possibilities for the next cell and take the smaller
+therefore \emph{look ahead}@^lookahead@>: we try both possibilities for the next cell and take the smaller
 of the two bounds, including the weight of the cell.  A completion in
 the lookahead counts only if it would be a valid polyomino.  With the
-option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.  In the most frequent case, only one of the two possibilities
+option \texttt{-N} the lookahead is switched off.
+In the most frequent case, only one of the two possibilities
 is possible, and a light version of the lookahead is used (see below).
 @<Compute |lowerbound| for |new_state|, looking one cell ahead@>=
                         int kink_cell_forced = 0, kink_cell_optional = 0;
-                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+                        if (LOOKAHEAD && cell_number + 1 < num_row_cells - 1 &&
                             !new_state.label[i] && new_state.label[i + 1]) {
                             @<Set |kink_cell_forced| if only the kink cell can continue the component at the kink@>@;
                         }
@@ -3227,7 +3233,7 @@ is possible, and a light version of the lookahead is used (see below).
                         } else {
                             lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+                                !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
                                 @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
                             }
                         }
@@ -3256,7 +3262,7 @@ for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied
 }
 lowerbound = max(lowerbound, lookahead_bound);
 
-@ {\bf The light lookahead.}
+@ {\bf The light lookahead.}@^light lookahead@>@^forced kink cell@>
 Let $b=i+1$ be the kink position, with the frontier cell of component~$X$.
 Its upper neighbors are the empty cell~$i$ and the kink cell |next_i|${}=b+1$.
 If $b$ is the only frontier cell of $X$, and $X$ is floating or central, and
@@ -3299,7 +3305,7 @@ state_ahead.touches = new_state.touches || next_i == W - 1;
 int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, 0);
 lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
 
-@ {\bf Blocked gaps.}
+@ {\bf Blocked gaps.}@^blocked gaps@>
 If the component $X$ of the frontier cell $b=i+1$ at the kink has other
 frontier cells, both choices for the kink cell are possible.  The
 completions that use the kink cell are handled as in the forced case.
@@ -3307,7 +3313,9 @@ For the completions that leave the kink cell empty, $b$ becomes a dead end:
 its upper neighbors are the empty cell~$i$ and the kink cell.  So no path
 can end at~$b$, and the two gaps next to $b$ can be bridged only together,
 by a path from $a$ to $c$ that passes over $b$.  We make these two gaps
-infinitely expensive.  This is still a valid lower bound: if
+infinitely expensive.  Moreover, nothing can grow from~$b$ any more, so $b$
+is not used as a starting point for the path to the side
+(|SIDE_DISTANCE| and the score).  This is still a valid lower bound: if
 the cheapest completion bridges the two gaps together with $L+R$ cells,
 we can replace this path by the kink cell and the paths of $L$ and $R-1$ cells
 to its two sides, at the same cost, and we get a completion that uses the kink cell.
@@ -3340,7 +3348,7 @@ else if (lowerbound_without_kink_cell >= 0)
 \label{sec:reflection}
 If $M_u=0$, the strip is symmetric under $u\to-u$, and at the end of a row
 the mirror image of a state is again a valid state with the same
-numbers of completions.  We merge each state with its mirror image by
+numbers of completions.  We \emph{merge}@^mirror merging@> each state with its mirror image by
 keeping the smaller of the two in some fixed order, and adding the counts.  This almost halves
 the number of states for these cases.  (The option \texttt{-R} disables it.)
 
@@ -3492,7 +3500,7 @@ lexicographically.
   -v V   progress report: 0 none, 1 per row (default), 2 per cell
   -p S   with -v 1, report within a row every S seconds (default 60)
   -R     do not merge mirror states
-  -N     no lookahead;   -A  lookahead after every cell
+  -N     no lookahead
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
@@ -3502,7 +3510,7 @@ lexicographically.
 static int MERGE_MIRROR_STATES = 1; /* merge mirror states? */
 static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 static const char *RESULT_FILE_NAME = "results180.py"; /* \texttt{-o} */
-static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int LOOKAHEAD = 1; /* lookahead at the kink? (option \texttt{-N} turns it off) */
 static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 
@@ -3532,8 +3540,6 @@ int main(int argc, char **argv)
             MODULUS = strtoull(argv[++arg], 0, 10), arg++;
         else if (!strcmp(argv[arg], "-o") && arg + 1 < argc)
             RESULT_FILE_NAME = argv[++arg], arg++;
-        else if (!strcmp(argv[arg], "-A"))
-            LOOKAHEAD = 2, arg++;
         else if (!strcmp(argv[arg], "-N"))
             LOOKAHEAD = 0, arg++;
         else if (!strcmp(argv[arg], "-H"))
@@ -3625,7 +3631,7 @@ self-describing.
             fprintf(stream, ", modulus 2**" COUNTER_BITS "\n");
         fprintf(stream, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 USE_OLD_BOUND ? "old Kruskal (-K)" : "cactus", USE_HEIGHT_TERMS ? "on" : "off (-H)",
-                LOOKAHEAD == 2 ? "every cell (-A)" : LOOKAHEAD ? "at the kink" : "off (-N)",
+                !LOOKAHEAD ? "off (-N)" : BLOCKED_LOOKAHEAD ? "at the kink, blocked gaps" : "at the kink, both choices (-B)",
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
         fprintf(stream, "# output: results file %s, progress -v %d -p %g s\n",
                 RESULT_FILE_NAME, VERBOSITY, PROGRESS_SECONDS);
@@ -3729,7 +3735,7 @@ with the values in the OEIS (sequences \oeis{A390653}--\oeis{A390655}), which we
 computed by Shirakawa~\cite{Shirakawa} with a completely different
 method; for $n\le 32$ we have also compared the three types of centers
 separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
-\texttt{-N}, \texttt{-A}) lead to the same counts; this is a strong test, since an
+\texttt{-N}, \texttt{-B}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 
 @*1 Tightness of the bound.
