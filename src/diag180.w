@@ -2007,7 +2007,6 @@ static int CURRENT_ROW, TARGET_ROW, FIRST_ROW; /* current row $v$, target row $\
 static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int FREE_HEIGHT, FREE_SCORE; /* best height and best score reached for free */
 static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* options */
-static int NUM_MIDDLE, MIDDLE_GAP[MAXW], MIDDLE_PEAK[MAXW], MIDDLE_SCORE[MAXW]; /* the middle cycle: largest gap, its peak and score */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
 static int KINK_POSITION; /* the kink position: one more than the position that was decided last */
@@ -2237,7 +2236,7 @@ is a polyomino with $6+10=16$ cells.
 
 Figure~\ref{fig:boundex2} shows four more examples with a central
 component~$Z$ and a floating component~$F$, where no side has been touched.
-The center is in a cell.  In the first three examples,
+The center is in a cell.  In the examples (a), (b), and~(d),
 $Z$ reaches the frontier in two places, with
 $F$ in the pocket between them, and row~2 is being processed.
 
@@ -2256,7 +2255,13 @@ $\max(8-3,\min(3,13))=5$.  Now the missing rows dominate: the chain reaches the 
 after 3 cells, in row~6, bounces off, and needs 2 more cells for the
 rows 7 and~8.  The bound is $1+5=6$ cells.
 
-(c)~$W=19$, $\Vstar=9$; the frontier cells are at the positions 7, 11,
+(c)~$W=17$, $\Vstar=8$, and row~4 is being processed; the frontier
+cells are $Z$ at position~6 and $F$ at position~8.  One cell bridges the gap.  The best score is that of
+the frontier cell~$Z$ at position $j=6$ in row $h=4$:
+$\max(8-4,\min(6,10))=6$.  Here the distance to the side dominates: the chain reaches the top row
+after 4 cells, at position~2, and needs 2 more cells to arrive at the side.  The bound is $1+6=7$ cells.
+
+(d)~$W=19$, $\Vstar=9$; the frontier cells are at the positions 7, 11,
 and 16.  The gaps have 3 and 4 columns.  Bridging the smaller gap costs
 3 cells, but its cells are far from both sides: the best score is~8,
 for a total of~11.  This is a case where an \emph{option} wins: bridging the larger gap
@@ -2264,12 +2269,6 @@ costs one cell more, and its highest cell, at position $j=13$ in row
 $h=4$, has score $\max(9-4,\min(13,5))=5$, with a straight chain into the
 right corner.  The bound is $4+5=9$ cells.  (Reaching the side and the
 top separately would cost $3+2+5=10$.)
-
-(d)~$W=17$, $\Vstar=8$, and row~4 is being processed; the frontier
-cells are $Z$ at position~6 and $F$ at position~8.  One cell bridges the gap.  The best score is that of
-the frontier cell~$Z$ at position $j=6$ in row $h=4$:
-$\max(8-4,\min(6,10))=6$.  Here the distance to the side dominates: the chain reaches the top row
-after 4 cells, at position~2, and needs 2 more cells to arrive at the side.  The bound is $1+6=7$ cells.
 
 In all four cases, the picture shows a completion with this number of
 cells, so the bound is tight.
@@ -2335,7 +2334,7 @@ calling the function |bound| of the program for these states.
   \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
   \node[below] at (0,-4.6) {(b) $1+5=6$ cells};
 \end{scope}
-\begin{scope}[xshift=-0.2cm,yshift=-6.4cm]
+\begin{scope}[xshift=7.6cm,yshift=-6.75cm]
   \foreach \v in {-2,...,9} \foreach \u in {-9,...,9} {
     \ifodd\numexpr\v+\u+16\relax \else
       \def\sty{emp}
@@ -2358,9 +2357,9 @@ calling the function |bound| of the program for these states.
   \draw[dashed] (-10,-3)--(-10,9.3+1) (10,-3)--(10,9.3+1);
   \foreach \v in {-2,0,...,9} \node[left] at (-10.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,18} \node at (\i-9,-3.9) {\scriptsize\i};
-  \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
+  \node[below] at (0,-6.6) {(d) $4+5=9$ cells};
 \end{scope}
-\begin{scope}[xshift=7.6cm,yshift=-6.75cm]
+\begin{scope}[xshift=0cm,yshift=-6.75cm]
   \foreach \v in {-4,...,8} \foreach \u in {-8,...,8} {
     \ifodd\numexpr\v+\u+16\relax \else
       \def\sty{emp}
@@ -2382,7 +2381,7 @@ calling the function |bound| of the program for these states.
   \draw[dashed] (-9,-5)--(-9,8.3+1) (9,-5)--(9,8.3+1);
   \foreach \v in {-4,-2,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,16} \node at (\i-8,-5.9) {\scriptsize\i};
-  \node[below] at (0,-6.6) {(d) $1+6=7$ cells};
+  \node[below] at (0,-6.6) {(c) $1+6=7$ cells};
 \end{scope}
 \end{tikzpicture}
 \caption{Four states with a central component $Z$ and a floating component $F$
@@ -2392,9 +2391,9 @@ calling the function |bound| of the program for these states.
   the cells of the completion.
   (a)~The chain leads straight into the corner.
   (b)~The chain bounces off the side and continues to the top.
-  (c)~It is cheaper to bridge the larger gap, because the chain from
-  there is shorter.
-  (d)~The chain reaches the top first and continues along the top to the side.}
+  (c)~The chain reaches the top first and continues along the top to the side.
+  (d)~It is cheaper to bridge the larger gap, because the chain from
+  there is shorter.}
 \label{fig:boundex2}
 \end{figure}
 
@@ -2439,7 +2438,8 @@ static int cactus_bound(const state_t *state)
     FREE_HEIGHT = -1000;
     FREE_SCORE = 1 << 20;
     NUM_OPTIONS = 0;
-    NUM_MIDDLE = 0;
+    int middle_must_be_closed = 0; /* no central component, and the middle cycle exists */
+    int middle_gap = 0, middle_peak = 0, middle_score = 0; /* its largest gap, with peak and score */
     CURRENT_TOUCHES = touches;
     for (int i = 0; i < W; i++)
         if (label[i]) {
@@ -2515,7 +2515,6 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
             reach_score(top_score[t]);
         }
         int num_pairs = num_crossing / 2;
-        NUM_MIDDLE = 0;
         for (int i = 0; i < num_pairs; i++) {
             int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0, max1, peak_of_max, score_of_max;
             int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
@@ -2531,17 +2530,17 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
                     peak[num_gaps++] = top_peak[t];
                 }
             cost += cycle_cost(gap, peak, score, num_gaps, &max1, &peak_of_max, &score_of_max);
-            if (i == num_pairs - 1) {
-                /* only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
+            if (i == num_pairs - 1 && num_crossing % 2 == 0) {
+                /* there is no central component, and
+                   only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
                    some $X$ to $\rhoo X$: the right side of a band is just the image
                    of its left side */
-                MIDDLE_GAP[NUM_MIDDLE] = max1;
-                MIDDLE_SCORE[NUM_MIDDLE] = score_of_max;
-                MIDDLE_PEAK[NUM_MIDDLE++] = peak_of_max;
+                middle_must_be_closed = 1;
+                middle_gap = max1;
+                middle_score = score_of_max;
+                middle_peak = peak_of_max;
             }
         }
-        if (num_crossing & 1)
-            NUM_MIDDLE = 0;                    /* central component present */
     } else {
         for (int t = 0; t < num_top - 1; t++) {
             cost += top_gap[t];
@@ -2559,14 +2558,9 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
       @/
     /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
-    if (NUM_MIDDLE) {
-        int extra = 1 << 20;
-        for (int c = 0; c < NUM_MIDDLE; c++) {
-            int extra_this_way = MIDDLE_GAP[c] + height_term(max(MIDDLE_PEAK[c], FREE_HEIGHT), min(MIDDLE_SCORE[c], FREE_SCORE));
-            extra = min(extra, extra_this_way);
-        }
-        cost += extra;
-    } else
+    if (middle_must_be_closed)
+        cost += middle_gap + height_term(max(middle_peak, FREE_HEIGHT), min(middle_score, FREE_SCORE));
+    else
         cost += height_term(FREE_HEIGHT, FREE_SCORE);
 
 @*1 The old bound.
