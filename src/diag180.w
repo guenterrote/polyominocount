@@ -187,6 +187,11 @@ are evaluated twice, so they must not have side effects.
 @d max(a,b) ((a) > (b) ? (a) : (b))
 @d min(a,b) ((a) < (b) ? (a) : (b))
 
+@ Most loops run over a range of integers.  The macro |for_int_from_to|
+names the loop variable only once.
+@d for_int_from_to(x,first,last) for (int x = (first); x <= (last); x++)
+@f for_int_from_to for
+
 @q Some format declarations for the typesetting of this document. @>
 @s uint8_t int
 @s uint32_t int
@@ -402,14 +407,19 @@ others are still open.  The boundary between them is a zigzag line: if
 the cells of row $v$ have been decided up to position~$i$, the most
 recently decided cell in each column is in row $v$ for the positions
 $\le i$ and in row $v-1$ for the positions $>i$ (always only for the
-columns of the right parity).  These cells form the \emph{frontier}.
-The place where the frontier steps down from row $v$ to row $v-1$ is
+columns of the right parity).  The boundary is the \emph{frontier line}
+(the red line in the figures), and the decided cells that touch it from
+below are the \emph{frontier cells}.  (Without a qualifier, a frontier cell
+is usually an occupied one, a cell of $P^+$.)
+@^frontier line@>
+@^frontier cell@>
+The place where the frontier line steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
 Formally, we define the \emph{kink position} $k$ as the coordinate of the
 midpoint of the two consecutive red downstepping edges. The cell at
 column
 $k-1$ was the last cell that was decided,
-the frontier steps down when it proceeds to column $k$,
+the frontier line steps down when it proceeds to column $k$,
 and the next cell to be
 decided is at column $k+1$.
 Thus, the frontier cells at the positions $<k$ are in row~$v$, and the
@@ -418,14 +428,14 @@ When the last cell of a row has been decided, there is no kink: all
 frontier cells are in row~$v$.  In this case, $k$ is larger than the
 positions of all frontier cells.
 
-A frontier cell is dropped from the frontier as soon as both of its
+A cell stops being a frontier cell as soon as both of its
 upper neighbors have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
 
 It is useful to imagine that we are simultaneously building the
-polyomino downward from the center. Thus, there is a lower frontier,
-at the mirror position of the upper frontier, and if we decide to
-place a cell at the kink, its mirror will be placed below the lower frontier.
+polyomino downward from the center. Thus, there is a lower frontier line,
+at the mirror position of the upper frontier line, and if we decide to
+place a cell at the kink, its mirror will be placed below the lower frontier line.
 
 \begin{figure}[htb]
 \centering
@@ -452,11 +462,11 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   position $k-1=6$ of row $v$ has
   been decided. Blue cells belong to $P^+$, gray cells are decided and
   empty, white cells are undecided.  The thick red curve separates the
-  decided cells from the unprocessed cells, and the frontier consists of
+  decided cells from the unprocessed cells; it is the frontier line.  The frontier cells are
   all cells that touch an edge of the red curve from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
-  components $A$, $B$, $C$ with four runs.  The frontier steps down at the
+  components $A$, $B$, $C$ with four runs.  The frontier line steps down at the
   kink, from position~$k-1$ to position~$k$.}
 \label{fig:frontier}
 \end{figure}
@@ -464,12 +474,12 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
 @*1 Components: central, paired, and floating.
 Consider the part of $P$ that is known so far: the decided cells of $P^+$
 and their images.  From now on, the word \emph{component} denotes a connected component of this known part
-that contains a cell of the (upper) frontier.
+that contains a frontier cell.
 In the state, a component is represented by its frontier cells, which
 carry a common label.  A \emph{run} is a maximal block of
 consecutive positions that hold frontier cells.  Since the cells of a
-row occupy only every other position, and the cells in between have
-already left the frontier, most runs consist of a single cell; only at
+row occupy only every other position, and the cells in between are
+no frontier cells any more, most runs consist of a single cell; only at
 the kink, the positions $k-1$ and $k$ can both hold a frontier cell,
 and these two cells are neighbors.  The frontier cells of a component form
 one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of component
@@ -479,27 +489,27 @@ cannot \emph{cross}: the pattern $A\ldots B\ldots A\ldots B$ does not
 occur.
 
 The image $\rhoo(X)$ of a component $X$ is again a connected component of the known
-part, but it need not touch the upper frontier.  There are three possibilities:
+part, but it need not contain a frontier cell.  There are three possibilities:
 \begin{itemize}
 \item $\rhoo(X)=X$.  We call $X$ the \emph{central} component.  It is
   point-symmetric around the center, and it
-  reaches the lower frontier.
+  reaches the lower frontier line.
   %already connects $P^+$ to its image.
   There is at most one such component.
 \item $\rhoo(X)=Y$ is another component.  Then $X$ and $Y$ are \emph{paired}
   components, and each is the \emph{partner} of the other.  A paired
-  component reaches through the known part to the opposite (lower) frontier.
-\item $\rhoo(X)$ has no cell on the frontier.  Then $X$ is a
+  component reaches through the known part to the opposite (lower) frontier line.
+\item $\rhoo(X)$ has no frontier cell.  Then $X$ is a
   \emph{floating} component: it lives on the upper side only and does not
-  reach the lower frontier, and its image touches only the lower frontier.
+  reach the lower frontier line, and its image touches only the lower frontier line.
 \end{itemize}
 \label{sec:crossing}%
 Call a component \emph{crossing} if it is central or paired, that is, if
-it is not floating.  The union of the frontier and its image under $\rhoo$ is a
+it is not floating.  The union of the frontier line and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
-crossing component together with its partner connects the frontier with the
-image of the frontier across this disk.  Two such connections cannot
-cross each other, and $\rhoo$ reverses the order along the frontier.
+crossing component together with its partner connects the frontier line with its
+image across this disk.  Two such connections cannot
+cross each other, and $\rhoo$ reverses the order along the frontier line.
 Consequently, the crossing components, read from left to right, form one
 nested chain
 $$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
@@ -589,18 +599,18 @@ types of components.
 \end{tikzpicture}
 \caption{A larger example with all types of components: $W=53$, center type~C,
   row~8 has been decided up to position~38.  The red line is the
-  frontier, and the dotted line is its image, the lower frontier.
+  frontier line, and the dotted line is its image, the lower frontier line.
   The numbers are the component labels.
   The components 1 and 9 are \emph{paired}, and so are 4 and~7 (blue): each
-  of them reaches from the upper to the lower frontier, and its image
+  of them reaches from the upper to the lower frontier line, and its image
   is its partner.  Component~5 is the \emph{central} component (dark blue).
   The components 2, 3, 6, 8, and 10 are \emph{floating} (green): their
-  images (light green) touch only the lower frontier.  Component~3 lies in the
+  images (light green) touch only the lower frontier line.  Component~3 lies in the
   pocket between the two runs of the floating component~2, which in turn lies
   in the pocket of the paired component~1.  Component~6 lies in the pocket of
   the central component.  The components 8 and~10 are at the top level.
   Component~10 extends far into the lower half, but it
-  does not reach the lower frontier.
+  does not reach the lower frontier line.
   The crossing components form the nested chain $1,4,5,7,9$.
   Above the picture: the labels and the codes of the packed key
   (Section~\ref{sec:packed}) at the occupied positions; all other
@@ -627,7 +637,7 @@ In its unpacked form, a state is a record of type |state_t| with the following f
   and 0 if $j$ is a floating component.
 \item |touches|: the \emph{touched} bit.
 \end{itemize}
-A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
+There are at most $\lceil W/2\rceil+1$ frontier cells, hence at most
 that many components.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
@@ -672,7 +682,7 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   (label~4), so $A$ and $D$ are paired.  Component $B$ (label~2) contains
   the center: it is the central component.  Component $C$ (label~3) is an
   isolated cell
-  in row~2; its image is not on the frontier: it is floating.
+  in row~2; its image has no frontier cell: it is floating.
   Above the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
   initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
@@ -691,7 +701,7 @@ typedef struct {
 
 @*1 The working state.
 A transition changes only little: a new cell joins at most two components,
-and at most two cells leave the frontier.  We therefore work directly
+and at most two cells stop being frontier cells.  We therefore work directly
 on a copy of the state, with two arrays: |label[i]| is the label of the
 frontier cell at position~|i| (or 0), and |partner[j]| is the partner of the
 component with label~|j|, in the same form as in |state_t|.
@@ -706,7 +716,7 @@ All operations are simple sweeps over the positions.
 @<Sub...@>=
 static inline void relabel(uint8_t *label, int from, int to)
 {
-    for (int j = 0; j < W; j++)
+    for_int_from_to(j, 0, W - 1)
         if (label[j] == from)
             label[j] = to;
 }
@@ -728,7 +738,7 @@ of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 @<Sub...@>=
 static void join(uint8_t *label, uint8_t *partner, int a, int b)
 {
-    /* on entry: |a| and |b| are labels that occur on the frontier, possibly |a == b|; the partner relation is symmetric:
+    /* on entry: |a| and |b| are labels of frontier cells, possibly |a == b|; the partner relation is symmetric:
        |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
        afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
     if (a == b) /* the new cell touches the same component a second time. */
@@ -763,27 +773,28 @@ static void make_state_canonical(const uint8_t *label, const uint8_t *partner, i
     uint8_t new_label[MAXLAB], old_label[MAXLAB];
     int num_components = 0;
     memset(new_label, 0, sizeof(new_label));
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         if (label[i] && !new_label[label[i]]) {
             new_label[label[i]] = ++num_components;
             old_label[num_components] = label[i];
         }
         result->label[i] = new_label[label[i]];
     }
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         result->partner[j] = new_label[partner[old_label[j]]];
     result->num_components = num_components;
     result->touches = touches;
 }
 
-@*1 Removing a cell from the frontier.
+@*1 Retiring a frontier cell.
+\label{sec:retire}
 When the frontier cell at position~|i| can no longer get new
 neighbors, it is \emph{retired}.  If other frontier cells of the same
-component remain, nothing happens.  Otherwise the component $X$ disappears from
-the frontier, and there are several cases:
+component remain, nothing happens.  Otherwise the component $X$ has no frontier
+cells any more, and there are several cases:
 \begin{itemize}
 \item $X$ is the central component.  Then $X$ is a complete symmetric polyomino,
-  and nothing can be added to it.  If the frontier is now empty, we have
+  and nothing can be added to it.  If no frontier cells remain, we have
   found a polyomino (|COMPLETE|); otherwise the other components can
   never be connected to $X$, and the state is |DEAD|.
 \item $X$ is floating.  Then $X$ and $\rhoo(X)$ are two
@@ -803,7 +814,7 @@ static int retire(uint8_t *label, uint8_t *partner, int i)
         return OK;
     label[i] = 0;
     int others_remain = 0;
-    for (int j = 0; j < W; j++)
+    for_int_from_to(j, 0, W - 1)
         if (label[j]) {
             others_remain = 1;
             if (label[j] == retired_label)
@@ -948,7 +959,7 @@ static void encode(const state_t *s, coded_t *coded)
     /* on entry: the state is canonical: the first run of component $j$ comes before the first run of component $j+1$ */
     int first_run[MAXLAB], last_run[MAXLAB];
     int num_components = 0;
-    for (int i = 0; i < W; i++)
+    for_int_from_to(i, 0, W - 1)
         if (s->label[i] && (i == 0 || !s->label[i - 1])) {
             int lab = s->label[i];
             if (lab > num_components) {
@@ -957,7 +968,7 @@ static void encode(const state_t *s, coded_t *coded)
             }
             last_run[lab] = i;
         }
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         int lab = s->label[i];
         if (!lab)
             coded->code[i] = C_EMPTY;
@@ -968,7 +979,7 @@ static void encode(const state_t *s, coded_t *coded)
         else
             coded->code[i] = last_run[lab] == i ? C_LAST : C_MIDDLE;
     }
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         coded->crossing[j] = s->partner[j] != 0;
     coded->num_components = num_components;
     coded->touches = s->touches;
@@ -983,7 +994,7 @@ static void decode(const coded_t *coded, state_t *s)
 {
     /* on entry: the codes are properly nested, as produced by |encode| */
     int stack[MAXLAB], stack_size = 0, num_components = 0;
-    for (int i = 0; i < W; i++) {
+    for_int_from_to(i, 0, W - 1) {
         switch (coded->code[i]) {
         case C_EMPTY: s->label[i] = 0; break;
         case C_CONTINUE: s->label[i] = s->label[i - 1]; break;
@@ -994,7 +1005,7 @@ static void decode(const coded_t *coded, state_t *s)
         }
     }
     stack_size = 0;                       /* crossing components, left to right */
-    for (int j = 1; j <= num_components; j++)
+    for_int_from_to(j, 1, num_components)
         if (coded->crossing[j])
             stack[stack_size++] = j;
         else
@@ -1306,7 +1317,7 @@ static uint32_t HASH_BITS[MAX_BYTES_PER_KEY][256]; /* random bits for universal 
 static inline uint32_t hash_of_key(const uint8_t *key)
 {
     uint32_t h = HASH_BITS[0][key[0]];
-    for (int l = 1; l < BYTES_PER_KEY; l++)
+    for_int_from_to(l, 1, BYTES_PER_KEY - 1)
         h += HASH_BITS[l][key[l]];
     return h;
 }
@@ -1315,8 +1326,8 @@ static inline uint32_t hash_of_key(const uint8_t *key)
 @<Initialize the random bits for hashing@>=
     {
         uint64_t x = 0; /* the state (``seed'') of the generator */
-        for (int l = 0; l < MAX_BYTES_PER_KEY; l++)
-            for (int b = 1; b < 256; b++) {
+        for_int_from_to(l, 0, MAX_BYTES_PER_KEY - 1)
+            for_int_from_to(b, 1, 255) {
                 uint64_t z = (x += 0x9E3779B97F4A7C15ull); /* {\tt nextSeed} with {\tt GOLDEN\_GAMMA} */
                 z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull; /* {\tt mix64variant13} */
                 z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
@@ -1549,7 +1560,7 @@ weight~2.
 To turn the partial polyomino into a full polyomino that we want to
 count, we have to satisfy three conditions:
 \begin{enumerate}
-\item The components reaching the frontier must be connected to each
+\item The components that have frontier cells must be connected to each
   other.
 \item If the boundary has not been touched yet, the polyomino must be connected
   to the boundary.
@@ -1591,7 +1602,7 @@ $g=u'-u-1$ columns strictly between $u$ and~$u'$.
 
 If $u'$ is at % the bottom of the kink,
 the path must use the only cell
-adjacent to $u'$ above the frontier, at position $u'+1$, and to
+adjacent to $u'$ above the frontier line, at position $u'+1$, and to
 connect this cell to $u$ requires
 $(u'+1)-u-1$ cells, by the previous argument, in addition to the cell
 at $u'+1$.
@@ -1646,10 +1657,10 @@ a \emph{gap}.
   bridging each gap in the shortest possible way according to Lemma~\ref{shortest}.
 \end{lemma}
 \begin{proof}
-  Take any set $C^+$ of additional cells above the frontier that, together with its mirror image
+  Take any set $C^+$ of additional cells above the frontier line that, together with its mirror image
   $C^-$, makes $P$ connected.
 Now, ``project'' $C^+$ downwards, moving each cell to the highest cell
-above the frontier in the same column.
+above the frontier line in the same column.
 % It is easy to see that
 The 
 resulting set of cells $C^+_0$ remains connected, and it
@@ -1688,7 +1699,7 @@ sets of columns, so their costs simply add up.
 
 Again there is the exception for the cell $u$
 at the lower end of the kink: The adjacent cell $u+1$
-above the frontier may be used to
+above the frontier line may be used to
 simultaneously bridge the gap to the previous and the successive
 occupied cell, thus saving one cell in this case.
 Since this is the only exception, we treat it by simply making a case
@@ -1714,7 +1725,7 @@ never meet.
 @<Return $-1$ if all components of |state| are floating@>=
     {
         int some_component_is_crossing = 0;
-        for (int j = 1; j <= state->num_components; j++)
+        for_int_from_to(j, 1, state->num_components)
             if (state->partner[j] != 0)
                 some_component_is_crossing = 1;
         if (!some_component_is_crossing)
@@ -1917,10 +1928,143 @@ Only a path across the middle, from $A_k$ to $\rhoo A_k$, creates a central
 component.  Therefore, if there is no central component, the middle cycle must be
 closed completely, and its largest gap is paid as well.
 
-@ The function |cycle_cost| handles one cycle with |num_gaps| gaps of sizes |gap|.
-It returns the sum minus the maximum.  The remaining parameters and
-the calls of |reach_height| and |reach_score| have to do with the height, which
-is discussed next.
+@*1 The connection bound.
+If the state already touches a side and a frontier cell already reaches the
+target row $\Vstar$, nothing is needed for the side and the top, and the
+bound is just the cost for connecting the cactus, including the central
+term.  This simple case is treated first, by the function
+|connection_bound|.  The general case (Section~\ref{sec:height}) adds the
+height and the side, and it repeats the same scan with more bookkeeping.
+At $N=30$, 40, and 44, the simple case covers 31\%, 23\%, and 12\% of the
+calls of the bound.
+
+The function |sum_minus_max| handles one cycle with |num_gaps| gaps of sizes |gap|.
+@<Sub...@>=
+static int sum_minus_max(const int *gap, int num_gaps)
+{
+    /* on entry: |num_gaps| $\ge1$ */
+    int sum = 0, largest = 0;
+    for_int_from_to(t, 0, num_gaps - 1) {
+        sum += gap[t];
+        largest = max(largest, gap[t]);
+    }
+    return sum - largest;
+}
+
+@ The frontier cells form maximal \emph{runs} of consecutive
+occupied positions; all cells of a run belong to the same component.
+Run |j| extends from position |run_start[j]| to |run_end[j]| and belongs to component
+|run_label[j]|, and |last_run[c]| is the last run of component~|c|.
+@<Find the runs of frontier cells; if there are none, return 0@>=
+    int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
+    int last_run[MAXW + 2];
+    for_int_from_to(i, 0, W - 1)
+        if (label[i]) {
+            if (i == 0 || !label[i - 1]) {
+                run_start[num_runs] = i;
+                run_label[num_runs] = label[i];
+                num_runs++;
+            }
+            run_end[num_runs - 1] = i;
+            last_run[label[i]] = num_runs - 1;
+        }
+    if (!num_runs)
+        return 0;
+
+@ The function |connection_bound| scans the runs from left to right.
+A gap whose right end $b$ is at the kink position needs one more cell
+(Figure~\ref{fig:gap}).
+(In this case, the cell at position $b-1$ of the current row is empty,
+because otherwise it would form a run together with~$b$.)
+@<Sub...@>=
+static int connection_bound(const state_t *state)
+{
+    /* on entry: |KINK_POSITION| has been set */
+    const uint8_t *label = state->label;
+    @<Find the runs of frontier cells; if there are none, return 0@>@;
+    int cost = 0;
+    @<Scan the runs and pay for the pockets, without heights@>@;
+    @<Pay for the outer paths and the bands, and close the middle@>@;
+    return cost;
+}
+
+@ The pockets are processed with a stack, like nested parentheses.
+The gaps of the open pockets are collected in the buffer |pocket_gap|;
+|pocket_label| and |pocket_first_gap| give the component of each open
+pocket and the start of its gaps in the buffer.  Gaps at the top level
+are stored separately: |top_gap[t]| is the gap after the |t|-th top-level
+component |top_label[t]|.  When a run of the component on top of the stack is
+found, the pocket is closed and paid for.
+@<Scan the runs and pay for the pockets, without heights@>=
+    int pocket_label[MAXW], pocket_first_gap[MAXW], num_open_pockets = 0;
+    int pocket_gap[MAXW], num_pocket_gaps = 0;
+    int top_label[MAXW], top_gap[MAXW], num_top = 0;
+    for_int_from_to(j, 0, num_runs - 1) {
+        int component = run_label[j];
+        if (j > 0) {
+            int a = run_end[j - 1], b = run_start[j];
+            int gap = b - a - 1 + (b == KINK_POSITION);
+            if (a == BLOCKED_POSITION || b == BLOCKED_POSITION)
+                gap = INFINITE_GAP;
+            if (num_open_pockets)
+                pocket_gap[num_pocket_gaps++] = gap;
+            else
+                top_gap[num_top - 1] = gap;
+        }
+        if (num_open_pockets && pocket_label[num_open_pockets - 1] == component) {
+            num_open_pockets--;
+            int first = pocket_first_gap[num_open_pockets];
+            cost += sum_minus_max(pocket_gap + first, num_pocket_gaps - first);
+            num_pocket_gaps = first;
+        } else if (!num_open_pockets)
+            top_label[num_top++] = component;
+        if (j < last_run[component]) {
+            pocket_label[num_open_pockets] = component;
+            pocket_first_gap[num_open_pockets] = num_pocket_gaps;
+            num_open_pockets++;
+        }
+    }
+
+@ At the top level, |crossing| lists the |num_crossing| crossing components;
+there are $k=|num_crossing|/2$ crossing pairs.  Band number $i$, for $0\le i<k-1$,
+consists of the gaps from |crossing[i]| to |crossing[i+1]| and their
+counterparts on the right, from |crossing[num_crossing-2-i]| to |crossing[num_crossing-1-i]|.
+The middle consists of the gaps from $A_k$, which is |crossing[k-1]|, to
+$\rhoo A_k$, which is |crossing[num_crossing-k]|.
+The flag |MIDDLE_EXISTS| is set if there is no central component
+(|num_crossing| is even and positive); then the middle
+cycle must be closed completely: its largest gap is paid as well.
+@<Pay for the outer paths and the bands, and close the middle@>=
+    int crossing[MAXW], num_crossing = 0;
+    for_int_from_to(t, 0, num_top - 1)
+        if (state->partner[top_label[t]] != 0) /* crossing */
+            crossing[num_crossing++] = t;
+    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
+    if (num_crossing) {
+        for_int_from_to(t, 0, crossing[0] - 1)
+            cost += top_gap[t];
+        for_int_from_to(t, crossing[num_crossing - 1], num_top - 2)
+            cost += top_gap[t];
+        int num_pairs = num_crossing / 2;
+        for_int_from_to(i, 0, num_pairs - 2) { /* the band between pair $i$ and pair $i+1$ */
+            int gap[2 * MAXW], num_gaps = 0;
+            for_int_from_to(t, crossing[i], crossing[i + 1] - 1)
+                gap[num_gaps++] = top_gap[t];
+            for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1)
+                gap[num_gaps++] = top_gap[t];
+            cost += sum_minus_max(gap, num_gaps);
+        }
+        if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
+            int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
+            if (MIDDLE_EXISTS)
+                for_int_from_to(t, first, last - 1)
+                    cost += top_gap[t]; /* no central component: close the middle completely */
+            else
+                cost += sum_minus_max(top_gap + first, last - first);
+        }
+    } else
+        for_int_from_to(t, 0, num_top - 2)
+            cost += top_gap[t];
 
 @*1 Reaching the sides and the top.
 \label{sec:height}
@@ -1938,7 +2082,7 @@ A path of $c$ cells that connects frontier cells in rows $r_a$ and
 $r_b$ has its highest point at most in row
 $\lfloor (c+r_a+r_b+1)/2\rfloor$: it forms a ``tent''.  The bound adds up
 the connection costs, determines the largest height $h$ that the
-connecting paths (or the frontier itself) can reach, and charges
+connecting paths (or the frontier cells themselves) can reach, and charges
 one cell for each of the $\Vstar-h$ rows that are still missing.
 
 There are choices.  In a cycle, omitting the largest gap is
@@ -2006,11 +2150,13 @@ parameter lists short.
 static int CURRENT_ROW, TARGET_ROW, FIRST_ROW; /* current row $v$, target row $\Vstar$, first row $v_0$ */
 static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int FREE_HEIGHT, FREE_SCORE; /* best height and best score reached for free */
+static int MIDDLE_EXISTS; /* is there a middle cycle that must be closed (no central component)? */
+static int MIDDLE_GAP, MIDDLE_PEAK, MIDDLE_SCORE; /* its largest gap, with peak and score */
 static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* options */
-static int NUM_MIDDLE, MIDDLE_GAP[MAXW], MIDDLE_PEAK[MAXW], MIDDLE_SCORE[MAXW]; /* the middle cycle: largest gap, its peak and score */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
 static int KINK_POSITION; /* the kink position: one more than the position that was decided last */
+static int BLOCKED_POSITION = -1; /* the gaps next to the frontier cell at this position cost |INFINITE_GAP| */
 
 @ The row of the frontier cell at position |j|:  The frontier cells
 left of the kink position are in the current row, and
@@ -2023,16 +2169,12 @@ static inline int frontier_row(int j)
     return j < KINK_POSITION ? CURRENT_ROW : CURRENT_ROW - 1;
 }
 
-@ @<Sub...@>=
-static inline void reach_height(int h) @+
-{ @+
-    FREE_HEIGHT = max(FREE_HEIGHT, h);
-@+}
-
-static inline void reach_score(int sc) @+
-{ @+
-    FREE_SCORE = min(FREE_SCORE, sc);
-@+}
+@ The best height and the best score reached so far are updated by two macros.
+The gaps next to the frontier cell at |BLOCKED_POSITION| are made
+``infinitely'' expensive; this is used by the lookahead (Section~\ref{sec:lookahead}).
+@d INFINITE_GAP 4096
+@d update_best_height(h) (FREE_HEIGHT = max(FREE_HEIGHT, (h)))
+@d update_best_score(sc) (FREE_SCORE = min(FREE_SCORE, (sc)))
 
 @ The cost of reaching both the top row and a side from row |h| and
 column |j|.
@@ -2066,7 +2208,7 @@ static int gap_score(int a, int row_a, int b, int row_b)
 {
     /* on entry: $a<b$ */
     int best = 1 << 20;
-    for (int j = a + 1; j < b; j++) {
+    for_int_from_to(j, a + 1, b - 1) {
         int row_from_left = row_a + (j - a), row_from_right = row_b + (b - j);
         int c = side_and_top_cost(min(row_from_left, row_from_right), j);
         best = min(best, c);
@@ -2074,7 +2216,8 @@ static int gap_score(int a, int row_a, int b, int row_b)
     return best;
 }
 
-@ Now we can give the function |cycle_cost|.  Besides returning the sum minus
+@ Now we can give the function |cycle_cost|, the extension of
+|sum_minus_max| for the general case.  Besides returning the sum minus
 the maximum, it registers the peaks and scores of all gaps that are
 certainly bridged.  If the largest gap |max1| is unique, bridging it
 instead of the second largest gap |max2| is recorded as an option with
@@ -2085,7 +2228,7 @@ static int cycle_cost(const int *gap, const int *peak, const int *score, int num
 {
     /* on entry: |num_gaps| $\ge1$ */
     int sum = 0, max1 = -1, num_max = 0, max2 = 0, peak_of_max = -1000, score_of_max = 1 << 20;
-    for (int t = 0; t < num_gaps; t++) {
+    for_int_from_to(t, 0, num_gaps - 1) {
         sum += gap[t];
         if (gap[t] > max1) {
             if (max1 >= 0)
@@ -2101,10 +2244,10 @@ static int cycle_cost(const int *gap, const int *peak, const int *score, int num
         } else if (gap[t] > max2)
             max2 = gap[t];
     }
-    for (int t = 0; t < num_gaps; t++)
+    for_int_from_to(t, 0, num_gaps - 1)
         if (num_max >= 2 || gap[t] != max1) {
-            reach_height(peak[t]);
-            reach_score(score[t]);
+            update_best_height(peak[t]);
+            update_best_score(score[t]);
         }
     if (num_max == 1) {
         OPTION_COST[NUM_OPTIONS] = max1 - max2;
@@ -2161,7 +2304,7 @@ with one cell each.  There is no need to bridge the gap between $C$
 and~$D$: when $A$ is connected to~$B$, the image of this connection
 connects $D=\rhoo A$ to $\rhoo B=B$.  A central component exists and the sides
 are touched, so no further connections are needed.  For the height,
-the polyomino must reach row $\Vstar=8$.  The frontier is in row~3, and
+the polyomino must reach row $\Vstar=8$.  The frontier cells are in row~3, and
 the bridge between $A$ and $B$ is a tent of one cell, whose peak is in
 row~4.  The rows $5,\ldots,8$ need one cell each.  The bound is
 therefore $2+4=6$ cells, or a weight of~12.  With the weight 35 of the
@@ -2237,8 +2380,8 @@ is a polyomino with $6+10=16$ cells.
 
 Figure~\ref{fig:boundex2} shows four more examples with a central
 component~$Z$ and a floating component~$F$, where no side has been touched.
-The center is in a cell.  In the first three examples,
-$Z$ reaches the frontier in two places, with
+The center is in a cell.  In the examples (a), (b), and~(d),
+$Z$ has frontier cells in two places, with
 $F$ in the pocket between them, and row~2 is being processed.
 
 (a)~$W=17$, $\Vstar=8$; the frontier cells are at the positions 2, 8,
@@ -2256,7 +2399,13 @@ $\max(8-3,\min(3,13))=5$.  Now the missing rows dominate: the chain reaches the 
 after 3 cells, in row~6, bounces off, and needs 2 more cells for the
 rows 7 and~8.  The bound is $1+5=6$ cells.
 
-(c)~$W=19$, $\Vstar=9$; the frontier cells are at the positions 7, 11,
+(c)~$W=17$, $\Vstar=8$, and row~4 is being processed; the frontier
+cells are $Z$ at position~6 and $F$ at position~8.  One cell bridges the gap.  The best score is that of
+the frontier cell~$Z$ at position $j=6$ in row $h=4$:
+$\max(8-4,\min(6,10))=6$.  Here the distance to the side dominates: the chain reaches the top row
+after 4 cells, at position~2, and needs 2 more cells to arrive at the side.  The bound is $1+6=7$ cells.
+
+(d)~$W=19$, $\Vstar=9$; the frontier cells are at the positions 7, 11,
 and 16.  The gaps have 3 and 4 columns.  Bridging the smaller gap costs
 3 cells, but its cells are far from both sides: the best score is~8,
 for a total of~11.  This is a case where an \emph{option} wins: bridging the larger gap
@@ -2264,12 +2413,6 @@ costs one cell more, and its highest cell, at position $j=13$ in row
 $h=4$, has score $\max(9-4,\min(13,5))=5$, with a straight chain into the
 right corner.  The bound is $4+5=9$ cells.  (Reaching the side and the
 top separately would cost $3+2+5=10$.)
-
-(d)~$W=17$, $\Vstar=8$, and row~4 is being processed; the frontier
-cells are $Z$ at position~6 and $F$ at position~8.  One cell bridges the gap.  The best score is that of
-the frontier cell~$Z$ at position $j=6$ in row $h=4$:
-$\max(8-4,\min(6,10))=6$.  Here the distance to the side dominates: the chain reaches the top row
-after 4 cells, at position~2, and needs 2 more cells to arrive at the side.  The bound is $1+6=7$ cells.
 
 In all four cases, the picture shows a completion with this number of
 cells, so the bound is tight.
@@ -2335,7 +2478,7 @@ calling the function |bound| of the program for these states.
   \foreach \i in {0,2,...,16} \node at (\i-8,-3.9) {\scriptsize\i};
   \node[below] at (0,-4.6) {(b) $1+5=6$ cells};
 \end{scope}
-\begin{scope}[xshift=-0.2cm,yshift=-6.4cm]
+\begin{scope}[xshift=7.6cm,yshift=-7.1cm]
   \foreach \v in {-2,...,9} \foreach \u in {-9,...,9} {
     \ifodd\numexpr\v+\u+16\relax \else
       \def\sty{emp}
@@ -2358,9 +2501,9 @@ calling the function |bound| of the program for these states.
   \draw[dashed] (-10,-3)--(-10,9.3+1) (10,-3)--(10,9.3+1);
   \foreach \v in {-2,0,...,9} \node[left] at (-10.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,18} \node at (\i-9,-3.9) {\scriptsize\i};
-  \node[below] at (0,-4.6) {(c) $4+5=9$ cells};
+  \node[below] at (0,-5.6) {(d) $4+5=9$ cells};
 \end{scope}
-\begin{scope}[xshift=7.6cm,yshift=-6.75cm]
+\begin{scope}[xshift=0cm,yshift=-6.75cm]
   \foreach \v in {-4,...,8} \foreach \u in {-8,...,8} {
     \ifodd\numexpr\v+\u+16\relax \else
       \def\sty{emp}
@@ -2382,7 +2525,7 @@ calling the function |bound| of the program for these states.
   \draw[dashed] (-9,-5)--(-9,8.3+1) (9,-5)--(9,8.3+1);
   \foreach \v in {-4,-2,...,8} \node[left] at (-9.5,\v) {\scriptsize$\v$};
   \foreach \i in {0,2,...,16} \node at (\i-8,-5.9) {\scriptsize\i};
-  \node[below] at (0,-6.6) {(d) $1+6=7$ cells};
+  \node[below] at (0,-6.6) {(c) $1+6=7$ cells};
 \end{scope}
 \end{tikzpicture}
 \caption{Four states with a central component $Z$ and a floating component $F$
@@ -2392,23 +2535,23 @@ calling the function |bound| of the program for these states.
   the cells of the completion.
   (a)~The chain leads straight into the corner.
   (b)~The chain bounces off the side and continues to the top.
-  (c)~It is cheaper to bridge the larger gap, because the chain from
-  there is shorter.
-  (d)~The chain reaches the top first and continues along the top to the side.}
+  (c)~The chain reaches the top first and continues along the top to the side.
+  (d)~It is cheaper to bridge the larger gap, because the chain from
+  there is shorter.}
 \label{fig:boundex2}
 \end{figure}
 
 @*1 Putting the bound together.
-A gap whose right end $b$ is at the kink position needs one more cell.
-(In this case, the cell at position $b-1$ of the current row is empty,
-because otherwise it would form a run together with~$b$.)
+The function |cactus_bound| extends |connection_bound|: the scan of the
+runs is the same, but every gap also carries its peak and its score, and
+the options for the height are collected on the way.
 @<Sub...@>=
 static int cactus_bound(const state_t *state)
 {
     /* on entry: |CURRENT_ROW|, |TARGET_ROW|, and |KINK_POSITION| have been set */
     const uint8_t *label = state->label;
     int touches = state->touches;
-    @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
+    @<Find the runs of frontier cells; if there are none, return 0@>@;
     @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
@@ -2417,49 +2560,25 @@ static int cactus_bound(const state_t *state)
     return cost;
 }
 
-@ Run |j| extends from position |run_start[j]| to |run_end[j]| and belongs to component
-|run_label[j]|.
-@<Find the runs...@>=
-    int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
-    int last_run[MAXW + 2];
-    for (int i = 0; i < W; i++)
-        if (label[i]) {
-            if (i == 0 || !label[i - 1]) {
-                run_start[num_runs] = i;
-                run_label[num_runs] = label[i];
-                num_runs++;
-            }
-            run_end[num_runs - 1] = i;
-            last_run[label[i]] = num_runs - 1;
-        }
-    if (!num_runs)
-        return 0;
-
 @ @<Initialize the height...@>=
     FREE_HEIGHT = -1000;
     FREE_SCORE = 1 << 20;
     NUM_OPTIONS = 0;
-    NUM_MIDDLE = 0;
     CURRENT_TOUCHES = touches;
-    for (int i = 0; i < W; i++)
+    for_int_from_to(i, 0, W - 1)
         if (label[i]) {
-            reach_height(frontier_row(i));
-            reach_score(side_and_top_cost(frontier_row(i), i));
+            update_best_height(frontier_row(i));
+            update_best_score(side_and_top_cost(frontier_row(i), i));
         }
 
-@ The pockets are processed with a stack, like nested parentheses.
-The gaps of the open pockets are collected in a buffer (|pocket_gap|, with
-peaks |pocket_peak| and scores |pocket_score|); |pocket_label| and |pocket_first_gap| give the component of each open
-pocket and the start of its gaps in the buffer.  Gaps at the top level
-are stored separately: |top_gap[t]| is the gap after the |t|-th top-level
-component |top_label[t]|.  When a run of the component on top of the stack is
-found, the pocket is closed and paid for.
-@<Scan the runs...@>=
+@ This is the scan of |connection_bound|, with the peaks
+(|pocket_peak|, |top_peak|) and scores (|pocket_score|, |top_score|) of the gaps.
+@<Scan the runs from left to right and pay for the pockets@>=
     /* open pockets: component and start of its gaps in the gap buffer */
     int pocket_label[MAXW], pocket_first_gap[MAXW], num_open_pockets = 0;
     int pocket_gap[MAXW], pocket_peak[MAXW], pocket_score[MAXW], num_pocket_gaps = 0;
     int top_label[MAXW], top_gap[MAXW], top_peak[MAXW], top_score[MAXW], num_top = 0;
-    for (int j = 0; j < num_runs; j++) {
+    for_int_from_to(j, 0, num_runs - 1) {
         int component = run_label[j];
         if (j > 0) {
             int a = run_end[j - 1], b = run_start[j];
@@ -2467,6 +2586,8 @@ found, the pocket is closed and paid for.
             /* at the kink position the path ends one column beyond $b$: $g + 2$ cells */
             int peak = (gap - 1 + (b == KINK_POSITION) + frontier_row(a) + frontier_row(b) + 2) / 2;
             int score = touches ? 1 << 20 : gap_score(a, frontier_row(a), b == KINK_POSITION ? b + 2 : b, frontier_row(b));
+            if (a == BLOCKED_POSITION || b == BLOCKED_POSITION)
+                gap = INFINITE_GAP;
             if (num_open_pockets) {
                 pocket_gap[num_pocket_gaps] = gap;
                 pocket_score[num_pocket_gaps] = score;
@@ -2494,59 +2615,56 @@ found, the pocket is closed and paid for.
         }
     }
 
-@ At the top level, |crossing| lists the |num_crossing| crossing components.  Band number |i|
-consists of the gaps between |crossing[i]| and |crossing[i+1]| and their
-counterparts on the right; the last ``band'', $i=k-1$, is the middle.
-@<Pay for the outer paths...@>=
+@ Again as in |connection_bound|, but the largest gap of the middle is
+remembered for the central term, which also enters the height term.
+@<Pay for the outer paths, the bands and the middle@>=
     /* top level */
     int crossing[MAXW], num_crossing = 0;
-    for (int t = 0; t < num_top; t++)
+    for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
+    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
+        /* without a central component, only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
+           some $X$ to $\rhoo X$: the right side of a band is just the image of its left side */
     if (num_crossing) {
-        for (int t = 0; t < crossing[0]; t++) {
+        for_int_from_to(t, 0, crossing[0] - 1) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
-        for (int t = crossing[num_crossing - 1]; t < num_top - 1; t++) {
+        for_int_from_to(t, crossing[num_crossing - 1], num_top - 2) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
         int num_pairs = num_crossing / 2;
-        NUM_MIDDLE = 0;
-        for (int i = 0; i < num_pairs; i++) {
-            int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0, max1, peak_of_max, score_of_max;
-            int a = crossing[i], b = (i < num_pairs - 1) ? crossing[i + 1] : crossing[num_crossing - 1 - i];
-            for (int t = a; t < b; t++) {
+        for_int_from_to(i, 0, num_pairs - 2) { /* the band between pair $i$ and pair $i+1$ */
+            int gap[2 * MAXW], peak[2 * MAXW], score[2 * MAXW], num_gaps = 0;
+            for_int_from_to(t, crossing[i], crossing[i + 1] - 1) {
                 gap[num_gaps] = top_gap[t];
                 score[num_gaps] = top_score[t];
                 peak[num_gaps++] = top_peak[t];
             }
-            if (i < num_pairs - 1)
-                for (int t = crossing[num_crossing - 2 - i]; t < crossing[num_crossing - 1 - i]; t++) {
-                    gap[num_gaps] = top_gap[t];
-                    score[num_gaps] = top_score[t];
-                    peak[num_gaps++] = top_peak[t];
-                }
-            cost += cycle_cost(gap, peak, score, num_gaps, &max1, &peak_of_max, &score_of_max);
-            if (i == num_pairs - 1) {
-                /* only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
-                   some $X$ to $\rhoo X$: the right side of a band is just the image
-                   of its left side */
-                MIDDLE_GAP[NUM_MIDDLE] = max1;
-                MIDDLE_SCORE[NUM_MIDDLE] = score_of_max;
-                MIDDLE_PEAK[NUM_MIDDLE++] = peak_of_max;
+            for_int_from_to(t, crossing[num_crossing - 2 - i], crossing[num_crossing - 1 - i] - 1) {
+                gap[num_gaps] = top_gap[t];
+                score[num_gaps] = top_score[t];
+                peak[num_gaps++] = top_peak[t];
             }
+            cost += cycle_cost(gap, peak, score, num_gaps, 0, 0, 0);
         }
-        if (num_crossing & 1)
-            NUM_MIDDLE = 0;                    /* central component present */
+        if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
+            int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
+            if (MIDDLE_EXISTS)
+                cost += cycle_cost(top_gap + first, top_peak + first, top_score + first, last - first,
+                    &MIDDLE_GAP, &MIDDLE_PEAK, &MIDDLE_SCORE);
+            else
+                cost += cycle_cost(top_gap + first, top_peak + first, top_score + first, last - first, 0, 0, 0);
+        }
     } else {
-        for (int t = 0; t < num_top - 1; t++) {
+        for_int_from_to(t, 0, num_top - 2) {
             cost += top_gap[t];
-            reach_height(top_peak[t]);
-            reach_score(top_score[t]);
+            update_best_height(top_peak[t]);
+            update_best_score(top_score[t]);
         }
     }
 
@@ -2559,14 +2677,9 @@ counterparts on the right; the last ``band'', $i=k-1$, is the middle.
       @/
     /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
-    if (NUM_MIDDLE) {
-        int extra = 1 << 20;
-        for (int c = 0; c < NUM_MIDDLE; c++) {
-            int extra_this_way = MIDDLE_GAP[c] + height_term(max(MIDDLE_PEAK[c], FREE_HEIGHT), min(MIDDLE_SCORE[c], FREE_SCORE));
-            extra = min(extra, extra_this_way);
-        }
-        cost += extra;
-    } else
+    if (MIDDLE_EXISTS)
+        cost += MIDDLE_GAP + height_term(max(MIDDLE_PEAK, FREE_HEIGHT), min(MIDDLE_SCORE, FREE_SCORE));
+    else
         cost += height_term(FREE_HEIGHT, FREE_SCORE);
 
 @*1 The old bound.
@@ -2575,14 +2688,14 @@ An older and weaker bound is retained for comparison (option
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 The code is part of the function |bound| below; the state is not empty.
-@<Set |connection_bound| to the old spanning tree bound@>=
+@<Set |connection_term| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
-        for (int j = 1; j <= state->num_components; j++) {
+        for_int_from_to(j, 1, state->num_components) {
             int q = state->partner[j];
             representative[j] = (q != 0 && q < j) ? q : j;
         }
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j])
                 occupied[num_occupied++] = j;
         /* Kruskal over gaps between consecutive occupied positions */
@@ -2590,7 +2703,7 @@ The code is part of the function |bound| below; the state is not empty.
         int num_sets = 0;
         int seen[MAXW + 1];
         memset(seen, 0, sizeof(seen));
-        for (int a = 0; a < num_occupied; a++) {
+        for_int_from_to(a, 0, num_occupied - 1) {
             int rep = representative[label[occupied[a]]];
             if (!seen[rep]) {
                 seen[rep] = 1;
@@ -2604,11 +2717,11 @@ The code is part of the function |bound| below; the state is not empty.
             int num_gaps = num_occupied - 1;
             int gap[MAXW], order[MAXW], bucket[MAXW + 1];
             memset(bucket, 0, sizeof(bucket));
-            for (int a = 0; a < num_gaps; a++) {
+            for_int_from_to(a, 0, num_gaps - 1) {
                 gap[a] = occupied[a + 1] - occupied[a] - 1;
                 bucket[gap[a]]++;
             }
-            for (int g = 1; g <= W; g++)
+            for_int_from_to(g, 1, W)
                 bucket[g] += bucket[g - 1];
             for (int a = num_gaps - 1; a >= 0; a--)
                 order[--bucket[gap[a]]] = a;
@@ -2630,14 +2743,15 @@ The code is part of the function |bound| below; the state is not empty.
             int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
             cost += min(left_distance, right_distance);
         }
-        connection_bound = 2 * cost;
+        connection_term = 2 * cost;
 
 @*1 The complete bound.
 The function |bound| returns a lower bound on the \emph{weight} that
 must still be added to a nonempty state, or $-1$ if the state can never
 be completed.  Here |k| is the number of the current row, counted from
 the first row of $P^+$, and |min_rows| is the smallest number of rows for
-which the height reaches $W$.
+which the height reaches $W$.  If the state touches a side and the
+a frontier cell reaches the target row, the simple |connection_bound| suffices.
 @<Sub...@>=
 static int bound(const state_t *state, int k, int min_rows, int i, int last_in_row)
 {
@@ -2647,7 +2761,7 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     int lowerbound = max(2 * (min_rows - k), 0);
     if (!state->touches) {
         int side_distance = W;
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j]) {
                 int distance = min(j, W - 1 - j);
                 side_distance = min(side_distance, distance);
@@ -2658,12 +2772,18 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     CURRENT_ROW = FIRST_ROW + k - 1;
     KINK_POSITION = i + 1; /* at the end of a row, no frontier cell is at this position or beyond */
     TARGET_ROW = FIRST_ROW + min_rows - 1;
-    int connection_bound;
+    int frontier_height = CURRENT_ROW - 1; /* the highest row of a frontier cell */
+    for_int_from_to(j, 0, KINK_POSITION - 1)
+        if (label[j])
+            frontier_height = CURRENT_ROW;
+    int connection_term;
     if (USE_OLD_BOUND) {
-        @<Set |connection_bound| to the old spanning tree bound@>@;
-    } else
-        connection_bound = 2 * cactus_bound(state);
-    lowerbound = max(lowerbound, connection_bound);
+        @<Set |connection_term| to the old spanning tree bound@>@;
+    } else if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
+    lowerbound = max(lowerbound, connection_term);
     return lowerbound;
 }
 
@@ -2739,7 +2859,7 @@ static void print_row_results(int top_row_number)
     if (VERBOSITY >= 1) {
         fprintf(stderr, "#rect %s (Mx=%d My=%d): width %d (u=%d..%d) x height %d (v=%d..%d):",
                 type_name[M_x + M_y], M_x, M_y, W, umin, umin + W - 1, height, M_v - top_row, top_row);
-        for (int n = 0; n <= NMAX; n++)
+        for_int_from_to(n, 0, NMAX)
             if (ROW_RESULTS[n])
                 fprintf(stderr, " n=%d:%s", n, counter_to_string(ROW_RESULTS[n]));
         fprintf(stderr, "\n");
@@ -2771,7 +2891,7 @@ static void print_status_line(const char *tag, int k, int v, int cell_number, in
     double now = wall_time();
     LAST_REPORT_TIME = now;
     counter_t done = 0;
-    for (int n = 0; n <= NMAX; n++)
+    for_int_from_to(n, 0, NMAX)
         done = add_mod(done, add_mod(add_mod(PORTRAIT[n], SQUARE[n]), ROW_RESULTS[n]));
     fprintf(stderr, "%s Mx=%d My=%d umax=%d W=%d row k=%d v=%d cell %d/%d: "
             "%zu states, %zu records, %.1f MB, done %s, %.1fs wall, %.1fs cpu\n",
@@ -2794,7 +2914,7 @@ static void count_case(void)
     for (int k = 1 + TWIN; current->num_states; k++) {
         memset(ROW_RESULTS, 0, NMAX_plus_1 * sizeof(counter_t));
         @<Determine the cells of row |k|@>@;
-        for (int cell_number = 0; cell_number < num_row_cells; cell_number++) {
+        for_int_from_to(cell_number, 0, num_row_cells - 1) {
             @<Decide cell |cell_number| of the row for all states@>@;
         }
         if (VERBOSITY >= 1)
@@ -2810,11 +2930,11 @@ $k-1$ rows.  They have been collected in |ROW_RESULTS|, provided that they are a
 least as high as wide; lower rectangles are not counted in this case.
 @<Add the results of this row to the totals and report them@>=
         if (vspan(k - 1) == W) {
-            for (int n = 0; n <= NMAX; n++)
+            for_int_from_to(n, 0, NMAX)
                 SQUARE[n] = add_mod(SQUARE[n], ROW_RESULTS[n]);
             print_row_results(k - 1);
         } else if (vspan(k - 1) > W) {
-            for (int n = 0; n <= NMAX; n++)
+            for_int_from_to(n, 0, NMAX)
                 PORTRAIT[n] = add_mod(PORTRAIT[n], ROW_RESULTS[n]);
             print_row_results(k - 1);
         }
@@ -2922,7 +3042,7 @@ half, including the center.  A chosen position stands for two cells,
 except the center.  The first row to be built is $v_0=v_m+1$.
 @<Prepare the choices for the middle row@>=
         int vm = M_v / 2;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - vm) % 2 + 2) % 2 == 0 && 2 * (umin + i) >= M_u)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * min_rows + 1) / 2;
@@ -2935,13 +3055,13 @@ central component.  The weight is the number of cells.
             uint8_t label[MAXW], partner[MAXLAB];
             int num_cells = 0;
             memset(label, 0, W);
-            for (int b = 0; b < num_choices; b++)
+            for_int_from_to(b, 0, num_choices - 1)
                 if (chosen[b])
                     label[choice[b]] = label[W - 1 - choice[b]] = 1;
-            for (int i = 0; i < W; i++)
+            for_int_from_to(i, 0, W - 1)
                 if (label[i])
                     label[i] = ++num_cells;
-            for (int i = 0; i < W; i++)
+            for_int_from_to(i, 0, W - 1)
                 if (label[i])
                     partner[label[i]] = label[W - 1 - i]; /* the cell itself at the center */
             if (num_cells + 2 * min_rows <= NMAX) {
@@ -2956,7 +3076,7 @@ Its image is the row $v_0-1$ directly below it.  We choose an arbitrary
 nonempty subset of the twin row, and the row-by-row construction starts with the next row.
 @<Prepare the choices for the twin row@>=
         FIRST_ROW = (M_v + 1) / 2;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - FIRST_ROW) % 2 + 2) % 2 == 0)
                 choice[num_choices++] = i;
         max_chosen = (NMAX - 2 * (min_rows - 1)) / 2;
@@ -2970,7 +3090,7 @@ image of the cell of the twin row at position $W-1-q$.  We record in
 Cells at adjacent positions of the band are neighbors.  Hence the
 connected components of the known part are the maximal runs of occupied
 positions in the band.  A run that consists of a single cell of the
-image row has no cell on the frontier, and it gets no label.  The image
+image row has no frontier cell, and it gets no label.  The image
 of a run is the run at the mirror position: the |r|-th run from the left
 is the image of the |r|-th run from the right.  Thus, a single cell of
 the twin row is a floating component, the run that contains the two
@@ -2985,12 +3105,12 @@ is 2 for each cell.
             int is_twin[MAXW], run_label[MAXW], num_runs = 0, num_components = 0;
             memset(band, 0, W + 1);
             memset(is_twin, 0, W * sizeof(int));
-            for (int b = 0; b < num_choices; b++) {
+            for_int_from_to(b, 0, num_choices - 1) {
                 is_twin[choice[b]] = 1;
                 if (chosen[b])
                     band[choice[b]] = band[W - 1 - choice[b]] = 1;
             }
-            for (int q = 0; q < W; q++) {
+            for_int_from_to(q, 0, W - 1) {
                 new_state.label[q] = 0;
                 if (!band[q])
                     continue;
@@ -3002,7 +3122,7 @@ is 2 for each cell.
                     new_state.label[q] = run_label[num_runs - 1];
                 }
             }
-            for (int r = 0; r < num_runs; r++)
+            for_int_from_to(r, 0, num_runs - 1)
                 if (run_label[r])
                     new_state.partner[run_label[r]] = run_label[num_runs - 1 - r];
             new_state.num_components = num_components;
@@ -3018,7 +3138,7 @@ The cells of row $v$ are at the positions $i$ for which $u_{\min}+i-v$
 is even.
 @<Determine the cells of row |k|@>=
         int v = FIRST_ROW + k - 1, num_row_cells = 0;
-        for (int i = 0; i < W; i++)
+        for_int_from_to(i, 0, W - 1)
             if (((umin + i - v) % 2 + 2) % 2 == 0)
                 row_cells[num_row_cells++] = i;
 
@@ -3036,7 +3156,7 @@ is completed while row $k$ is processed has its top in row $k-1$.
 @<Extend state |source_state|...@>=
                 state_t old_state;
                 unpack(current->keys + source_state * BYTES_PER_KEY, current->decided_position, &old_state);
-                for (int occupied = 0; occupied <= 1; occupied++) {
+                for_int_from_to(occupied, 0, 1) {
                     int status = step(&old_state, i, occupied, last_in_row, &new_state);
                     if (status == DEAD)
                         continue;
@@ -3069,10 +3189,9 @@ they cannot be completed or because all weights were too large.
                     if (target_state != NO_STATE)
                         lowerbound = next->lowerbound[target_state];
                     else {
-                        lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+@<Compute |lowerbound| for |new_state|, looking one cell ahead@>@;
                         if (lowerbound < 0)
                             continue;
-@<Sharpen |lowerbound| by looking one cell ahead@>@;
                     }
                     int limit = NMAX - lowerbound - added_weight;
                     if (current->records[current->first_record[source_state] - 1].weight > limit)
@@ -3084,6 +3203,7 @@ they cannot be completed or because all weights were too large.
                     add_list(next, target_state, current, source_state, added_weight, limit);
 
 @*1 Lookahead.
+\label{sec:lookahead}
 The bound does not know which cells of the current row are already
 decided to be empty (Figure~\ref{fig:stair}).  This matters most at the
 kink: if the cell |i| is empty and there is a frontier cell right of it,
@@ -3092,31 +3212,117 @@ therefore try both possibilities for the next cell and take the smaller
 of the two bounds, including the weight of the cell.  A completion in
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.
-@<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last_in_row && (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
-                        /* one step ahead: the next cell is present or not */
-                        int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
-                        int lookahead_bound = 1 << 20;
-                        state_t state_ahead;
-                        for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
-                            int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
-                            if (status_ahead == DEAD)
-                                continue;
-                            /* a completion only counts if it is a valid polyomino */
-                            if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
-                                continue;
-                            int bound_this_way = 2 * next_occupied;
-                            if (status_ahead == OK) {
-                                int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
-                                if (lowerbound_ahead < 0)
-                                    continue;
-                                bound_this_way += lowerbound_ahead;
-                            }
-                            lookahead_bound = min(lookahead_bound, bound_this_way);
+is switched off.  In the most frequent case, only one of the two possibilities
+is possible, and a light version of the lookahead is used (see below).
+@<Compute |lowerbound| for |new_state|, looking one cell ahead@>=
+                        int kink_cell_forced = 0, kink_cell_optional = 0;
+                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+                            !new_state.label[i] && new_state.label[i + 1]) {
+                            @<Set |kink_cell_forced| if only the kink cell can continue the component at the kink@>@;
                         }
-                        lowerbound = max(lowerbound, lookahead_bound);
-                    }
+                        if (kink_cell_forced) {
+                            @<Place the kink cell directly and set |lowerbound|@>@;
+                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {
+                            @<Take the smaller of the bounds with the kink cell and with blocked gaps@>@;
+                        } else {
+                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+                                @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
+                            }
+                        }
+
+@ (The condition |cell_number + 1 < num_row_cells - 1| says that the
+next cell exists and is not the last cell of the row; then $i+1<W$.)
+@<Sharpen |lowerbound| by trying both...@>=
+int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
+int lookahead_bound = 1 << 20;
+state_t state_ahead;
+for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
+    int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
+    if (status_ahead == DEAD)
+        continue;
+    /* a completion only counts if it is a valid polyomino */
+    if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
+        continue;
+    int bound_this_way = 2 * next_occupied;
+    if (status_ahead == OK) {
+        int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
+        if (lowerbound_ahead < 0)
+            continue;
+        bound_this_way += lowerbound_ahead;
+    }
+    lookahead_bound = min(lookahead_bound, bound_this_way);
+}
+lowerbound = max(lowerbound, lookahead_bound);
+
+@ {\bf The light lookahead.}
+Let $b=i+1$ be the kink position, with the frontier cell of component~$X$.
+Its upper neighbors are the empty cell~$i$ and the kink cell |next_i|${}=b+1$.
+If $b$ is the only frontier cell of $X$, and $X$ is floating or central, and
+there are other components, then leaving the kink cell empty would make the
+state |DEAD| when $b$ is retired (Section~\ref{sec:retire}).  So the kink cell
+must be occupied, and the lookahead has only one branch.  We carry it out
+directly, without |step|, and we do not even compute the bound for
+|new_state| itself (in runs up to $N=40$, it was never larger than
+the bound after the kink cell): the kink cell takes over the label of~$b$, and
+it is joined with the frontier cell at position $b+2$, if there is one.
+The kink cell is not the last cell of the row, so nothing else is retired.
+The resulting state need not be canonical; the bound does not care.
+
+In terms of the gaps, the gap from $b$ to the right shrinks by one, the gap
+to the left keeps its cost ($b-a$, now without the extra cell at the
+kink), and the kink cell itself costs one cell, or a weight of~2.
+If the right neighbor is at $b+2$, the gap becomes zero and the
+components are joined.
+@<Set |kink_cell_forced|...@>=
+int kink_label = new_state.label[i + 1];
+int alone = 1, others_exist = 0;
+for_int_from_to(j, 0, W - 1)
+    if (new_state.label[j] && j != i + 1) {
+        if (new_state.label[j] == kink_label)
+            alone = 0;
+        else
+            others_exist = 1;
+    }
+kink_cell_forced = alone && others_exist && !is_paired(new_state.partner, kink_label);
+kink_cell_optional = !alone;
+
+@ @<Place the kink cell directly...@>=
+int next_i = row_cells[cell_number + 1];
+state_t state_ahead = new_state;
+state_ahead.label[next_i] = new_state.label[i + 1];
+state_ahead.label[i + 1] = 0;
+if (next_i + 1 < W && state_ahead.label[next_i + 1])
+    join(state_ahead.label, state_ahead.partner, state_ahead.label[next_i], state_ahead.label[next_i + 1]);
+state_ahead.touches = new_state.touches || next_i == W - 1;
+int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, 0);
+lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
+
+@ {\bf Blocked gaps.}
+If the component $X$ of the frontier cell $b=i+1$ at the kink has other
+frontier cells, both choices for the kink cell are possible.  The
+completions that use the kink cell are handled as in the forced case.
+For the completions that leave the kink cell empty, $b$ becomes a dead end:
+its upper neighbors are the empty cell~$i$ and the kink cell.  So no path
+can end at~$b$, and the two gaps next to $b$ can be bridged only together,
+by a path from $a$ to $c$ that passes over $b$.  We make these two gaps
+infinitely expensive.  This is still a valid lower bound: if
+the cheapest completion bridges the two gaps together with $L+R$ cells,
+we can replace this path by the kink cell and the paths of $L$ and $R-1$ cells
+to its two sides, at the same cost, and we get a completion that uses the kink cell.
+(The paths through the kink cell may reach a lower height than the path over~$b$.
+This is not yet taken into account.)
+@<Take the smaller of the bounds with the kink cell and with blocked gaps@>=
+@<Place the kink cell directly and set |lowerbound|@>@;
+int lowerbound_with_kink_cell = lowerbound;
+BLOCKED_POSITION = i + 1;
+int lowerbound_without_kink_cell = bound(&new_state, k, min_rows, i, last_in_row);
+BLOCKED_POSITION = -1;
+if (lowerbound_with_kink_cell < 0)
+    lowerbound = lowerbound_without_kink_cell;
+else if (lowerbound_without_kink_cell >= 0)
+    lowerbound = min(lowerbound_with_kink_cell, lowerbound_without_kink_cell);
 
 @ @<Swap the tables...@>=
             table_t *swap = current;
@@ -3251,7 +3457,7 @@ sequences agree there, they agree everywhere.
                             @<Compute the flags of the mirror image and compare them with the flags of the state if |comparison == 0|@>@;
                         }
                         if (comparison > 0) {
-                            for (int a = 0; a < W; a++)
+                            for_int_from_to(a, 0, W - 1)
                                 mirror.code[a] = MIRRORED_CODE[coded.code[W - 1 - a]];
                             mirror.num_components = coded.num_components;
                             mirror.touches = coded.touches;
@@ -3290,12 +3496,14 @@ lexicographically.
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
+  -B     at the kink, try both choices instead of blocking the gaps
 \end{verbatim}
 @<Glob...@>=
 static int MERGE_MIRROR_STATES = 1; /* merge mirror states? */
 static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 static const char *RESULT_FILE_NAME = "results180.py"; /* \texttt{-o} */
 static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 
 @ @<The main program@>=
@@ -3334,6 +3542,8 @@ int main(int argc, char **argv)
             USE_OLD_BOUND = 1, arg++;
         else if (!strcmp(argv[arg], "-C"))
             CHECK_PACKING = 1, arg++;
+        else if (!strcmp(argv[arg], "-B"))
+            BLOCKED_LOOKAHEAD = 0, arg++;
         else if (!strcmp(argv[arg], "-v") && arg + 1 < argc)
             VERBOSITY = atoi(argv[++arg]), arg++;
         else if (!strcmp(argv[arg], "-p") && arg + 1 < argc)
@@ -3401,10 +3611,10 @@ with the complete command line (including the name |argv[0]| of the
 program), so that every log file and every result file is
 self-describing.
 @<Print the program parameters@>=
-    for (int stream_number = 0; stream_number < 2; stream_number++) {
+    for_int_from_to(stream_number, 0, 1) {
         FILE *stream = stream_number ? stdout : stderr;
         fprintf(stream, "# command:");
-        for (int word = 0; word < argc; word++)
+        for_int_from_to(word, 0, argc - 1)
             fprintf(stream, " %s", argv[word]);
         fprintf(stream, "\n# diag180 built %s %s; N=%d", __DATE__, __TIME__, NMAX);
         if (argc - arg == 4)
@@ -3433,7 +3643,7 @@ cases over the nodes of a cluster.
             printf("# modulus %llu; n #(uspan<vspan) #(uspan=vspan)\n", (unsigned long long)MODULUS);
         else
             printf("# modulus 2**" COUNTER_BITS "; n #(uspan<vspan) #(uspan=vspan)\n");
-        for (int n = 1; n <= NMAX; n++)
+        for_int_from_to(n, 1, NMAX)
             printf("%d %s %s\n", n, counter_to_string(PORTRAIT[n]), counter_to_string(SQUARE[n]));
 
 @ The cases are $(M_x,M_y)\in\{(0,0),(1,0),(1,1)\}$ and all $u_{\max}$ for
@@ -3449,7 +3659,7 @@ it stands also for its mirror image $(0,1)$.
                 int t = M_x - M_y, center_type = M_x + M_y, twice = M_x != M_y;
                 for (umax = t; 2 * umax - t + 1 <= NMAX; umax++) {
                     count_case();
-                    for (int n = 1; n <= NMAX; n++) {
+                    for_int_from_to(n, 1, NMAX) {
                         counter_t *entry = &results[center_type * NMAX_plus_1 + n];
                         *entry = add_mod(*entry, add_mod(PORTRAIT[n], PORTRAIT[n]));
                         *entry = add_mod(*entry, SQUARE[n]);
@@ -3484,8 +3694,8 @@ lemma) can be done in Python with integers of unlimited size.
             snprintf(modulus_string, sizeof modulus_string, "2**" COUNTER_BITS);
         fprintf(result_file, "# diag180 N=%d modulus %s\ntry:\n    Results\nexcept NameError:\n    Results = {}\n", NMAX, modulus_string);
         static const char *type_name[3] = {"R180C", "R180M", "R180V"};
-        for (int n = 1; n <= NMAX; n++)
-            for (int center_type = 0; center_type < 3; center_type++)
+        for_int_from_to(n, 1, NMAX)
+            for_int_from_to(center_type, 0, 2)
                 fprintf(result_file, "Results[%d, %s, '%s'] = %s\n", n, modulus_string, type_name[center_type],
                         counter_to_string(results[center_type * NMAX_plus_1 + n]));
         fclose(result_file);
@@ -3495,7 +3705,7 @@ lemma) can be done in Python with integers of unlimited size.
 $\fix_{\rhoo}(n)$ and its three parts for the three types of centers.
 @<Print the table of results@>=
         printf("# n fix(r180) R180C(center in a cell) R180M(edge midpoint) R180V(vertex)\n");
-        for (int n = 1; n <= NMAX; n++) {
+        for_int_from_to(n, 1, NMAX) {
             counter_t total = add_mod(add_mod(results[n], results[NMAX_plus_1 + n]), results[2 * NMAX_plus_1 + n]);
             printf("%d %s %s %s %s\n", n, counter_to_string(total), counter_to_string(results[n]), counter_to_string(results[NMAX_plus_1 + n]),
                    counter_to_string(results[2 * NMAX_plus_1 + n]));
@@ -3745,7 +3955,7 @@ We list them roughly in the order of increasing effort.
   on disk, and the main memory holds just the buffers.
   A simpler variant keeps the hash table for the new row in memory but
   reads the old row, which is only scanned once, from a file.
-\item \emph{Splitting the table by the untouched part of the frontier.}
+\item \emph{Splitting the table by the untouched frontier cells.}
   While the cells in the left part of a row are decided, the frontier
   cells far to the right of the kink are not touched: their component labels
   may change, but the pattern of occupied and empty positions stays the

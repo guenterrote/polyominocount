@@ -82,14 +82,14 @@ An older and weaker bound is retained for comparison (option
 Kruskal's algorithm, identifying partners, and adds the distance to the
 side.  It ignores the kink, the central term, and the height.
 The code is part of the function |bound| below; the state is not empty.
-@<Set |connection_bound| to the old spanning tree bound@>=
+@<Set |connection_term| to the old spanning tree bound@>=
         int representative[MAXW + 1];
         int occupied[MAXW], num_occupied = 0;
-        for (int j = 1; j <= state->num_components; j++) {
+        for_int_from_to(j, 1, state->num_components) {
             int q = state->partner[j];
             representative[j] = (q != 0 && q < j) ? q : j;
         }
-        for (int j = 0; j < W; j++)
+        for_int_from_to(j, 0, W - 1)
             if (label[j])
                 occupied[num_occupied++] = j;
         /* Kruskal over gaps between consecutive occupied positions */
@@ -97,7 +97,7 @@ The code is part of the function |bound| below; the state is not empty.
         int num_sets = 0;
         int seen[MAXW + 1];
         memset(seen, 0, sizeof(seen));
-        for (int a = 0; a < num_occupied; a++) {
+        for_int_from_to(a, 0, num_occupied - 1) {
             int rep = representative[label[occupied[a]]];
             if (!seen[rep]) {
                 seen[rep] = 1;
@@ -111,11 +111,11 @@ The code is part of the function |bound| below; the state is not empty.
             int num_gaps = num_occupied - 1;
             int gap[MAXW], order[MAXW], bucket[MAXW + 1];
             memset(bucket, 0, sizeof(bucket));
-            for (int a = 0; a < num_gaps; a++) {
+            for_int_from_to(a, 0, num_gaps - 1) {
                 gap[a] = occupied[a + 1] - occupied[a] - 1;
                 bucket[gap[a]]++;
             }
-            for (int g = 1; g <= W; g++)
+            for_int_from_to(g, 1, W)
                 bucket[g] += bucket[g - 1];
             for (int a = num_gaps - 1; a >= 0; a--)
                 order[--bucket[gap[a]]] = a;
@@ -137,31 +137,53 @@ The code is part of the function |bound| below; the state is not empty.
             int left_distance = occupied[0], right_distance = W - 1 - occupied[num_occupied - 1];
             cost += min(left_distance, right_distance);
         }
-        connection_bound = 2 * cost;
+        connection_term = 2 * cost;
 
 @y
 @z
 
 @x
-    int connection_bound;
+    int connection_term;
     if (USE_OLD_BOUND) {
-        @<Set |connection_bound| to the old spanning tree bound@>@;
-    } else
-        connection_bound = 2 * cactus_bound(state);
+        @<Set |connection_term| to the old spanning tree bound@>@;
+    } else if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
 @y
-    int connection_bound = 2 * cactus_bound(state);
+    int connection_term;
+    if (state->touches && frontier_height >= TARGET_ROW)
+        connection_term = 2 * connection_bound(state);
+    else
+        connection_term = 2 * cactus_bound(state);
 @z
 
 @x
 the lookahead counts only if it would be a valid polyomino.  With the
 option \texttt{-A} the lookahead is done for every cell, and with \texttt{-N} it
-is switched off.
-@<Sharpen |lowerbound|...@>=
-                    if (LOOKAHEAD && !last_in_row && (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+is switched off.  In the most frequent case, only one of the two possibilities
 @y
 the lookahead counts only if it would be a valid polyomino.
-@<Sharpen |lowerbound|...@>=
-                    if (!last_in_row && !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
+In the most frequent case, only one of the two possibilities
+@z
+
+@x
+                        if (LOOKAHEAD == 1 && cell_number + 1 < num_row_cells - 1 &&
+@y
+                        if (cell_number + 1 < num_row_cells - 1 &&
+@z
+
+@x
+                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {
+@y
+                        } else if (kink_cell_optional) {
+@z
+
+@x
+                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (LOOKAHEAD == 2 || (!new_state.label[i] && i + 1 < W && new_state.label[i + 1]))) {
+@y
+                            if (lowerbound >= 0 && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
 @z
 
 @x
@@ -169,6 +191,7 @@ the lookahead counts only if it would be a valid polyomino.
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
+  -B     at the kink, try both choices instead of blocking the gaps
 @y
 @z
 
@@ -179,6 +202,7 @@ static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 
 @x
 static int LOOKAHEAD = 1; /* 0 none, 1 at the kink, 2 after every cell */
+static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 @y
 @z
@@ -194,6 +218,8 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
             USE_OLD_BOUND = 1, arg++;
         else if (!strcmp(argv[arg], "-C"))
             CHECK_PACKING = 1, arg++;
+        else if (!strcmp(argv[arg], "-B"))
+            BLOCKED_LOOKAHEAD = 0, arg++;
 @y
 @z
 
