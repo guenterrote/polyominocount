@@ -3292,7 +3292,7 @@ for_int_from_to(j, 0, W - 1)
             others_exist = 1;
     }
 kink_cell_forced = alone && others_exist && !is_paired(new_state.partner, kink_label);
-kink_cell_optional = !alone;
+kink_cell_optional = !alone || others_exist; /* if not forced: both choices are possible */
 
 @ @<Place the kink cell directly...@>=
 int next_i = row_cells[cell_number + 1];
@@ -3307,7 +3307,10 @@ lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
 
 @ {\bf Blocked gaps.}@^blocked gaps@>
 If the component $X$ of the frontier cell $b=i+1$ at the kink has other
-frontier cells, both choices for the kink cell are possible.  The
+frontier cells, or if $X$ is paired, both choices for the kink cell are possible.
+(In the second case, leaving the kink cell empty retires $X$, and its partner
+becomes floating.  The bound below is a bound for the completions of the
+state before this decision, and so it does not need to know this.)  The
 completions that use the kink cell are handled as in the forced case.
 For the completions that leave the kink cell empty, $b$ becomes a dead end:
 its upper neighbors are the empty cell~$i$ and the kink cell.  So no path
@@ -3319,8 +3322,12 @@ is not used as a starting point for the path to the side
 the cheapest completion bridges the two gaps together with $L+R$ cells,
 we can replace this path by the kink cell and the paths of $L$ and $R-1$ cells
 to its two sides, at the same cost, and we get a completion that uses the kink cell.
-(The paths through the kink cell may reach a lower height than the path over~$b$.
-This is not yet taken into account.)
+(The paths through the kink cell may reach a lower height than the path over~$b$,
+whose tent can be higher; for the height term, the replacement is therefore not
+obviously harmless.  As an experiment, we have replaced the infinite costs by
+the cost $L+R$ for both gaps, with the peak and score of the path over~$b$; this is
+safe without the replacement argument.  In all 2.8 million cases of the
+blocked lookahead for $N=42$, it gave exactly the same bound.)
 @<Take the smaller of the bounds with the kink cell and with blocked gaps@>=
 @<Place the kink cell directly and set |lowerbound|@>@;
 int lowerbound_with_kink_cell = lowerbound;
