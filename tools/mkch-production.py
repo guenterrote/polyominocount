@@ -39,17 +39,15 @@ i=find("@*1 The old bound."); j=find("@*1 The complete bound."); ch(i,j,"")
 i=find("    int connection_term;"); assert L[i+6]=="        connection_term = 2 * cactus_bound(state);"
 ch(i,i+7,"    int connection_term;\n    if (state->touches && frontier_height >= TARGET_ROW)\n"
    "        connection_term = 2 * connection_bound(state);\n    else\n        connection_term = 2 * cactus_bound(state);")
-i=find("the lookahead counts only if it would be a valid polyomino.  With the")
-assert L[i+1]=="option \\texttt{-N} the lookahead is switched off."
-ch(i,i+2,"the lookahead counts only if it would be a valid polyomino.")
-i=find("                        if (LOOKAHEAD && cell_number + 1 < num_row_cells - 1 &&")
-ch(i,i+1,"                        if (cell_number + 1 < num_row_cells - 1 &&")
-i=find("                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {")
-ch(i,i+1,"                        } else if (kink_cell_optional) {")
-i=find("                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&")
-assert L[i+1].lstrip().startswith("(!BLOCKED_LOOKAHEAD ||") and L[i+2].lstrip().startswith("!new_state.label[i] && i + 1 < W")
-ch(i,i+3,"                            if (lowerbound >= 0 && cell_number + 1 == num_row_cells - 1 &&\n"
-   "                                !new_state.label[i] && new_state.label[i + 1]) {")
+i=find("(With the option \\texttt{-N} the lookahead is switched off, and with \\texttt{-B}")
+assert L[i+2].endswith("bounds.)")
+ch(i,i+3,"")
+i=find("                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&")
+ch(i,i+1,"                        if (!last_in_row &&")
+i=find("                        } else {", i); assert L[i+4].lstrip().startswith("@<Sharpen") and L[i+6]=="                        }"
+ch(i,i+7,"                        } else\n                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);")
+i=find("@ {\\bf Trying both possibilities.}"); j=find("@ @<Swap the tables...@>=", i)
+ch(i,j,"")
 i=find("  -N     no lookahead"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C") and L[i+4].startswith("  -B")
 ch(i,i+5,"")
 i=find("static int USE_OLD_BOUND = 0;"); ch(i,i+1,"")

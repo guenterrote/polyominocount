@@ -2004,7 +2004,7 @@ found, the pocket is closed and paid for.
         if (j > 0) {
             int a = run_end[j - 1], b = run_start[j];
             int gap = b - a - 1 + (b == KINK_POSITION);
-            if (a == BLOCKED_POSITION || b == BLOCKED_POSITION)
+            if (is_blocked(a) || is_blocked(b))
                 gap = INFINITE_GAP;
             if (num_open_pockets)
                 pocket_gap[num_pocket_gaps++] = gap;
@@ -2157,7 +2157,7 @@ static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OP
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
 static int CURRENT_TOUCHES; /* touched bit of the current state */
 static int KINK_POSITION; /* the kink position: one more than the position that was decided last */
-static int BLOCKED_POSITION = -1; /* the gaps next to the frontier cell at this position cost |INFINITE_GAP| */
+static int BLOCKED_POSITION = -1, SECOND_BLOCKED_POSITION = -1; /* the gaps next to these frontier cells cost |INFINITE_GAP| */
 
 @ The row of the frontier cell at position |j|:  The frontier cells
 left of the kink position are in the current row, and
@@ -2171,9 +2171,10 @@ static inline int frontier_row(int j)
 }
 
 @ The best height and the best score reached so far are updated by two macros.
-The gaps next to the frontier cell at |BLOCKED_POSITION| are made
+The gaps next to the frontier cells at |BLOCKED_POSITION| and |SECOND_BLOCKED_POSITION| are made
 ``infinitely'' expensive; this is used by the lookahead (Section~\ref{sec:lookahead}).
 @d INFINITE_GAP 4096
+@d is_blocked(j) ((j) == BLOCKED_POSITION || (j) == SECOND_BLOCKED_POSITION)
 @d update_best_height(h) (FREE_HEIGHT = max(FREE_HEIGHT, (h)))
 @d update_best_score(sc) (FREE_SCORE = min(FREE_SCORE, (sc)))
 
@@ -2569,7 +2570,7 @@ static int cactus_bound(const state_t *state)
     for_int_from_to(i, 0, W - 1)
         if (label[i]) {
             update_best_height(frontier_row(i));
-            if (i != BLOCKED_POSITION) /* a blocked cell gets no new neighbors */
+            if (!is_blocked(i)) /* a blocked cell gets no new neighbors */
                 update_best_score(side_and_top_cost(frontier_row(i), i));
         }
 
@@ -2588,7 +2589,7 @@ static int cactus_bound(const state_t *state)
             /* at the kink position the path ends one column beyond $b$: $g + 2$ cells */
             int peak = (gap - 1 + (b == KINK_POSITION) + frontier_row(a) + frontier_row(b) + 2) / 2;
             int score = touches ? 1 << 20 : gap_score(a, frontier_row(a), b == KINK_POSITION ? b + 2 : b, frontier_row(b));
-            if (a == BLOCKED_POSITION || b == BLOCKED_POSITION)
+            if (is_blocked(a) || is_blocked(b))
                 gap = INFINITE_GAP;
             if (num_open_pockets) {
                 pocket_gap[num_pocket_gaps] = gap;
@@ -2674,9 +2675,9 @@ remembered for the central term, which also enters the height term.
     SIDE_DISTANCE = 0;
     if (!touches) {
         int first = 0, last = num_runs - 1; /* the outermost runs that are not blocked */
-        if (run_start[first] == BLOCKED_POSITION)
+        while (first < last && is_blocked(run_start[first]))
             first++;
-        if (run_start[last] == BLOCKED_POSITION)
+        while (last > first && is_blocked(run_start[last]))
             last--;
         SIDE_DISTANCE = min(run_start[first], W - 1 - run_end[last]);
       }
@@ -2768,7 +2769,7 @@ static int bound(const state_t *state, int k, int min_rows, int i, int last_in_r
     if (!state->touches) {
         int side_distance = W;
         for_int_from_to(j, 0, W - 1)
-            if (label[j] && j != BLOCKED_POSITION) {
+            if (label[j] && !is_blocked(j)) {
                 int distance = min(j, W - 1 - j);
                 side_distance = min(side_distance, distance);
             }
@@ -3212,39 +3213,125 @@ they cannot be completed or because all weights were too large.
 \label{sec:lookahead}
 The bound does not know which cells of the current row are already
 decided to be empty (Figure~\ref{fig:stair}).  This matters most at the
-kink: if the cell |i| is empty and there is a frontier cell right of it,
-that cell depends entirely on the next cell |next_i| of the row.  We
-therefore \emph{look ahead}@^lookahead@>: we try both possibilities for the next cell and take the smaller
-of the two bounds, including the weight of the cell.  A completion in
-the lookahead counts only if it would be a valid polyomino.  With the
-option \texttt{-N} the lookahead is switched off.
-In the most frequent case, only one of the two possibilities
-is possible, and a light version of the lookahead is used (see below).
+kink: if the cell |i| is empty and there is a frontier cell~$b=i+1$ right of it,
+the upper neighbors of~$b$ are the empty cell~|i| and the next cell
+|next_i|${}=b+1$ of the row, the \emph{kink cell}@^kink cell@>.  We therefore
+\emph{look ahead}@^lookahead@>: we distinguish the completions that use
+the kink cell from those that do not.
+(With the option \texttt{-N} the lookahead is switched off, and with \texttt{-B}
+the old version of the lookahead is used, which tries both possibilities for the
+kink cell with |step| and takes the smaller of the two bounds.)
+
+The function |step| tells us what happens if the kink cell stays empty;
+we use only its status, not the resulting state.
+\begin{itemize}
+\item |DEAD|, for example, if $b$ is the only frontier cell of a floating or central
+component and there are other components (Section~\ref{sec:retire}),
+or |COMPLETE| but not a valid polyomino (it must touch a side and be high enough):
+the kink cell is \emph{forced}@^forced kink cell@>, and the bound is the bound after
+placing it.  We do not even compute the bound for |new_state| itself (in runs up to $N=40$,
+it was never larger).
+\item |COMPLETE| and a valid polyomino: a completion of weight~0 exists, and
+the lookahead cannot improve the bound.
+\item |OK|: both choices are possible.  We take the smaller of the bound with the kink cell
+and the bound with \emph{blocked gaps}, explained below.
+\end{itemize}
 @<Compute |lowerbound| for |new_state|, looking one cell ahead@>=
-                        int kink_cell_forced = 0, kink_cell_optional = 0;
-                        if (LOOKAHEAD && cell_number + 1 < num_row_cells - 1 &&
+                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&
                             !new_state.label[i] && new_state.label[i + 1]) {
-                            @<Set |kink_cell_forced| if only the kink cell can continue the component at the kink@>@;
-                        }
-                        if (kink_cell_forced) {
-                            @<Place the kink cell directly and set |lowerbound|@>@;
-                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {
-                            @<Take the smaller of the bounds with the kink cell and with blocked gaps@>@;
+                            @<Look ahead at the kink cell@>@;
                         } else {
                             lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                (!BLOCKED_LOOKAHEAD || cell_number + 1 == num_row_cells - 1) &&
-                                !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
+                                !new_state.label[i] && new_state.label[i + 1]) {
                                 @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
                             }
                         }
 
-@ (The condition |cell_number + 1 < num_row_cells - 1| says that the
-next cell exists and is not the last cell of the row; then $i+1<W$.)
-If the kink cell is the last cell of its row, deciding it also retires the
-frontier cell at position $b+2$.  This case is left to the full lookahead,
-which tries both possibilities with |step|; with option \texttt{-B}, the full
-lookahead is used instead of the blocked gaps in all cases that are not forced.
+@ Since cell |i| is not the last cell of the row, the kink cell
+|next_i|${}=i+2$ exists, and $i+1<W$.
+@<Look ahead at the kink cell@>=
+int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
+state_t state_without_kink_cell;
+int status_without_kink_cell = step(&new_state, next_i, 0, next_is_last, &state_without_kink_cell);
+if (status_without_kink_cell == COMPLETE && new_state.touches && vspan(k - 1) >= W)
+    lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+else {
+    @<Place the kink cell directly and set |lowerbound|@>@;
+    if (status_without_kink_cell == OK) {
+        @<Take the smaller of the bounds with the kink cell and with blocked gaps@>@;
+    }
+}
+
+@ {\bf The kink cell.}@^light lookahead@>
+We place the kink cell directly, without |step|: it takes over the label of~$b$,
+so that $b$ can be retired without consequences, and it is joined with the frontier cell
+at position $b+2$, if there is one.  If the kink cell is the last cell of the row,
+the cell at $b+2$ is retired as well; this is harmless, because it now belongs
+to the component of the kink cell.
+The resulting state need not be canonical; the bound does not care.
+
+In terms of the gaps, the gap from $b$ to the right shrinks by one, the gap
+to the left keeps its cost ($b-a$, now without the extra cell at the
+kink), and the kink cell itself costs one cell, or a weight of~2.
+If the right neighbor is at $b+2$, the gap becomes zero and the
+components are joined.
+@<Place the kink cell directly and set |lowerbound|@>=
+state_t state_ahead = new_state;
+state_ahead.label[next_i] = new_state.label[i + 1];
+state_ahead.label[i + 1] = 0;
+if (next_i + 1 < W && state_ahead.label[next_i + 1]) {
+    join(state_ahead.label, state_ahead.partner, state_ahead.label[next_i], state_ahead.label[next_i + 1]);
+    if (next_is_last)
+        state_ahead.label[next_i + 1] = 0; /* retired; its component continues in the kink cell */
+}
+state_ahead.touches = new_state.touches || next_i == W - 1;
+int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
+lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
+
+@ {\bf Blocked gaps.}@^blocked gaps@>
+If both choices for the kink cell are possible, the
+completions that use the kink cell are handled as in the forced case.
+(If $b$ is the only frontier cell of a paired component, leaving the kink cell empty
+makes its partner floating.  The bound below is a bound for the completions of the
+state before this decision, and so it does not need to know this.)
+For the completions that leave the kink cell empty, $b$ becomes a dead end:
+its upper neighbors are the empty cell~$i$ and the kink cell.  So no path
+can end at~$b$, and the two gaps next to $b$ can be bridged only together,
+by a path from $a$ to $c$ that passes over $b$.  We make these two gaps
+infinitely expensive.  Moreover, nothing can grow from~$b$ any more, so $b$
+is not used as a starting point for the path to the side
+(|SIDE_DISTANCE| and the score).  This is still a valid lower bound: if
+the cheapest completion bridges the two gaps together with $L+R$ cells,
+we can replace this path by the kink cell and the paths of $L$ and $R-1$ cells
+to its two sides, at the same cost, and we get a completion that uses the kink cell.
+(The paths through the kink cell may reach a lower height than the path over~$b$,
+whose tent can be higher; for the height term, the replacement is therefore not
+obviously harmless.  As an experiment, we have replaced the infinite costs by
+the cost $L+R$ for both gaps, with the peak and score of the path over~$b$; this is
+safe without the replacement argument.  In all 2.8 million cases of the
+blocked lookahead for $N=42$, it gave exactly the same bound.)
+
+If the kink cell is the last cell of its row, the frontier cell at $b+2$ is retired
+as well when the kink cell stays empty, because its other upper neighbor lies
+outside the strip.  It is a dead end, too, and it is blocked in the same way.
+In this case, there is no path over~$b$ at all, because there is no frontier cell
+to the right of $b+2$.
+@<Take the smaller of the bounds with the kink cell and with blocked gaps@>=
+int lowerbound_with_kink_cell = lowerbound;
+BLOCKED_POSITION = i + 1;
+SECOND_BLOCKED_POSITION = next_is_last ? i + 3 : -1;
+int lowerbound_without_kink_cell = bound(&new_state, k, min_rows, i, last_in_row);
+BLOCKED_POSITION = SECOND_BLOCKED_POSITION = -1;
+if (lowerbound_with_kink_cell < 0)
+    lowerbound = lowerbound_without_kink_cell;
+else if (lowerbound_without_kink_cell >= 0)
+    lowerbound = min(lowerbound_with_kink_cell, lowerbound_without_kink_cell);
+
+@ {\bf Trying both possibilities.}
+With the option \texttt{-B}, both possibilities for the kink cell are tried with
+|step|, and the bound is computed for both resulting states.
+A completion counts only if it would be a valid polyomino.
 @<Sharpen |lowerbound| by trying both...@>=
 int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
 int lookahead_bound = 1 << 20;
@@ -3266,91 +3353,6 @@ for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied
     lookahead_bound = min(lookahead_bound, bound_this_way);
 }
 lowerbound = max(lowerbound, lookahead_bound);
-
-@ {\bf The light lookahead.}@^light lookahead@>@^forced kink cell@>
-Let $b=i+1$ be the kink position, with the frontier cell of component~$X$.
-Its upper neighbors are the empty cell~$i$ and the kink cell |next_i|${}=b+1$.
-If $b$ is the only frontier cell of $X$, and $X$ is floating or central, and
-there are other components, then leaving the kink cell empty would make the
-state |DEAD| when $b$ is retired (Section~\ref{sec:retire}).  If $b$ is the
-only frontier cell of all, then $X$ is central, and leaving the kink cell empty
-completes the polyomino; if this is not a valid polyomino (it must touch a
-side and be high enough), the kink cell is forced as well.  (If it is valid,
-a completion of weight~0 exists, and the lookahead cannot improve the bound.)
-In these cases the kink cell
-must be occupied, and the lookahead has only one branch.  We carry it out
-directly, without |step|, and we do not even compute the bound for
-|new_state| itself (in runs up to $N=40$, it was never larger than
-the bound after the kink cell): the kink cell takes over the label of~$b$, and
-it is joined with the frontier cell at position $b+2$, if there is one.
-The kink cell is not the last cell of the row, so nothing else is retired.
-The resulting state need not be canonical; the bound does not care.
-
-In terms of the gaps, the gap from $b$ to the right shrinks by one, the gap
-to the left keeps its cost ($b-a$, now without the extra cell at the
-kink), and the kink cell itself costs one cell, or a weight of~2.
-If the right neighbor is at $b+2$, the gap becomes zero and the
-components are joined.
-@<Set |kink_cell_forced|...@>=
-int kink_label = new_state.label[i + 1];
-int alone = 1, others_exist = 0;
-for_int_from_to(j, 0, W - 1)
-    if (new_state.label[j] && j != i + 1) {
-        if (new_state.label[j] == kink_label)
-            alone = 0;
-        else
-            others_exist = 1;
-    }
-if (others_exist)
-    kink_cell_forced = alone && !is_paired(new_state.partner, kink_label);
-else /* $b$ is the only frontier cell: without the kink cell, the polyomino is complete */
-    kink_cell_forced = alone && !(new_state.touches && vspan(k - 1) >= W);
-kink_cell_optional = !alone || others_exist; /* if not forced: both choices are possible */
-
-@ @<Place the kink cell directly...@>=
-int next_i = row_cells[cell_number + 1];
-state_t state_ahead = new_state;
-state_ahead.label[next_i] = new_state.label[i + 1];
-state_ahead.label[i + 1] = 0;
-if (next_i + 1 < W && state_ahead.label[next_i + 1])
-    join(state_ahead.label, state_ahead.partner, state_ahead.label[next_i], state_ahead.label[next_i + 1]);
-state_ahead.touches = new_state.touches || next_i == W - 1;
-int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, 0);
-lowerbound = lowerbound_ahead < 0 ? -1 : 2 + lowerbound_ahead;
-
-@ {\bf Blocked gaps.}@^blocked gaps@>
-If the component $X$ of the frontier cell $b=i+1$ at the kink has other
-frontier cells, or if $X$ is paired, both choices for the kink cell are possible.
-(In the second case, leaving the kink cell empty retires $X$, and its partner
-becomes floating.  The bound below is a bound for the completions of the
-state before this decision, and so it does not need to know this.)  The
-completions that use the kink cell are handled as in the forced case.
-For the completions that leave the kink cell empty, $b$ becomes a dead end:
-its upper neighbors are the empty cell~$i$ and the kink cell.  So no path
-can end at~$b$, and the two gaps next to $b$ can be bridged only together,
-by a path from $a$ to $c$ that passes over $b$.  We make these two gaps
-infinitely expensive.  Moreover, nothing can grow from~$b$ any more, so $b$
-is not used as a starting point for the path to the side
-(|SIDE_DISTANCE| and the score).  This is still a valid lower bound: if
-the cheapest completion bridges the two gaps together with $L+R$ cells,
-we can replace this path by the kink cell and the paths of $L$ and $R-1$ cells
-to its two sides, at the same cost, and we get a completion that uses the kink cell.
-(The paths through the kink cell may reach a lower height than the path over~$b$,
-whose tent can be higher; for the height term, the replacement is therefore not
-obviously harmless.  As an experiment, we have replaced the infinite costs by
-the cost $L+R$ for both gaps, with the peak and score of the path over~$b$; this is
-safe without the replacement argument.  In all 2.8 million cases of the
-blocked lookahead for $N=42$, it gave exactly the same bound.)
-@<Take the smaller of the bounds with the kink cell and with blocked gaps@>=
-@<Place the kink cell directly and set |lowerbound|@>@;
-int lowerbound_with_kink_cell = lowerbound;
-BLOCKED_POSITION = i + 1;
-int lowerbound_without_kink_cell = bound(&new_state, k, min_rows, i, last_in_row);
-BLOCKED_POSITION = -1;
-if (lowerbound_with_kink_cell < 0)
-    lowerbound = lowerbound_without_kink_cell;
-else if (lowerbound_without_kink_cell >= 0)
-    lowerbound = min(lowerbound_with_kink_cell, lowerbound_without_kink_cell);
 
 @ @<Swap the tables...@>=
             table_t *swap = current;

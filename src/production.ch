@@ -159,31 +159,59 @@ The code is part of the function |bound| below; the state is not empty.
 @z
 
 @x
-the lookahead counts only if it would be a valid polyomino.  With the
-option \texttt{-N} the lookahead is switched off.
+(With the option \texttt{-N} the lookahead is switched off, and with \texttt{-B}
+the old version of the lookahead is used, which tries both possibilities for the
+kink cell with |step| and takes the smaller of the two bounds.)
 @y
-the lookahead counts only if it would be a valid polyomino.
 @z
 
 @x
-                        if (LOOKAHEAD && cell_number + 1 < num_row_cells - 1 &&
+                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&
 @y
-                        if (cell_number + 1 < num_row_cells - 1 &&
+                        if (!last_in_row &&
 @z
 
 @x
-                        } else if (kink_cell_optional && BLOCKED_LOOKAHEAD) {
-@y
-                        } else if (kink_cell_optional) {
-@z
-
-@x
+                        } else {
+                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                (!BLOCKED_LOOKAHEAD || cell_number + 1 == num_row_cells - 1) &&
-                                !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
-@y
-                            if (lowerbound >= 0 && cell_number + 1 == num_row_cells - 1 &&
                                 !new_state.label[i] && new_state.label[i + 1]) {
+                                @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
+                            }
+                        }
+@y
+                        } else
+                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
+@z
+
+@x
+@ {\bf Trying both possibilities.}
+With the option \texttt{-B}, both possibilities for the kink cell are tried with
+|step|, and the bound is computed for both resulting states.
+A completion counts only if it would be a valid polyomino.
+@<Sharpen |lowerbound| by trying both...@>=
+int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
+int lookahead_bound = 1 << 20;
+state_t state_ahead;
+for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
+    int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
+    if (status_ahead == DEAD)
+        continue;
+    /* a completion only counts if it is a valid polyomino */
+    if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
+        continue;
+    int bound_this_way = 2 * next_occupied;
+    if (status_ahead == OK) {
+        int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
+        if (lowerbound_ahead < 0)
+            continue;
+        bound_this_way += lowerbound_ahead;
+    }
+    lookahead_bound = min(lookahead_bound, bound_this_way);
+}
+lowerbound = max(lowerbound, lookahead_bound);
+
+@y
 @z
 
 @x
