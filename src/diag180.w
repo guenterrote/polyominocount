@@ -3233,6 +3233,7 @@ is possible, and a light version of the lookahead is used (see below).
                         } else {
                             lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (!BLOCKED_LOOKAHEAD || cell_number + 1 == num_row_cells - 1) &&
                                 !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
                                 @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
                             }
@@ -3240,6 +3241,10 @@ is possible, and a light version of the lookahead is used (see below).
 
 @ (The condition |cell_number + 1 < num_row_cells - 1| says that the
 next cell exists and is not the last cell of the row; then $i+1<W$.)
+If the kink cell is the last cell of its row, deciding it also retires the
+frontier cell at position $b+2$.  This case is left to the full lookahead,
+which tries both possibilities with |step|; with option \texttt{-B}, the full
+lookahead is used instead of the blocked gaps in all cases that are not forced.
 @<Sharpen |lowerbound| by trying both...@>=
 int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
 int lookahead_bound = 1 << 20;
@@ -3267,7 +3272,12 @@ Let $b=i+1$ be the kink position, with the frontier cell of component~$X$.
 Its upper neighbors are the empty cell~$i$ and the kink cell |next_i|${}=b+1$.
 If $b$ is the only frontier cell of $X$, and $X$ is floating or central, and
 there are other components, then leaving the kink cell empty would make the
-state |DEAD| when $b$ is retired (Section~\ref{sec:retire}).  So the kink cell
+state |DEAD| when $b$ is retired (Section~\ref{sec:retire}).  If $b$ is the
+only frontier cell of all, then $X$ is central, and leaving the kink cell empty
+completes the polyomino; if this is not a valid polyomino (it must touch a
+side and be high enough), the kink cell is forced as well.  (If it is valid,
+a completion of weight~0 exists, and the lookahead cannot improve the bound.)
+In these cases the kink cell
 must be occupied, and the lookahead has only one branch.  We carry it out
 directly, without |step|, and we do not even compute the bound for
 |new_state| itself (in runs up to $N=40$, it was never larger than
@@ -3291,7 +3301,10 @@ for_int_from_to(j, 0, W - 1)
         else
             others_exist = 1;
     }
-kink_cell_forced = alone && others_exist && !is_paired(new_state.partner, kink_label);
+if (others_exist)
+    kink_cell_forced = alone && !is_paired(new_state.partner, kink_label);
+else /* $b$ is the only frontier cell: without the kink cell, the polyomino is complete */
+    kink_cell_forced = alone && !(new_state.touches && vspan(k - 1) >= W);
 kink_cell_optional = !alone || others_exist; /* if not forced: both choices are possible */
 
 @ @<Place the kink cell directly...@>=

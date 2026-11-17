@@ -179,9 +179,11 @@ the lookahead counts only if it would be a valid polyomino.
 
 @x
                             if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
+                                (!BLOCKED_LOOKAHEAD || cell_number + 1 == num_row_cells - 1) &&
                                 !new_state.label[i] && i + 1 < W && new_state.label[i + 1]) {
 @y
-                            if (lowerbound >= 0 && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
+                            if (lowerbound >= 0 && cell_number + 1 == num_row_cells - 1 &&
+                                !new_state.label[i] && new_state.label[i + 1]) {
 @z
 
 @x
