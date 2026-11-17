@@ -407,14 +407,17 @@ others are still open.  The boundary between them is a zigzag line: if
 the cells of row $v$ have been decided up to position~$i$, the most
 recently decided cell in each column is in row $v$ for the positions
 $\le i$ and in row $v-1$ for the positions $>i$ (always only for the
-columns of the right parity).  These cells form the \emph{frontier}.
-The place where the frontier steps down from row $v$ to row $v-1$ is
+columns of the right parity).  The boundary is the \emph{frontier line}
+(the red line in the figures), and the decided cells that touch it from
+below are the \emph{frontier cells}.  (Without a qualifier, a frontier cell
+is usually an occupied one, a cell of $P^+$.)
+The place where the frontier line steps down from row $v$ to row $v-1$ is
 called the \emph{kink}.
 Formally, we define the \emph{kink position} $k$ as the coordinate of the
 midpoint of the two consecutive red downstepping edges. The cell at
 column
 $k-1$ was the last cell that was decided,
-the frontier steps down when it proceeds to column $k$,
+the frontier line steps down when it proceeds to column $k$,
 and the next cell to be
 decided is at column $k+1$.
 Thus, the frontier cells at the positions $<k$ are in row~$v$, and the
@@ -423,14 +426,14 @@ When the last cell of a row has been decided, there is no kink: all
 frontier cells are in row~$v$.  In this case, $k$ is larger than the
 positions of all frontier cells.
 
-A frontier cell is dropped from the frontier as soon as both of its
+A cell stops being a frontier cell as soon as both of its
 upper neighbors have been decided, since nothing can be attached to it
 any more.  (See Figure~\ref{fig:frontier}.)
 
 It is useful to imagine that we are simultaneously building the
-polyomino downward from the center. Thus, there is a lower frontier,
-at the mirror position of the upper frontier, and if we decide to
-place a cell at the kink, its mirror will be placed below the lower frontier.
+polyomino downward from the center. Thus, there is a lower frontier line,
+at the mirror position of the upper frontier line, and if we decide to
+place a cell at the kink, its mirror will be placed below the lower frontier line.
 
 \begin{figure}[htb]
 \centering
@@ -457,11 +460,11 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
   position $k-1=6$ of row $v$ has
   been decided. Blue cells belong to $P^+$, gray cells are decided and
   empty, white cells are undecided.  The thick red curve separates the
-  decided cells from the unprocessed cells, and the frontier consists of
+  decided cells from the unprocessed cells; it is the frontier line.  The frontier cells are
   all cells that touch an edge of the red curve from below: the cells
   of row $v$ at the positions $0,2,4,6$ and the cells of row $v-1$ at
   the positions $7,9,11$.  Five of them are occupied; they form three
-  components $A$, $B$, $C$ with four runs.  The frontier steps down at the
+  components $A$, $B$, $C$ with four runs.  The frontier line steps down at the
   kink, from position~$k-1$ to position~$k$.}
 \label{fig:frontier}
 \end{figure}
@@ -469,12 +472,12 @@ place a cell at the kink, its mirror will be placed below the lower frontier.
 @*1 Components: central, paired, and floating.
 Consider the part of $P$ that is known so far: the decided cells of $P^+$
 and their images.  From now on, the word \emph{component} denotes a connected component of this known part
-that contains a cell of the (upper) frontier.
+that contains a frontier cell.
 In the state, a component is represented by its frontier cells, which
 carry a common label.  A \emph{run} is a maximal block of
 consecutive positions that hold frontier cells.  Since the cells of a
-row occupy only every other position, and the cells in between have
-already left the frontier, most runs consist of a single cell; only at
+row occupy only every other position, and the cells in between are
+no frontier cells any more, most runs consist of a single cell; only at
 the kink, the positions $k-1$ and $k$ can both hold a frontier cell,
 and these two cells are neighbors.  The frontier cells of a component form
 one or more runs.  (In Figure~\ref{fig:frontier}, the two cells of component
@@ -484,27 +487,27 @@ cannot \emph{cross}: the pattern $A\ldots B\ldots A\ldots B$ does not
 occur.
 
 The image $\rhoo(X)$ of a component $X$ is again a connected component of the known
-part, but it need not touch the upper frontier.  There are three possibilities:
+part, but it need not contain a frontier cell.  There are three possibilities:
 \begin{itemize}
 \item $\rhoo(X)=X$.  We call $X$ the \emph{central} component.  It is
   point-symmetric around the center, and it
-  reaches the lower frontier.
+  reaches the lower frontier line.
   %already connects $P^+$ to its image.
   There is at most one such component.
 \item $\rhoo(X)=Y$ is another component.  Then $X$ and $Y$ are \emph{paired}
   components, and each is the \emph{partner} of the other.  A paired
-  component reaches through the known part to the opposite (lower) frontier.
-\item $\rhoo(X)$ has no cell on the frontier.  Then $X$ is a
+  component reaches through the known part to the opposite (lower) frontier line.
+\item $\rhoo(X)$ has no frontier cell.  Then $X$ is a
   \emph{floating} component: it lives on the upper side only and does not
-  reach the lower frontier, and its image touches only the lower frontier.
+  reach the lower frontier line, and its image touches only the lower frontier line.
 \end{itemize}
 \label{sec:crossing}%
 Call a component \emph{crossing} if it is central or paired, that is, if
-it is not floating.  The union of the frontier and its image under $\rhoo$ is a
+it is not floating.  The union of the frontier line and its image under $\rhoo$ is a
 closed curve around the known part of~$P$ (think of a disk), and a
-crossing component together with its partner connects the frontier with the
-image of the frontier across this disk.  Two such connections cannot
-cross each other, and $\rhoo$ reverses the order along the frontier.
+crossing component together with its partner connects the frontier line with its
+image across this disk.  Two such connections cannot
+cross each other, and $\rhoo$ reverses the order along the frontier line.
 Consequently, the crossing components, read from left to right, form one
 nested chain
 $$ A_1,\ A_2,\ \ldots,\ A_k,\ (Z),\ \rhoo A_k,\ \ldots,\ \rhoo A_2,\ \rhoo A_1, $$
@@ -594,18 +597,18 @@ types of components.
 \end{tikzpicture}
 \caption{A larger example with all types of components: $W=53$, center type~C,
   row~8 has been decided up to position~38.  The red line is the
-  frontier, and the dotted line is its image, the lower frontier.
+  frontier line, and the dotted line is its image, the lower frontier line.
   The numbers are the component labels.
   The components 1 and 9 are \emph{paired}, and so are 4 and~7 (blue): each
-  of them reaches from the upper to the lower frontier, and its image
+  of them reaches from the upper to the lower frontier line, and its image
   is its partner.  Component~5 is the \emph{central} component (dark blue).
   The components 2, 3, 6, 8, and 10 are \emph{floating} (green): their
-  images (light green) touch only the lower frontier.  Component~3 lies in the
+  images (light green) touch only the lower frontier line.  Component~3 lies in the
   pocket between the two runs of the floating component~2, which in turn lies
   in the pocket of the paired component~1.  Component~6 lies in the pocket of
   the central component.  The components 8 and~10 are at the top level.
   Component~10 extends far into the lower half, but it
-  does not reach the lower frontier.
+  does not reach the lower frontier line.
   The crossing components form the nested chain $1,4,5,7,9$.
   Above the picture: the labels and the codes of the packed key
   (Section~\ref{sec:packed}) at the occupied positions; all other
@@ -632,7 +635,7 @@ In its unpacked form, a state is a record of type |state_t| with the following f
   and 0 if $j$ is a floating component.
 \item |touches|: the \emph{touched} bit.
 \end{itemize}
-A frontier contains at most $\lceil W/2\rceil+1$ cells, hence at most
+There are at most $\lceil W/2\rceil+1$ frontier cells, hence at most
 that many components.
 
 Figure~\ref{fig:example} shows an example.  The labels at the 17
@@ -677,7 +680,7 @@ is~1, because the columns $u=-8$ and $u=8$ are occupied.
   (label~4), so $A$ and $D$ are paired.  Component $B$ (label~2) contains
   the center: it is the central component.  Component $C$ (label~3) is an
   isolated cell
-  in row~2; its image is not on the frontier: it is floating.
+  in row~2; its image has no frontier cell: it is floating.
   Above the picture: the labels of the state, and the codes of
   the packed key (Section~\ref{sec:packed}), abbreviated by their
   initials: \texttt{E}mpty, \texttt{C}ontinue, \texttt{S}ingleton,
@@ -696,7 +699,7 @@ typedef struct {
 
 @*1 The working state.
 A transition changes only little: a new cell joins at most two components,
-and at most two cells leave the frontier.  We therefore work directly
+and at most two cells stop being frontier cells.  We therefore work directly
 on a copy of the state, with two arrays: |label[i]| is the label of the
 frontier cell at position~|i| (or 0), and |partner[j]| is the partner of the
 component with label~|j|, in the same form as in |state_t|.
@@ -733,7 +736,7 @@ of~$A$, and the type of the union depends on the types of $A$ and~$B$:
 @<Sub...@>=
 static void join(uint8_t *label, uint8_t *partner, int a, int b)
 {
-    /* on entry: |a| and |b| are labels that occur on the frontier, possibly |a == b|; the partner relation is symmetric:
+    /* on entry: |a| and |b| are labels of frontier cells, possibly |a == b|; the partner relation is symmetric:
        |partner[partner[x]] == x| for every component |x| that occurs and is not floating;
        afterwards |b| (and possibly a partner) no longer occurs, and its entry in |partner| is garbage */
     if (a == b) /* the new cell touches the same component a second time. */
@@ -781,15 +784,15 @@ static void make_state_canonical(const uint8_t *label, const uint8_t *partner, i
     result->touches = touches;
 }
 
-@*1 Removing a cell from the frontier.
+@*1 Retiring a frontier cell.
 \label{sec:retire}
 When the frontier cell at position~|i| can no longer get new
 neighbors, it is \emph{retired}.  If other frontier cells of the same
-component remain, nothing happens.  Otherwise the component $X$ disappears from
-the frontier, and there are several cases:
+component remain, nothing happens.  Otherwise the component $X$ has no frontier
+cells any more, and there are several cases:
 \begin{itemize}
 \item $X$ is the central component.  Then $X$ is a complete symmetric polyomino,
-  and nothing can be added to it.  If the frontier is now empty, we have
+  and nothing can be added to it.  If no frontier cells remain, we have
   found a polyomino (|COMPLETE|); otherwise the other components can
   never be connected to $X$, and the state is |DEAD|.
 \item $X$ is floating.  Then $X$ and $\rhoo(X)$ are two
@@ -1555,7 +1558,7 @@ weight~2.
 To turn the partial polyomino into a full polyomino that we want to
 count, we have to satisfy three conditions:
 \begin{enumerate}
-\item The components reaching the frontier must be connected to each
+\item The components that have frontier cells must be connected to each
   other.
 \item If the boundary has not been touched yet, the polyomino must be connected
   to the boundary.
@@ -1597,7 +1600,7 @@ $g=u'-u-1$ columns strictly between $u$ and~$u'$.
 
 If $u'$ is at % the bottom of the kink,
 the path must use the only cell
-adjacent to $u'$ above the frontier, at position $u'+1$, and to
+adjacent to $u'$ above the frontier line, at position $u'+1$, and to
 connect this cell to $u$ requires
 $(u'+1)-u-1$ cells, by the previous argument, in addition to the cell
 at $u'+1$.
@@ -1652,10 +1655,10 @@ a \emph{gap}.
   bridging each gap in the shortest possible way according to Lemma~\ref{shortest}.
 \end{lemma}
 \begin{proof}
-  Take any set $C^+$ of additional cells above the frontier that, together with its mirror image
+  Take any set $C^+$ of additional cells above the frontier line that, together with its mirror image
   $C^-$, makes $P$ connected.
 Now, ``project'' $C^+$ downwards, moving each cell to the highest cell
-above the frontier in the same column.
+above the frontier line in the same column.
 % It is easy to see that
 The 
 resulting set of cells $C^+_0$ remains connected, and it
@@ -1694,7 +1697,7 @@ sets of columns, so their costs simply add up.
 
 Again there is the exception for the cell $u$
 at the lower end of the kink: The adjacent cell $u+1$
-above the frontier may be used to
+above the frontier line may be used to
 simultaneously bridge the gap to the previous and the successive
 occupied cell, thus saving one cell in this case.
 Since this is the only exception, we treat it by simply making a case
@@ -1924,7 +1927,7 @@ component.  Therefore, if there is no central component, the middle cycle must b
 closed completely, and its largest gap is paid as well.
 
 @*1 The connection bound.
-If the state already touches a side and the frontier already reaches the
+If the state already touches a side and a frontier cell already reaches the
 target row $\Vstar$, nothing is needed for the side and the top, and the
 bound is just the cost for connecting the cactus, including the central
 term.  This simple case is treated first, by the function
@@ -1946,11 +1949,11 @@ static int sum_minus_max(const int *gap, int num_gaps)
     return sum - largest;
 }
 
-@ The frontier is divided into maximal \emph{runs} of consecutive
+@ The frontier cells form maximal \emph{runs} of consecutive
 occupied positions; all cells of a run belong to the same component.
 Run |j| extends from position |run_start[j]| to |run_end[j]| and belongs to component
 |run_label[j]|, and |last_run[c]| is the last run of component~|c|.
-@<Find the runs of the frontier; if the frontier is empty, return 0@>=
+@<Find the runs of frontier cells; if there are none, return 0@>=
     int run_start[MAXW], run_end[MAXW], run_label[MAXW], num_runs = 0;
     int last_run[MAXW + 2];
     for_int_from_to(i, 0, W - 1)
@@ -1976,7 +1979,7 @@ static int connection_bound(const state_t *state)
 {
     /* on entry: |KINK_POSITION| has been set */
     const uint8_t *label = state->label;
-    @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
+    @<Find the runs of frontier cells; if there are none, return 0@>@;
     int cost = 0;
     @<Scan the runs and pay for the pockets, without heights@>@;
     @<Pay for the outer paths and the bands, and close the middle@>@;
@@ -2068,7 +2071,7 @@ A path of $c$ cells that connects frontier cells in rows $r_a$ and
 $r_b$ has its highest point at most in row
 $\lfloor (c+r_a+r_b+1)/2\rfloor$: it forms a ``tent''.  The bound adds up
 the connection costs, determines the largest height $h$ that the
-connecting paths (or the frontier itself) can reach, and charges
+connecting paths (or the frontier cells themselves) can reach, and charges
 one cell for each of the $\Vstar-h$ rows that are still missing.
 
 There are choices.  In a cycle, omitting the largest gap is
@@ -2286,7 +2289,7 @@ with one cell each.  There is no need to bridge the gap between $C$
 and~$D$: when $A$ is connected to~$B$, the image of this connection
 connects $D=\rhoo A$ to $\rhoo B=B$.  A central component exists and the sides
 are touched, so no further connections are needed.  For the height,
-the polyomino must reach row $\Vstar=8$.  The frontier is in row~3, and
+the polyomino must reach row $\Vstar=8$.  The frontier cells are in row~3, and
 the bridge between $A$ and $B$ is a tent of one cell, whose peak is in
 row~4.  The rows $5,\ldots,8$ need one cell each.  The bound is
 therefore $2+4=6$ cells, or a weight of~12.  With the weight 35 of the
@@ -2363,7 +2366,7 @@ is a polyomino with $6+10=16$ cells.
 Figure~\ref{fig:boundex2} shows four more examples with a central
 component~$Z$ and a floating component~$F$, where no side has been touched.
 The center is in a cell.  In the examples (a), (b), and~(d),
-$Z$ reaches the frontier in two places, with
+$Z$ has frontier cells in two places, with
 $F$ in the pocket between them, and row~2 is being processed.
 
 (a)~$W=17$, $\Vstar=8$; the frontier cells are at the positions 2, 8,
@@ -2533,7 +2536,7 @@ static int cactus_bound(const state_t *state)
     /* on entry: |CURRENT_ROW|, |TARGET_ROW|, and |KINK_POSITION| have been set */
     const uint8_t *label = state->label;
     int touches = state->touches;
-    @<Find the runs of the frontier; if the frontier is empty, return 0@>@;
+    @<Find the runs of frontier cells; if there are none, return 0@>@;
     @<Initialize the height computation with the frontier cells@>@;
     int cost = 0;
     @<Scan the runs from left to right and pay for the pockets@>@;
@@ -2733,7 +2736,7 @@ must still be added to a nonempty state, or $-1$ if the state can never
 be completed.  Here |k| is the number of the current row, counted from
 the first row of $P^+$, and |min_rows| is the smallest number of rows for
 which the height reaches $W$.  If the state touches a side and the
-frontier reaches the target row, the simple |connection_bound| suffices.
+a frontier cell reaches the target row, the simple |connection_bound| suffices.
 @<Sub...@>=
 static int bound(const state_t *state, int k, int min_rows, int i, int last_in_row)
 {
@@ -3072,7 +3075,7 @@ image of the cell of the twin row at position $W-1-q$.  We record in
 Cells at adjacent positions of the band are neighbors.  Hence the
 connected components of the known part are the maximal runs of occupied
 positions in the band.  A run that consists of a single cell of the
-image row has no cell on the frontier, and it gets no label.  The image
+image row has no frontier cell, and it gets no label.  The image
 of a run is the run at the mirror position: the |r|-th run from the left
 is the image of the |r|-th run from the right.  Thus, a single cell of
 the twin row is a floating component, the run that contains the two
@@ -3906,7 +3909,7 @@ We list them roughly in the order of increasing effort.
   on disk, and the main memory holds just the buffers.
   A simpler variant keeps the hash table for the new row in memory but
   reads the old row, which is only scanned once, from a file.
-\item \emph{Splitting the table by the untouched part of the frontier.}
+\item \emph{Splitting the table by the untouched frontier cells.}
   While the cells in the left part of a row are decided, the frontier
   cells far to the right of the kink are not touched: their component labels
   may change, but the pattern of occupied and empty positions stays the
