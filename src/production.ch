@@ -1,6 +1,6 @@
 This is a CWEB change file for diag180.w.  It produces the production
 version of the program, without the experimental options -K (old bound),
--N and -B (variants of the lookahead), -H (no height terms), and -C
+-N (no lookahead), -H (no height terms), and -C
 (check of packing and unpacking).
 
     ctangle diag180.w production.ch diag180p.c      (make tangle)
@@ -159,59 +159,14 @@ The code is part of the function |bound| below; the state is not empty.
 @z
 
 @x
-(With the option \texttt{-N} the lookahead is switched off, and with \texttt{-B}
-the old version of the lookahead is used, which tries both possibilities for the
-kink cell with |step| and takes the smaller of the two bounds.)
+(With the option \texttt{-N} the lookahead is switched off.)
 @y
 @z
 
 @x
-                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&
+                        if (LOOKAHEAD && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
 @y
-                        if (!last_in_row &&
-@z
-
-@x
-                        } else {
-                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
-                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                !new_state.label[i] && new_state.label[i + 1]) {
-                                @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
-                            }
-                        }
-@y
-                        } else
-                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
-@z
-
-@x
-@ {\bf Trying both possibilities.}
-With the option \texttt{-B}, both possibilities for the kink cell are tried with
-|step|, and the bound is computed for both resulting states.
-A completion counts only if it would be a valid polyomino.
-@<Sharpen |lowerbound| by trying both...@>=
-int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
-int lookahead_bound = 1 << 20;
-state_t state_ahead;
-for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
-    int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
-    if (status_ahead == DEAD)
-        continue;
-    /* a completion only counts if it is a valid polyomino */
-    if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
-        continue;
-    int bound_this_way = 2 * next_occupied;
-    if (status_ahead == OK) {
-        int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
-        if (lowerbound_ahead < 0)
-            continue;
-        bound_this_way += lowerbound_ahead;
-    }
-    lookahead_bound = min(lookahead_bound, bound_this_way);
-}
-lowerbound = max(lowerbound, lookahead_bound);
-
-@y
+                        if (!last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
 @z
 
 @x
@@ -219,7 +174,6 @@ lowerbound = max(lowerbound, lookahead_bound);
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
-  -B     at the kink, try both choices instead of blocking the gaps
 @y
 @z
 
@@ -230,7 +184,6 @@ static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 
 @x
 static int LOOKAHEAD = 1; /* lookahead at the kink? (option \texttt{-N} turns it off) */
-static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 @y
 @z
@@ -244,15 +197,13 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
             USE_OLD_BOUND = 1, arg++;
         else if (!strcmp(argv[arg], "-C"))
             CHECK_PACKING = 1, arg++;
-        else if (!strcmp(argv[arg], "-B"))
-            BLOCKED_LOOKAHEAD = 0, arg++;
 @y
 @z
 
 @x
         fprintf(stream, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 USE_OLD_BOUND ? "old Kruskal (-K)" : "cactus", USE_HEIGHT_TERMS ? "on" : "off (-H)",
-                !LOOKAHEAD ? "off (-N)" : BLOCKED_LOOKAHEAD ? "at the kink, blocked gaps" : "at the kink, both choices (-B)",
+                LOOKAHEAD ? "at the kink" : "off (-N)",
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
 @y
         fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\n",
@@ -261,7 +212,7 @@ static int CHECK_PACKING = 0; /* \texttt{-C} */
 
 @x
 separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
-\texttt{-N}, \texttt{-B}) lead to the same counts; this is a strong test, since an
+\texttt{-N}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 @y
 separately.  In the full version of the program, different variants of

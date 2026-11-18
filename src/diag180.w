@@ -1979,7 +1979,7 @@ because otherwise it would form a run together with~$b$.)
 @<Sub...@>=
 static int connection_bound(const state_t *state)
 {
-    /* on entry: |KINK_POSITION| has been set */
+    /* on entry: |KINK_POSITION| has been set; not all components of |state| are floating */
     const uint8_t *label = state->label;
     @<Find the runs of frontier cells; if there are none, return 0@>@;
     int cost = 0;
@@ -2031,17 +2031,17 @@ consists of the gaps from |crossing[i]| to |crossing[i+1]| and their
 counterparts on the right, from |crossing[num_crossing-2-i]| to |crossing[num_crossing-1-i]|.
 The middle consists of the gaps from $A_k$, which is |crossing[k-1]|, to
 $\rhoo A_k$, which is |crossing[num_crossing-k]|.
-The flag |MIDDLE_EXISTS| is set if there is no central component
-(|num_crossing| is even and positive);
-[CLAUDE: replace BY |CENTRAL_COMPONENT_EXISTS|, with opposite meaning.]
-then the middle
-cycle must be closed completely: its largest gap is paid as well.
+The flag |CENTRAL_COMPONENT_EXISTS| is set if there is a central component
+(|num_crossing| is odd).  If there is none,
+the middle cycle must be closed completely: its largest gap is paid as well.
+(There is always at least one crossing component, because |bound| returns $-1$
+for a state in which all components are floating.)
 @<Pay for the outer paths and the bands, and close the middle@>=
     int crossing[MAXW], num_crossing = 0;
     for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
-    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
+    CENTRAL_COMPONENT_EXISTS = num_crossing % 2 == 1;
     if (num_crossing) {
 @/@,    /* Connect the cells left of the first crossing component, and right of the last crossing component: */
         for_int_from_to(t, 0, crossing[0] - 1)
@@ -2060,7 +2060,7 @@ cycle must be closed completely: its largest gap is paid as well.
         }
         if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
             int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
-            if (MIDDLE_EXISTS)
+            if (!CENTRAL_COMPONENT_EXISTS)
                 for_int_from_to(t, first, last - 1)
                     cost += top_gap[t]; /* no central component: close the middle completely */
             else
@@ -2155,7 +2155,7 @@ parameter lists short.
 static int CURRENT_ROW, TARGET_ROW, FIRST_ROW; /* current row $v$, target row $\Vstar$, first row $v_0$ */
 static int USE_HEIGHT_TERMS = 1; /* use the height terms? (option \texttt{-H} turns them off) */
 static int FREE_HEIGHT, FREE_SCORE; /* best height and best score reached for free */
-static int MIDDLE_EXISTS; /* is there a middle cycle that must be closed (no central component)? */
+static int CENTRAL_COMPONENT_EXISTS; /* if not, the middle cycle must be closed completely */
 static int MIDDLE_GAP, MIDDLE_PEAK, MIDDLE_SCORE; /* its largest gap, with peak and score */
 static int NUM_OPTIONS, OPTION_COST[2 * MAXW + 4], OPTION_PEAK[2 * MAXW + 4], OPTION_SCORE[2 * MAXW + 4]; /* alternative options instead of merely optimizing the gap */
 static int SIDE_DISTANCE; /* distance to the nearest side, if untouched */
@@ -2564,7 +2564,7 @@ the options for the height are collected on the way.
 @<Sub...@>=
 static int cactus_bound(const state_t *state)
 {
-    /* on entry: |CURRENT_ROW|, |TARGET_ROW|, and |KINK_POSITION| have been set */
+    /* on entry: |CURRENT_ROW|, |TARGET_ROW|, and |KINK_POSITION| have been set; not all components are floating */
     const uint8_t *label = state->label;
     int touches = state->touches;
     @<Find the runs of frontier cells; if there are none, return 0@>@;
@@ -2640,7 +2640,7 @@ remembered for the central term, which also enters the height term.
     for_int_from_to(t, 0, num_top - 1)
         if (state->partner[top_label[t]] != 0) /* crossing */
             crossing[num_crossing++] = t;
-    MIDDLE_EXISTS = num_crossing > 0 && num_crossing % 2 == 0;
+    CENTRAL_COMPONENT_EXISTS = num_crossing % 2 == 1;
         /* without a central component, only a path across the middle (from $A_k$ to $\rhoo A_k$) can join
            some $X$ to $\rhoo X$: the right side of a band is just the image of its left side */
     if (num_crossing) {
@@ -2671,7 +2671,7 @@ remembered for the central term, which also enters the height term.
         }
         if (num_pairs) { /* the middle, from $A_k$ to $\rhoo A_k$ */
             int first = crossing[num_pairs - 1], last = crossing[num_crossing - num_pairs];
-            if (MIDDLE_EXISTS)
+            if (!CENTRAL_COMPONENT_EXISTS)
                 cost += cycle_cost(top_gap + first, top_peak + first, top_score + first, last - first,
                     &MIDDLE_GAP, &MIDDLE_PEAK, &MIDDLE_SCORE);
             else
@@ -2698,7 +2698,7 @@ remembered for the central term, which also enters the height term.
       @/
     /* without a central component the middle cycle must be closed completely:
        pay its largest gap, which then also counts for the height */
-    if (MIDDLE_EXISTS)
+    if (!CENTRAL_COMPONENT_EXISTS)
         cost += MIDDLE_GAP + height_term(max(MIDDLE_PEAK, FREE_HEIGHT), min(MIDDLE_SCORE, FREE_SCORE));
     else
         cost += height_term(FREE_HEIGHT, FREE_SCORE);
@@ -3232,9 +3232,7 @@ the upper neighbors of~$b$ are the empty cell~|i| and the next cell
 |next_i|${}=b+1$ of the row, the \emph{kink cell}@^kink cell@>.  We therefore
 \emph{look ahead}@^lookahead@>: we distinguish the completions that use
 the kink cell from those that do not.
-(With the option \texttt{-N} the lookahead is switched off, and with \texttt{-B}
-the old version of the lookahead is used, which tries both possibilities for the
-kink cell with |step| and takes the smaller of the two bounds.)
+(With the option \texttt{-N} the lookahead is switched off.)
 
 The function |step| tells us what happens if the kink cell stays empty;
 we use only its status, not the resulting state.
@@ -3251,16 +3249,10 @@ the lookahead cannot improve the bound.
 and the bound with \emph{blocked gaps}, explained below.
 \end{itemize}
 @<Compute |lowerbound| for |new_state|, looking one cell ahead@>=
-                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&
-                            !new_state.label[i] && new_state.label[i + 1]) {
+                        if (LOOKAHEAD && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {
                             @<Look ahead at the kink cell@>@;
-                        } else {
+                        } else
                             lowerbound = bound(&new_state, k, min_rows, i, last_in_row);
-                            if (lowerbound >= 0 && LOOKAHEAD && !last_in_row &&
-                                !new_state.label[i] && new_state.label[i + 1]) {
-                                @<Sharpen |lowerbound| by trying both possibilities for the next cell@>@;
-                            }
-                        }
 
 @ Since cell |i| is not the last cell of the row, the kink cell
 |next_i|${}=i+2$ exists, and $i+1<W$.
@@ -3341,32 +3333,6 @@ if (lowerbound_with_kink_cell < 0)
     lowerbound = lowerbound_without_kink_cell;
 else if (lowerbound_without_kink_cell >= 0)
     lowerbound = min(lowerbound_with_kink_cell, lowerbound_without_kink_cell);
-
-@ {\bf Trying both possibilities.}
-With the option \texttt{-B}, both possibilities for the kink cell are tried with
-|step|, and the bound is computed for both resulting states.
-A completion counts only if it would be a valid polyomino.
-@<Sharpen |lowerbound| by trying both...@>=
-int next_i = row_cells[cell_number + 1], next_is_last = cell_number + 1 == num_row_cells - 1;
-int lookahead_bound = 1 << 20;
-state_t state_ahead;
-for (int next_occupied = 0; next_occupied <= 1 && lookahead_bound; next_occupied++) {
-    int status_ahead = step(&new_state, next_i, next_occupied, next_is_last, &state_ahead);
-    if (status_ahead == DEAD)
-        continue;
-    /* a completion only counts if it is a valid polyomino */
-    if (status_ahead == COMPLETE && !(new_state.touches && vspan(k - 1) >= W))
-        continue;
-    int bound_this_way = 2 * next_occupied;
-    if (status_ahead == OK) {
-        int lowerbound_ahead = bound(&state_ahead, k, min_rows, next_i, next_is_last);
-        if (lowerbound_ahead < 0)
-            continue;
-        bound_this_way += lowerbound_ahead;
-    }
-    lookahead_bound = min(lookahead_bound, bound_this_way);
-}
-lowerbound = max(lowerbound, lookahead_bound);
 
 @ @<Swap the tables...@>=
             table_t *swap = current;
@@ -3540,14 +3506,12 @@ lexicographically.
   -H     no height terms in the bound
   -K     use the old bound (minimum spanning tree only)
   -C     check that packing and unpacking of every key are consistent
-  -B     at the kink, try both choices instead of blocking the gaps
 \end{verbatim}
 @<Glob...@>=
 static int MERGE_MIRROR_STATES = 1; /* merge mirror states? */
 static int USE_OLD_BOUND = 0; /* \texttt{-K} */
 static const char *RESULT_FILE_NAME = "results180.py"; /* \texttt{-o} */
 static int LOOKAHEAD = 1; /* lookahead at the kink? (option \texttt{-N} turns it off) */
-static int BLOCKED_LOOKAHEAD = 1; /* use blocked gaps instead of trying both choices (option \texttt{-B} turns it off) */
 static int CHECK_PACKING = 0; /* \texttt{-C} */
 
 @ @<The main program@>=
@@ -3584,8 +3548,6 @@ int main(int argc, char **argv)
             USE_OLD_BOUND = 1, arg++;
         else if (!strcmp(argv[arg], "-C"))
             CHECK_PACKING = 1, arg++;
-        else if (!strcmp(argv[arg], "-B"))
-            BLOCKED_LOOKAHEAD = 0, arg++;
         else if (!strcmp(argv[arg], "-v") && arg + 1 < argc)
             VERBOSITY = atoi(argv[++arg]), arg++;
         else if (!strcmp(argv[arg], "-p") && arg + 1 < argc)
@@ -3667,7 +3629,7 @@ self-describing.
             fprintf(stream, ", modulus 2**" COUNTER_BITS "\n");
         fprintf(stream, "# bound: %s, height term %s, lookahead %s; reflection merge %s; pack check %s\n",
                 USE_OLD_BOUND ? "old Kruskal (-K)" : "cactus", USE_HEIGHT_TERMS ? "on" : "off (-H)",
-                !LOOKAHEAD ? "off (-N)" : BLOCKED_LOOKAHEAD ? "at the kink, blocked gaps" : "at the kink, both choices (-B)",
+                LOOKAHEAD ? "at the kink" : "off (-N)",
                 MERGE_MIRROR_STATES ? "on" : "off (-R)", CHECK_PACKING ? "on (-C)" : "off");
         fprintf(stream, "# output: results file %s, progress -v %d -p %g s\n",
                 RESULT_FILE_NAME, VERBOSITY, PROGRESS_SECONDS);
@@ -3771,7 +3733,7 @@ with the values in the OEIS (sequences \oeis{A390653}--\oeis{A390655}), which we
 computed by Shirakawa~\cite{Shirakawa} with a completely different
 method; for $n\le 32$ we have also compared the three types of centers
 separately.  Different variants of the bound (\texttt{-K}, \texttt{-H},
-\texttt{-N}, \texttt{-B}) lead to the same counts; this is a strong test, since an
+\texttt{-N}) lead to the same counts; this is a strong test, since an
 invalid bound would lose polyominoes.
 
 @*1 Tightness of the bound.

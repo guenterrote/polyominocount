@@ -6,7 +6,7 @@ def find(prefix, start=0):
     raise SystemExit("not found: "+prefix)
 out=["""This is a CWEB change file for diag180.w.  It produces the production
 version of the program, without the experimental options -K (old bound),
--N and -B (variants of the lookahead), -H (no height terms), and -C
+-N (no lookahead), -H (no height terms), and -C
 (check of packing and unpacking).
 
     ctangle diag180.w production.ch diag180p.c      (make tangle)
@@ -39,21 +39,15 @@ i=find("@*1 The old bound."); j=find("@*1 The complete bound."); ch(i,j,"")
 i=find("    int connection_term;"); assert L[i+6]=="        connection_term = 2 * cactus_bound(state);"
 ch(i,i+7,"    int connection_term;\n    if (state->touches && frontier_height >= TARGET_ROW)\n"
    "        connection_term = 2 * connection_bound(state);\n    else\n        connection_term = 2 * cactus_bound(state);")
-i=find("(With the option \\texttt{-N} the lookahead is switched off, and with \\texttt{-B}")
-assert L[i+2].endswith("bounds.)")
-ch(i,i+3,"")
-i=find("                        if (LOOKAHEAD && BLOCKED_LOOKAHEAD && !last_in_row &&")
-ch(i,i+1,"                        if (!last_in_row &&")
-i=find("                        } else {", i); assert L[i+4].lstrip().startswith("@<Sharpen") and L[i+6]=="                        }"
-ch(i,i+7,"                        } else\n                            lowerbound = bound(&new_state, k, min_rows, i, last_in_row);")
-i=find("@ {\\bf Trying both possibilities.}"); j=find("@ @<Swap the tables...@>=", i)
-ch(i,j,"")
-i=find("  -N     no lookahead"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C") and L[i+4].startswith("  -B")
-ch(i,i+5,"")
+i=find("(With the option \\texttt{-N} the lookahead is switched off.)"); ch(i,i+1,"")
+i=find("                        if (LOOKAHEAD && !last_in_row && !new_state.label[i] && new_state.label[i + 1]) {")
+ch(i,i+1,"                        if (!last_in_row && !new_state.label[i] && new_state.label[i + 1]) {")
+i=find("  -N     no lookahead"); assert L[i+2].startswith("  -K") and L[i+3].startswith("  -C")
+ch(i,i+4,"")
 i=find("static int USE_OLD_BOUND = 0;"); ch(i,i+1,"")
-i=find("static int LOOKAHEAD = 1;"); assert L[i+1].startswith("static int BLOCKED_LOOKAHEAD") and L[i+2].startswith("static int CHECK_PACKING"); ch(i,i+3,"")
-i=find('        else if (!strcmp(argv[arg], "-N"))'); assert L[i+5]=="            USE_OLD_BOUND = 1, arg++;" and L[i+7]=="            CHECK_PACKING = 1, arg++;" and L[i+9]=="            BLOCKED_LOOKAHEAD = 0, arg++;"
-ch(i,i+10,"")
+i=find("static int LOOKAHEAD = 1;"); assert L[i+1].startswith("static int CHECK_PACKING"); ch(i,i+2,"")
+i=find('        else if (!strcmp(argv[arg], "-N"))'); assert L[i+5]=="            USE_OLD_BOUND = 1, arg++;" and L[i+7]=="            CHECK_PACKING = 1, arg++;"
+ch(i,i+8,"")
 i=find('        fprintf(stream, "# bound: %s, height term'); assert "MERGE_MIRROR_STATES" in L[i+3]
 ch(i,i+4,'        fprintf(stream, "# production version (cactus bound with height terms, lookahead at the kink); reflection merge %s\\n",\n'
    '                MERGE_MIRROR_STATES ? "on" : "off (-R)");')
